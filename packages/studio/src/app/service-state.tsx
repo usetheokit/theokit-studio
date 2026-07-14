@@ -18,8 +18,8 @@ export function ServiceOfflineState({ service }: { service: ServiceName }) {
       title={`${SERVICE_LABEL[service]} is offline`}
       description={
         <>
-          Suba o data stack com <code>theokit studio up</code> para habilitar esta tab. O Studio
-          continua funcional sem Docker (graceful degradation).
+          Bring the data stack up with <code>theokit studio up</code> to enable this tab. Studio
+          stays functional without Docker (graceful degradation).
         </>
       }
     />

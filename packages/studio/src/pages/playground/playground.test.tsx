@@ -14,6 +14,11 @@ function renderPlayground(ds = createFixtureDataSource({ scenario: "default" }))
   return ds;
 }
 
+async function pickAgent(name = "Support Agent") {
+  await userEvent.click(screen.getByRole("combobox", { name: /agent/i }));
+  await userEvent.click(await screen.findByRole("option", { name }));
+}
+
 describe("Playground (T3.1)", () => {
   beforeEach(() => {
     metrics.reset();
@@ -21,22 +26,22 @@ describe("Playground (T3.1)", () => {
 
   it("sending_prompt_plays_stream_and_renders_final_message", async () => {
     renderPlayground();
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
-    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "cadê meu pedido?");
+    await screen.findByRole("combobox", { name: /agent/i });
+    await pickAgent();
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "where is my order?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
 
-    const finalText = await screen.findByText(/chega dia 16/);
+    const finalText = await screen.findByText(/arrives on the 16th/);
     expect(finalText).toBeTruthy();
     expect(screen.getByText("lookupOrder")).toBeTruthy();
-    expect(screen.getByText(/aprovação humana/)).toBeTruthy();
+    expect(screen.getByText(/human approval/)).toBeTruthy();
     expect(screen.getByText(/rate limit/i)).toBeTruthy();
   });
 
   it("blank_prompt_send_is_noop_and_no_run_starts", async () => {
     renderPlayground();
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
+    await screen.findByRole("combobox", { name: /agent/i });
+    await pickAgent();
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "   ");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(metrics.snapshot().datasource_calls_total.runAgent ?? 0).toBe(0);
@@ -61,9 +66,9 @@ describe("Playground (T3.1)", () => {
         <PlaygroundPage />
       </DataSourceProvider>,
     );
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
-    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "olá");
+    await screen.findByRole("combobox", { name: /agent/i });
+    await pickAgent();
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     unmount();
     // dá tempo do playback (30ms/evento) tentar continuar após unmount
@@ -77,8 +82,8 @@ describe("Playground (T3.1)", () => {
     // (contrato do plano: "novo send aborta o anterior e inicia novo").
     const ds = createFixtureDataSource({ scenario: "default", streamDelayMs: 25 });
     renderPlayground(ds);
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
+    await screen.findByRole("combobox", { name: /agent/i });
+    await pickAgent();
     const box = screen.getByRole("textbox", { name: /prompt/i });
     await userEvent.type(box, "primeiro");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
@@ -90,7 +95,7 @@ describe("Playground (T3.1)", () => {
     // run 2 assume: turno do usuário é "segundo" (thread resetada) e run 2 completa
     expect(await screen.findByText("segundo")).toBeTruthy();
     expect(screen.queryByText("primeiro")).toBeNull();
-    expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
+    expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
     expect(metrics.snapshot().datasource_calls_total.runAgent).toBe(2);
   });
 
@@ -103,18 +108,18 @@ describe("Playground (T3.1)", () => {
           [Symbol.asyncIterator]() {
             return {
               next: (): Promise<IteratorResult<never>> =>
-                Promise.reject(new Error("adapter caiu no meio do run")),
+                Promise.reject(new Error("adapter crashed mid-run")),
             };
           },
         };
       },
     };
     renderPlayground(broken as unknown as ReturnType<typeof createFixtureDataSource>);
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
-    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "olá");
+    await screen.findByRole("combobox", { name: /agent/i });
+    await pickAgent();
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(await screen.findByText(/adapter caiu/)).toBeTruthy();
+    expect(await screen.findByText(/adapter crashed/)).toBeTruthy();
     const sendButton = screen.getByRole("button", { name: /send/i }) as HTMLButtonElement;
     expect(sendButton.disabled).toBe(false);
   });

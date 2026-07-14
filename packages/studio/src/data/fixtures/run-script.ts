@@ -14,8 +14,8 @@ const e = (at: number, event: InteractionUpdate | RunEvent): StudioRunEvent => (
 // terminal SEMPRE por último.
 export const DEFAULT_RUN: readonly StudioRunEvent[] = Object.freeze([
   e(0, { type: "step-started", stepId: 0 }),
-  e(40, { type: "text-delta", text: "Olá! Vou verificar " }),
-  e(80, { type: "text-delta", text: "o status do seu pedido." }),
+  e(40, { type: "text-delta", text: "Hi! Let me check " }),
+  e(80, { type: "text-delta", text: "the status of your order." }),
   e(120, {
     type: "tool-call-started",
     callId: "tc-1",
@@ -38,10 +38,10 @@ export const DEFAULT_RUN: readonly StudioRunEvent[] = Object.freeze([
     toolName: "refundOrder",
     toolCallId: "tc-2",
     source: "plugin",
-    message: "Reembolso acima de R$ 500 exige aprovação humana",
+    message: "Refunds above $500 require human approval",
   }),
   e(380, { type: "rate_limit", attempt: 1, retryAfterMs: 1200 }),
-  e(520, { type: "text-delta", text: " Seu pedido foi enviado — chega dia 16." }),
+  e(520, { type: "text-delta", text: " Your order has shipped — it arrives on the 16th." }),
   e(560, {
     type: "turn-ended",
     usage: { inputTokens: 812, outputTokens: 96, cacheReadTokens: 512, cacheWriteTokens: 0 },

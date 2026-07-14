@@ -145,11 +145,11 @@ describe("Studio integration", () => {
         <App router={router} />
       </DataSourceProvider>,
     );
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
+    await userEvent.click(await screen.findByRole("combobox", { name: /agent/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Support Agent" }));
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "status?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
+    expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
 
     await userEvent.click(screen.getByRole("button", { name: /events/i }));
     const rows = await screen.findAllByTestId("event-row");
@@ -186,11 +186,11 @@ describe("Studio integration", () => {
       </DataSourceProvider>,
     );
     // 1. Playground: run completo
-    const select = await screen.findByRole("combobox", { name: /agent/i });
-    await userEvent.selectOptions(select, "support-agent");
-    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "onde está o pedido?");
+    await userEvent.click(await screen.findByRole("combobox", { name: /agent/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Support Agent" }));
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "where is my order?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
+    expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
     // 2. Events
     await userEvent.click(screen.getByRole("button", { name: /events/i }));
     expect((await screen.findAllByTestId("event-row")).length).toBe(DEFAULT_RUN.length);

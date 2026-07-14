@@ -1,4 +1,4 @@
-import { Badge, EmptyState } from "@usetheo/ui";
+import { Badge, EmptyState, Select } from "@usetheo/ui";
 import { useState } from "react";
 import { Link } from "react-router";
 import { getSurface } from "../../app/nav-items";
@@ -51,22 +51,22 @@ export function EventsPage() {
           </div>
         ) : (
           <>
-            <label className="flex items-center gap-2 text-muted-foreground text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
               Category
-              <select
-                aria-label="Category"
-                className="rounded-lg border border-border/60 bg-card px-2.5 py-1.5 text-foreground text-sm outline-none focus:border-primary/50"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as "all" | EventCategory)}
-              >
-                <option value="all">all ({events.length})</option>
-                {FILTERABLE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c} ({countBy(c)})
-                  </option>
-                ))}
-              </select>
-            </label>
+              <Select value={filter} onValueChange={(v) => setFilter(v as "all" | EventCategory)}>
+                <Select.Trigger aria-label="Category" size="sm" className="min-w-36">
+                  <Select.Value />
+                </Select.Trigger>
+                <Select.Content>
+                  <Select.Item value="all">all ({events.length})</Select.Item>
+                  {FILTERABLE_CATEGORIES.map((c) => (
+                    <Select.Item key={c} value={c}>
+                      {c} ({countBy(c)})
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select>
+            </div>
             {visible.length === 0 ? (
               <p className="mt-6 text-muted-foreground">No events match this category.</p>
             ) : (

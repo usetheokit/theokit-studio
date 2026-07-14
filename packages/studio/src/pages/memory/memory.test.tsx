@@ -23,7 +23,7 @@ describe("Memory browser (T4.1)", () => {
     const scopesVisiveis = scopeRows.map((r) => r.textContent ?? "");
     expect(scopesVisiveis.some((t) => t.includes("user"))).toBe(true);
     expect(scopesVisiveis.some((t) => t.includes("session"))).toBe(true);
-    expect(screen.getByText(/webhook de pagamento/)).toBeTruthy();
+    expect(screen.getByText(/payment webhook/)).toBeTruthy();
   });
 
   it("empty_scenario_shows_no_memories_empty_state", async () => {
@@ -48,7 +48,8 @@ describe("Memory browser (T4.1)", () => {
   it("scope_filter_narrows_the_list", async () => {
     renderMemory();
     await screen.findAllByTestId("memory-row");
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /scope/i }), "agent");
+    await userEvent.click(screen.getByRole("combobox", { name: /scope/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "agent" }));
     const rows = screen.getAllByTestId("memory-row");
     expect(rows.length).toBe(1);
     expect(rows[0]?.textContent).toContain("refundOrder");

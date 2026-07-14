@@ -14,7 +14,7 @@ function NotFound() {
   return (
     <EmptyState
       title="Page not found"
-      description="Essa rota não existe no Studio."
+      description="This route does not exist in Studio."
       data-testid="not-found"
     />
   );

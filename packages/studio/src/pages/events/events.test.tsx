@@ -32,7 +32,8 @@ describe("Event Inspector (T3.2)", () => {
 
   it("filter_by_category_shows_only_matching_events", async () => {
     renderEvents();
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /category/i }), "tool");
+    await userEvent.click(screen.getByRole("combobox", { name: /category/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /^tool \(/ }));
     const rows = screen.getAllByTestId("event-row");
     const visibleCategories = rows.map((r) => within(r).getByTestId("event-category").textContent);
     const selecionadas = rows.map(() => "tool");
@@ -43,7 +44,8 @@ describe("Event Inspector (T3.2)", () => {
   it("filter_with_zero_matches_shows_no_match_message", async () => {
     // DEFAULT_RUN não tem eventos task_* → categoria task fica vazia (EC-7)
     renderEvents();
-    await userEvent.selectOptions(screen.getByRole("combobox", { name: /category/i }), "task");
+    await userEvent.click(screen.getByRole("combobox", { name: /category/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /^task \(/ }));
     expect(screen.getByText(/no events match/i)).toBeTruthy();
     expect(screen.queryByText(/run an agent/i)).toBeNull(); // no-match ≠ empty
   });

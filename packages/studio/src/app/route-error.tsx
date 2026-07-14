@@ -8,9 +8,7 @@ export function RouteError() {
   return (
     <section role="alert" className="p-6">
       <h2 className="text-lg font-semibold">Something went wrong</h2>
-      <p className="mt-2 opacity-80">
-        Erro nesta página — as demais superfícies seguem funcionando.
-      </p>
+      <p className="mt-2 opacity-80">This page hit an error — every other surface keeps working.</p>
       <pre className="mt-4 overflow-auto rounded bg-black/30 p-3 text-sm">{message}</pre>
     </section>
   );

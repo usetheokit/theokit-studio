@@ -60,7 +60,7 @@ function KnowledgeBrowser() {
     }
     // Validação na fronteira (EC do plano): NÃO chama a datasource com input inválido.
     if (query.trim().length === 0) {
-      setQueryError("Query vazia — informe um texto de busca.");
+      setQueryError("Query is empty — type something to search.");
       return;
     }
     setQueryError(null);
@@ -110,7 +110,7 @@ function KnowledgeBrowser() {
         {selected === null ? (
           <EmptyState
             title="Pick a collection"
-            description="Navegue documentos e chunks, ou rode uma retrieval query."
+            description="Browse documents and chunks, or run a retrieval query."
           />
         ) : (
           <>
@@ -118,7 +118,7 @@ function KnowledgeBrowser() {
               <Input
                 type="search"
                 aria-label="Query"
-                placeholder={`Retrieval em ${selected.name}…`}
+                placeholder={`Search ${selected.name}…`}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
@@ -152,7 +152,7 @@ function KnowledgeBrowser() {
               {documents !== null && documents.length === 0 ? (
                 <EmptyState
                   title="No documents in this collection"
-                  description="Ingira documentos via theo-rag para vê-los aqui."
+                  description="Ingest documents through theo-rag to see them here."
                 />
               ) : (
                 <ul className="space-y-1">

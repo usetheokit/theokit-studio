@@ -91,14 +91,14 @@ export type StudioEvent = StudioRunEvent["event"];
 
 export class EmptyQueryError extends Error {
   constructor() {
-    super("Retrieval query must not be blank — informe um texto de busca");
+    super("Retrieval query must not be blank — type something to search");
     this.name = "EmptyQueryError";
   }
 }
 
 export class UnknownCollectionError extends Error {
   constructor(collectionId: string) {
-    super(`Knowledge collection '${collectionId}' não existe`);
+    super(`Knowledge collection '${collectionId}' does not exist`);
     this.name = "UnknownCollectionError";
   }
 }

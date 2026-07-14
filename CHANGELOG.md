@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `genkit-ai/genkit` (Apache-2.0) — catalog in ROADMAP § State-of-the-art references
 
 ### Changed
+- Studio: todo o copy da UI e das fixtures padronizado em inglês (produto é English-first;
+  strings PT destoavam) — testes atualizados junto
+- Studio: selects nativos substituídos pelo `Select` (Radix) do design system no seletor
+  de agente, filtro de categoria (Events) e filtro de escopo (Memory)
 - `code-quality`: linguagem `typescript` habilitada (primeiro pacote TS do monorepo — M5)
 
 ### Deprecated

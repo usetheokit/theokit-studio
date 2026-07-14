@@ -1,4 +1,4 @@
-import { Badge, EmptyState, Input } from "@usetheo/ui";
+import { Badge, EmptyState, Input, Select } from "@usetheo/ui";
 import { useEffect, useState } from "react";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
@@ -64,7 +64,7 @@ function MemoryList() {
     return (
       <EmptyState
         title="No memories yet"
-        description="Ligue a memória ao agente com o binding @usetheo/memory/theokit e converse no Playground."
+        description="Wire memory into your agent with the @usetheo/memory/theokit binding and chat in the Playground."
       />
     );
   }
@@ -76,24 +76,21 @@ function MemoryList() {
         <Input
           type="search"
           aria-label="Search"
-          placeholder="Buscar por conteúdo ou entidade…"
+          placeholder="Search content or entities…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <label className="flex flex-col gap-1 text-sm">
-          Scope
-          <select
-            aria-label="Scope"
-            className="rounded border border-white/20 bg-transparent p-1"
-            value={scope}
-            onChange={(e) => setScope(e.target.value as "all" | MemoryScope)}
-          >
-            <option value="all">all</option>
-            <option value="user">user</option>
-            <option value="session">session</option>
-            <option value="agent">agent</option>
-          </select>
-        </label>
+        <Select value={scope} onValueChange={(v) => setScope(v as "all" | MemoryScope)}>
+          <Select.Trigger aria-label="Scope" size="sm" className="min-w-32">
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="all">all scopes</Select.Item>
+            <Select.Item value="user">user</Select.Item>
+            <Select.Item value="session">session</Select.Item>
+            <Select.Item value="agent">agent</Select.Item>
+          </Select.Content>
+        </Select>
       </div>
       {visible.length === 0 ? (
         <p className="mt-6 opacity-70">No memories match your search.</p>

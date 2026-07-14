@@ -67,7 +67,7 @@ describe("event-to-part (T3.1 — converter puro)", () => {
     expect(state.isRunning).toBe(false);
     expect(state.parts.some((p) => p.kind === "tool" && p.done)).toBe(true);
     expect(state.parts.filter((p) => p.kind === "notice").length).toBe(2);
-    const expectedFromScript = "Olá! Vou verificar o status do seu pedido.";
+    const expectedFromScript = "Hi! Let me check the status of your order.";
     const firstText = state.parts.find((p) => p.kind === "text");
     expect(firstText?.kind === "text" ? firstText.text : "").toBe(expectedFromScript);
   });

@@ -1,5 +1,5 @@
 import { ChatMessageContent, ChatMessageRoot, ToolCallCard } from "@theokit/ui";
-import { Badge, Button, Textarea } from "@usetheo/ui";
+import { Badge, Button, Select, Textarea } from "@usetheo/ui";
 import { Bot, SendHorizonal, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 import { getSurface } from "../../app/nav-items";
@@ -49,7 +49,7 @@ function PartView({ part }: { part: ChatPart }) {
     case "unknown":
       return (
         <div role="note" className="my-1 text-muted-foreground text-sm">
-          evento desconhecido: {part.type}
+          unknown event: {part.type}
         </div>
       );
   }
@@ -110,7 +110,7 @@ export function PlaygroundPage() {
               </div>
               <h2 className="font-display font-semibold text-foreground text-lg">Run an agent</h2>
               <p className="max-w-md text-muted-foreground text-sm">
-                Escolha um agente e envie um prompt — o stream de eventos tipados aparece aqui e no
+                Pick an agent and send a prompt — the typed event stream shows up here and in the
                 Event Inspector.
               </p>
             </div>
@@ -129,30 +129,29 @@ export function PlaygroundPage() {
               rows={2}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Pergunte algo ao agente…"
+              placeholder="Ask the agent anything…"
             />
             <div className="flex items-center justify-between gap-3 px-3 pb-3">
-              <label className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-sm">
-                <Bot className="size-4 text-primary" aria-hidden />
-                <select
-                  aria-label="Agent"
-                  className="bg-transparent text-foreground text-sm outline-none"
-                  value={agentId}
-                  onChange={(e) => setAgentId(e.target.value)}
-                >
-                  <option value="">— selecione —</option>
-                  {agents.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex items-center gap-2">
+                <Select value={agentId} onValueChange={setAgentId}>
+                  <Select.Trigger aria-label="Agent" size="sm" className="min-w-44 gap-2">
+                    <Bot className="size-4 shrink-0 text-primary" aria-hidden />
+                    <Select.Value placeholder="Select an agent" />
+                  </Select.Trigger>
+                  <Select.Content>
+                    {agents.map((a) => (
+                      <Select.Item key={a.id} value={a.id}>
+                        {a.name}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select>
                 {selectedAgent?.model && (
-                  <span className="hidden text-muted-foreground text-xs sm:inline">
+                  <span className="hidden font-mono text-muted-foreground text-xs sm:inline">
                     {selectedAgent.model}
                   </span>
                 )}
-              </label>
+              </div>
               <Button type="submit" disabled={agentId.length === 0} className="gap-1.5">
                 Send
                 <SendHorizonal className="size-4" aria-hidden />

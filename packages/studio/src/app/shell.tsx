@@ -33,7 +33,7 @@ export function SurfacePlaceholder({ title }: { title: string }) {
   return (
     <section className="p-8">
       <h1 className="font-semibold text-xl">{title}</h1>
-      <p className="mt-2 text-muted-foreground">Superfície em construção nesta fase do M5.</p>
+      <p className="mt-2 text-muted-foreground">Surface under construction in this M5 phase.</p>
     </section>
   );
 }
@@ -87,7 +87,7 @@ export function Shell() {
             <FlaskConical className="size-3.5 text-amber-400" aria-hidden />
             <div className="leading-tight">
               <span className="block font-medium text-foreground text-xs">Fixtures mode</span>
-              <span className="block text-[11px] text-muted-foreground">M5 · dados simulados</span>
+              <span className="block text-[11px] text-muted-foreground">M5 · simulated data</span>
             </div>
           </div>
         </Sidebar.Footer>
