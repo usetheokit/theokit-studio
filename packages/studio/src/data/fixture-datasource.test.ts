@@ -56,6 +56,21 @@ describe("FixtureDataSource (T1.1)", () => {
     await expect(ds.query(firstId, "   ")).rejects.toBeInstanceOf(EmptyQueryError);
   });
 
+  it("empty_scenario_still_rejects_unknown_collection", async () => {
+    // F-dom-2 (data): cenário empty não pode mascarar collection inexistente com [].
+    const ds = createFixtureDataSource({ scenario: "empty" });
+    await expect(ds.listDocuments("nao-existe")).rejects.toBeInstanceOf(UnknownCollectionError);
+    await expect(ds.query("nao-existe", "algo")).rejects.toBeInstanceOf(UnknownCollectionError);
+  });
+
+  it("query_metric_counts_all_calls_including_rejections", async () => {
+    // F-dom-3 (data): datasource_calls_total = chamadas, não sucessos (consistente).
+    const ds = createFixtureDataSource({ scenario: "default" });
+    await ds.query("nao-existe", "x").catch(() => {});
+    await ds.query("docs", "  ").catch(() => {});
+    expect(metrics.snapshot().datasource_calls_total.query).toBe(2);
+  });
+
   it("query_unknown_collection_throws_UnknownCollectionError", async () => {
     const ds = createFixtureDataSource({ scenario: "default" });
     const err = await ds.query("nao-existe", "algo").catch((e: unknown) => e);

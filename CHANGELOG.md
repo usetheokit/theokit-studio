@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Review M5 (batch): ciclo de import routes↔shell quebrado via `nav-items.ts`; tipos de
+  evento movidos para o domínio (`data/types.ts`); send durante run ativo habilitado
+  (contrato do plano — novo send aborta o anterior); erro de stream vira notice visível e
+  reabilita o send; erros de datasource tratados na fronteira das páginas; collection
+  inexistente rejeita em todos os cenários; métrica de query conta chamadas rejeitadas;
+  dead export `RUN_SCRIPTS` removido; `check_wiring.py` enxerga testes de integração
+  escopados por pacote (monorepo)
 - `plan-confidence` checker: `_scan_blueprint_refs` não resolvia blueprints no layout
   plugin-install (`.claude/knowledge-base/...`), marcando toda citação `Blueprint §"X"`
   como fabricada; regression test adicionado (achado durante o plan do M5)

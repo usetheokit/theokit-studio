@@ -6,7 +6,7 @@ import {
 } from "./fixtures/knowledge";
 import { fixtureMemories } from "./fixtures/memory";
 import { fixtureAgents, fixtureSkills, fixtureTools, fixtureWorkflows } from "./fixtures/registry";
-import { DEFAULT_RUN, type StudioRunEvent } from "./fixtures/run-script";
+import { DEFAULT_RUN } from "./fixtures/run-script";
 import { metrics } from "./metrics";
 import { play } from "./stream-player";
 import {
@@ -20,6 +20,7 @@ import {
   type RetrievalResult,
   type ServiceHealthMap,
   type SkillSummary,
+  type StudioRunEvent,
   type ToolSummary,
   UnknownCollectionError,
   type WorkflowSummary,
@@ -89,25 +90,30 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listCollections: (): Promise<KnowledgeCollection[]> =>
       counted("listCollections", isEmpty ? [] : [...fixtureCollections]),
 
+    // Convenção de métrica (review F-dom-3): datasource_calls_total conta CHAMADAS
+    // (inclusive rejeitadas), não sucessos — consistente entre métodos.
     listDocuments: (collectionId: string): Promise<KnowledgeDocument[]> => {
+      metrics.increment("datasource_calls_total", "listDocuments");
+      // Collection inexistente rejeita em QUALQUER cenário (review F-dom-2: empty não
+      // pode mascarar o erro tipado com []).
       const docs = fixtureDocuments[collectionId];
-      if (!isEmpty && docs === undefined) {
-        metrics.increment("datasource_calls_total", "listDocuments");
+      if (docs === undefined) {
         return Promise.reject(new UnknownCollectionError(collectionId));
       }
-      return counted("listDocuments", isEmpty ? [] : [...(docs ?? [])]);
+      return Promise.resolve(isEmpty ? [] : structuredClone([...docs]));
     },
 
     query: (collectionId: string, text: string): Promise<RetrievalResult[]> => {
+      metrics.increment("datasource_calls_total", "query");
       // Validação na fronteira (error-handling.md § 2): rejeita ANTES de "consultar".
       if (text.trim().length === 0) {
         return Promise.reject(new EmptyQueryError());
       }
-      if (!isEmpty && fixtureDocuments[collectionId] === undefined) {
+      if (fixtureDocuments[collectionId] === undefined) {
         return Promise.reject(new UnknownCollectionError(collectionId));
       }
       const sorted = [...fixtureRetrievalResults].sort((a, b) => b.score - a.score);
-      return counted("query", isEmpty ? [] : sorted);
+      return Promise.resolve(isEmpty ? [] : structuredClone(sorted));
     },
 
     health: (): Promise<ServiceHealthMap> => {

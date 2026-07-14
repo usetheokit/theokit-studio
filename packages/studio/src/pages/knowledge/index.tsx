@@ -12,15 +12,27 @@ function KnowledgeBrowser() {
   const [openDoc, setOpenDoc] = useState<KnowledgeDocument | null>(null);
   const [query, setQuery] = useState("");
   const [queryError, setQueryError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
   const [results, setResults] = useState<RetrievalResult[] | null>(null);
+
+  const boundary = (error: unknown) => {
+    // Fronteira de página (F-dom-2): erro tipado da datasource vira estado visível.
+    setPageError(error instanceof Error ? error.message : String(error));
+  };
 
   useEffect(() => {
     let ignore = false;
-    ds.listCollections().then((list) => {
-      if (!ignore) {
-        setCollections(list);
-      }
-    });
+    ds.listCollections()
+      .then((list) => {
+        if (!ignore) {
+          setCollections(list);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!ignore) {
+          setPageError(error instanceof Error ? error.message : String(error));
+        }
+      });
     return () => {
       ignore = true;
     };
@@ -30,7 +42,12 @@ function KnowledgeBrowser() {
     setSelected(c);
     setOpenDoc(null);
     setResults(null);
-    setDocuments(await ds.listDocuments(c.id));
+    setPageError(null);
+    try {
+      setDocuments(await ds.listDocuments(c.id));
+    } catch (error) {
+      boundary(error);
+    }
   };
 
   const retrieve = async (e: FormEvent) => {
@@ -44,11 +61,20 @@ function KnowledgeBrowser() {
       return;
     }
     setQueryError(null);
-    setResults(await ds.query(selected.id, query));
+    try {
+      setResults(await ds.query(selected.id, query));
+    } catch (error) {
+      boundary(error);
+    }
   };
 
   return (
     <div className="mt-4 grid grid-cols-[240px_1fr] gap-6">
+      {pageError && (
+        <p role="alert" className="col-span-2 text-sm text-red-400">
+          {pageError}
+        </p>
+      )}
       <nav aria-label="collections">
         <ul className="space-y-1">
           {collections.map((c) => (

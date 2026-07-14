@@ -1,6 +1,6 @@
 import { Sidebar } from "@usetheo/ui";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
-import { SURFACES } from "./routes";
+import { SURFACES } from "./nav-items";
 
 interface RouteHandle {
   label?: string;

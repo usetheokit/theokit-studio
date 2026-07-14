@@ -1,5 +1,4 @@
 import { createContext, useContext } from "react";
-import type { StudioRunEvent } from "./fixtures/run-script";
 import type {
   AgentSummary,
   KnowledgeCollection,
@@ -9,6 +8,7 @@ import type {
   RetrievalResult,
   ServiceHealthMap,
   SkillSummary,
+  StudioRunEvent,
   ToolSummary,
   WorkflowSummary,
 } from "./types";

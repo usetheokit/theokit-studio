@@ -57,6 +57,22 @@ describe("Knowledge browser (T4.2)", () => {
     expect(await screen.findByText(/no documents/i)).toBeTruthy();
   });
 
+  it("datasource_rejection_renders_visible_error_at_page_boundary", async () => {
+    // F-dom-2: erro tipado da datasource não pode virar unhandled rejection silenciosa.
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      listDocuments: () => Promise.reject(new Error("rag indisponível")),
+    };
+    render(
+      <DataSourceProvider value={broken}>
+        <KnowledgePage />
+      </DataSourceProvider>,
+    );
+    await userEvent.click(await screen.findByRole("button", { name: /product docs/i }));
+    expect(await screen.findByRole("alert")).toBeTruthy();
+    expect(screen.getByText(/rag indisponível/)).toBeTruthy();
+  });
+
   it("offline_scenario_shows_service_offline_state", async () => {
     renderKnowledge({ scenario: "offline" });
     expect(await screen.findByText(/theokit studio up/)).toBeTruthy();

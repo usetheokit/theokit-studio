@@ -3,12 +3,9 @@
 // Shapes verificados em dist/run-*.d.ts@3.4.1 (updates: kebab-case; run events: snake_case).
 // TODO(M1): revisar semântica de ordem/timing contra um Run.stream() real (Drawback 1).
 import type { InteractionUpdate, RunEvent } from "@theokit/sdk";
+import type { StudioRunEvent } from "../types";
 
-export interface StudioRunEvent {
-  /** offset em ms sugerido para playback (player usa o delta entre eventos) */
-  at: number;
-  event: InteractionUpdate | RunEvent;
-}
+export type { StudioRunEvent };
 
 const e = (at: number, event: InteractionUpdate | RunEvent): StudioRunEvent => ({ at, event });
 
@@ -60,8 +57,3 @@ export const LONG_RUN: readonly StudioRunEvent[] = Object.freeze([
   ),
   e(1200, { type: "turn-ended" }),
 ]);
-
-export const RUN_SCRIPTS: Readonly<Record<string, readonly StudioRunEvent[]>> = Object.freeze({
-  default: DEFAULT_RUN,
-  long: LONG_RUN,
-});

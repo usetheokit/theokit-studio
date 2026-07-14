@@ -1,5 +1,5 @@
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
-import type { StudioEvent } from "../pages/playground/event-to-part";
+import type { StudioEvent } from "../data/types";
 
 interface RunLog {
   events: readonly StudioEvent[];

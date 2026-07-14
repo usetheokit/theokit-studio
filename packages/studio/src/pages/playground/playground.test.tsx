@@ -44,12 +44,13 @@ describe("Playground (T3.1)", () => {
   });
 
   it("send_button_disabled_without_agent_selected", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     renderPlayground();
     await screen.findByRole("combobox", { name: /agent/i });
-    const consoleErrorCalls = 0;
     const button = screen.getByRole("button", { name: /send/i });
     expect((button as HTMLButtonElement).disabled).toBe(true);
-    expect(consoleErrorCalls).toBe(0);
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it("unmount_during_run_aborts_playback", async () => {
@@ -72,6 +73,8 @@ describe("Playground (T3.1)", () => {
   });
 
   it("new_prompt_aborts_previous_run", async () => {
+    // Determinístico (review F-dom-1): o send DURANTE run ativo deve ser possível pela UI
+    // (contrato do plano: "novo send aborta o anterior e inicia novo").
     const ds = createFixtureDataSource({ scenario: "default", streamDelayMs: 25 });
     renderPlayground(ds);
     const select = await screen.findByRole("combobox", { name: /agent/i });
@@ -79,11 +82,40 @@ describe("Playground (T3.1)", () => {
     const box = screen.getByRole("textbox", { name: /prompt/i });
     await userEvent.type(box, "primeiro");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    // run 1 ativo (delay 25ms/evento); botão DEVE aceitar novo send
     await userEvent.type(box, "segundo");
-    await userEvent.click(screen.getByRole("button", { name: /send/i }));
-    // run 2 completa (concurrent test: run 1 cancelado, sem interleaving)
+    const sendButton = screen.getByRole("button", { name: /send/i }) as HTMLButtonElement;
+    expect(sendButton.disabled).toBe(false);
+    await userEvent.click(sendButton);
+    // run 2 assume: turno do usuário é "segundo" (thread resetada) e run 2 completa
+    expect(await screen.findByText("segundo")).toBeTruthy();
+    expect(screen.queryByText("primeiro")).toBeNull();
     expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
-    const userMessages = screen.getAllByText(/primeiro|segundo/);
-    expect(userMessages.length).toBeGreaterThanOrEqual(2);
+    expect(metrics.snapshot().datasource_calls_total.runAgent).toBe(2);
+  });
+
+  it("stream_error_mid_run_surfaces_notice_and_reenables_send", async () => {
+    // F-dom-3: stream rejeitando não pode deixar isRunning=true para sempre.
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      runAgent(): AsyncIterable<never> {
+        return {
+          [Symbol.asyncIterator]() {
+            return {
+              next: (): Promise<IteratorResult<never>> =>
+                Promise.reject(new Error("adapter caiu no meio do run")),
+            };
+          },
+        };
+      },
+    };
+    renderPlayground(broken as unknown as ReturnType<typeof createFixtureDataSource>);
+    const select = await screen.findByRole("combobox", { name: /agent/i });
+    await userEvent.selectOptions(select, "support-agent");
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "olá");
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    expect(await screen.findByText(/adapter caiu/)).toBeTruthy();
+    const sendButton = screen.getByRole("button", { name: /send/i }) as HTMLButtonElement;
+    expect(sendButton.disabled).toBe(false);
   });
 });

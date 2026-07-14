@@ -1,10 +1,10 @@
 // Converter puro evento→parte de UI (Blueprint §"T3": narrowing por discriminated union +
 // dict de renderers). Grafias REAIS do SDK 3.4: updates kebab-case, run events snake_case
 // (log iteração 3 — o pseudo-code do plano usava grafia errada).
-import type { StudioRunEvent } from "../../data/fixtures/run-script";
 import { metrics } from "../../data/metrics";
+import type { StudioEvent } from "../../data/types";
 
-export type StudioEvent = StudioRunEvent["event"];
+export type { StudioEvent };
 
 export interface UserPart {
   seq: number;
@@ -28,7 +28,7 @@ export interface ToolPart {
 export interface NoticePart {
   seq: number;
   kind: "notice";
-  notice: "permission-denied" | "rate-limit" | "tripwire";
+  notice: "permission-denied" | "rate-limit" | "tripwire" | "stream-error";
   detail: string;
 }
 export interface UnknownPart {

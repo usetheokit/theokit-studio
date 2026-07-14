@@ -57,13 +57,22 @@ export function PlaygroundPage() {
   const [prompt, setPrompt] = useState("");
   const { state, send } = useRunPlayback();
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     let ignore = false;
-    ds.listAgents().then((list) => {
-      if (!ignore) {
-        setAgents(list);
-      }
-    });
+    ds.listAgents()
+      .then((list) => {
+        if (!ignore) {
+          setAgents(list);
+        }
+      })
+      .catch((error: unknown) => {
+        // Fronteira de página (F-dom-2): erro tipado vira estado visível, nunca unhandled.
+        if (!ignore) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      });
     return () => {
       ignore = true;
     };
@@ -80,6 +89,11 @@ export function PlaygroundPage() {
   return (
     <section className="flex h-full flex-col p-6">
       <h1 className="text-xl font-semibold">Playground</h1>
+      {loadError && (
+        <p role="alert" className="mt-2 text-sm text-red-400">
+          {loadError}
+        </p>
+      )}
       <div className="mt-4 flex-1 space-y-3 overflow-auto" data-testid="chat-thread">
         {state.parts.length === 0 && (
           <EmptyState
@@ -116,7 +130,7 @@ export function PlaygroundPage() {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder="Pergunte algo ao agente…"
         />
-        <Button type="submit" disabled={agentId.length === 0 || state.isRunning}>
+        <Button type="submit" disabled={agentId.length === 0}>
           Send
         </Button>
       </form>

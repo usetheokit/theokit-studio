@@ -74,6 +74,19 @@ export type ServiceHealthMap = Record<ServiceName, ServiceHealth>;
 
 export type FixtureScenario = "default" | "empty" | "offline";
 
+// Eventos do run (fonte: tipos publicados do @theokit/sdk — ver fixtures/run-script.ts,
+// ÚNICO módulo que importa o SDK; aqui só o envelope, para o contrato do domínio não
+// depender do adapter — F-arch-2/3 do review).
+import type { InteractionUpdate, RunEvent } from "@theokit/sdk";
+
+export interface StudioRunEvent {
+  /** offset em ms sugerido para playback (player usa o delta entre eventos) */
+  at: number;
+  event: InteractionUpdate | RunEvent;
+}
+
+export type StudioEvent = StudioRunEvent["event"];
+
 // Erros tipados da fronteira de dados (error-handling.md § 2 — fail-fast, contexto na mensagem).
 
 export class EmptyQueryError extends Error {

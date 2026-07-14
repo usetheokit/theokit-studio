@@ -6,24 +6,9 @@ import { KnowledgePage } from "../pages/knowledge";
 import { MemoryPage } from "../pages/memory";
 import { PlaygroundPage } from "../pages/playground";
 import { TracesPage } from "../pages/traces";
+import { SURFACES } from "./nav-items";
 import { RouteError } from "./route-error";
 import { Shell, SurfacePlaceholder } from "./shell";
-
-// Fonte única do mapa rota → superfície → seção (D1 — padrão Mastra; DRY: sidebar e
-// breadcrumb derivam daqui).
-export interface SurfaceMeta {
-  path: string;
-  label: string;
-  section: "Playground" | "Observability" | "Data";
-}
-
-export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
-  { path: "/playground", label: "Playground", section: "Playground" },
-  { path: "/events", label: "Events", section: "Observability" },
-  { path: "/traces", label: "Traces", section: "Observability" },
-  { path: "/memory", label: "Memory", section: "Data" },
-  { path: "/knowledge", label: "Knowledge", section: "Data" },
-]);
 
 function NotFound() {
   return (

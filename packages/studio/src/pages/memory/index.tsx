@@ -26,17 +26,34 @@ function MemoryList() {
   const [scope, setScope] = useState<"all" | MemoryScope>("all");
   const [search, setSearch] = useState("");
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   useEffect(() => {
     let ignore = false;
-    ds.getMemories().then((list) => {
-      if (!ignore) {
-        setMemories(list);
-      }
-    });
+    ds.getMemories()
+      .then((list) => {
+        if (!ignore) {
+          setMemories(list);
+        }
+      })
+      .catch((error: unknown) => {
+        // Fronteira de página (F-dom-2): erro tipado vira estado visível, nunca unhandled.
+        if (!ignore) {
+          setLoadError(error instanceof Error ? error.message : String(error));
+        }
+      });
     return () => {
       ignore = true;
     };
   }, [ds]);
+
+  if (loadError) {
+    return (
+      <p role="alert" className="text-sm text-red-400">
+        {loadError}
+      </p>
+    );
+  }
 
   if (memories === null) {
     return <p className="opacity-70">Loading…</p>;
