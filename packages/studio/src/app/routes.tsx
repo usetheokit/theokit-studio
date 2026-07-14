@@ -28,8 +28,8 @@ const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
   "/agents": <PlaygroundPage />,
   "/observability/events": <EventsPage />,
   "/observability/traces": <TracesPage />,
-  "/memory": <MemoryPage />,
-  "/knowledge": <KnowledgePage />,
+  "/memory/memories": <MemoryPage />,
+  "/knowledge/collections": <KnowledgePage />,
 };
 
 // Redirects de compat: paths pré-drill-down continuam funcionando (deep links).

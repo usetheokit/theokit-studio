@@ -191,7 +191,7 @@ function KnowledgeBrowser() {
   );
 }
 
-const surface = getSurface("/knowledge");
+const surface = getSurface("/knowledge/collections");
 
 export function KnowledgePage() {
   return (

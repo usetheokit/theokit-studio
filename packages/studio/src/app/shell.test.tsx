@@ -36,8 +36,6 @@ describe("Shell (T2.1 + drill-down IA)", () => {
       "Tools",
       "Workspaces",
       "Request Context",
-      "Memory",
-      "Knowledge",
       "Settings",
       "Agents",
     ];
@@ -73,6 +71,38 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     expect(await screen.findByRole("heading", { name: "Traces", level: 1 })).toBeTruthy();
   });
 
+  it("memory_drilldown_lands_on_memories_with_dashboard_parity_items", async () => {
+    renderShell(["/agents"]);
+    await userEvent.click(screen.getByRole("button", { name: "Memory" }));
+    // Item raiz navega direto para a página real (/memory/memories) e troca o painel.
+    expect(await screen.findByRole("heading", { name: "Memories", level: 1 })).toBeTruthy();
+    for (const label of [
+      "Overview",
+      "Episodes",
+      "Playground",
+      "Entities",
+      "Graph",
+      "Skills",
+      "Exports",
+      "Webhooks",
+    ]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Entities" }));
+    expect(await screen.findByRole("heading", { name: "Entities", level: 1 })).toBeTruthy();
+  });
+
+  it("knowledge_drilldown_lands_on_collections_with_dashboard_parity_items", async () => {
+    renderShell(["/agents"]);
+    await userEvent.click(screen.getByRole("button", { name: "Knowledge Base" }));
+    expect(await screen.findByRole("heading", { name: "Collections", level: 1 })).toBeTruthy();
+    for (const label of ["Overview", "Connectors", "Documents", "Ask", "Analytics"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Ask" }));
+    expect(await screen.findByRole("heading", { name: "Ask", level: 1 })).toBeTruthy();
+  });
+
   it("legacy_paths_redirect_to_new_ia", async () => {
     renderShell(["/playground"]);
     expect(await screen.findByRole("heading", { name: "Agents", level: 1 })).toBeTruthy();
@@ -84,9 +114,9 @@ describe("Shell (T2.1 + drill-down IA)", () => {
   });
 
   it("breadcrumb_reflects_active_route", async () => {
-    renderShell(["/knowledge"]);
+    renderShell(["/knowledge/collections"]);
     const breadcrumb = await screen.findByRole("navigation", { name: /breadcrumb/i });
-    expect(within(breadcrumb).getByText(/knowledge/i)).toBeTruthy();
+    expect(within(breadcrumb).getByText(/collections/i)).toBeTruthy();
   });
 
   it("unknown_route_renders_not_found_empty_state", async () => {
@@ -104,9 +134,9 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     renderShell(["/crash"], [{ path: "crash", element: <Boom /> }]);
     const alertEl = await screen.findByRole("alert");
     expect(alertEl.textContent).toContain("boom de rota");
-    // Sidebar sobrevive e continua navegável:
+    // Sidebar sobrevive e continua navegável (Memory drill → página real Memories):
     await userEvent.click(screen.getByRole("button", { name: "Memory" }));
-    expect(await screen.findByRole("heading", { name: "Memory", level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Memories", level: 1 })).toBeTruthy();
     spy.mockRestore();
   });
 

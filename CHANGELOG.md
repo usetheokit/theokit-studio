@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Studio Memory e Knowledge Base viram drill-downs com paridade total ao menu do
+  theo-cloud dashboard (dogfood): Memory → Overview, Memories (real), Episodes,
+  Playground, Entities, Graph, Skills, Exports, Webhooks; Knowledge Base → Overview,
+  Collections (real), Connectors, Documents, Ask, Analytics; rotas movem para
+  /memory/memories e /knowledge/collections com labels derivados do submenu (M5 dogfood)
 - Studio IA completa Mastra-parity com sidebar drill-down no padrão theo-cloud dashboard
   (dogfood): raiz com Agents/Workflows/Processors/MCP Servers/Tools/Workspaces/Request
   Context + Data (Memory, Knowledge) + Settings; submenus Evaluation (Overview, Scorers,

@@ -97,7 +97,7 @@ describe("Studio integration", () => {
       "Observability",
       "Data",
       "Memory",
-      "Knowledge",
+      "Knowledge Base",
       "Settings",
     ]) {
       expect(smoke.textContent).toContain(entry);
@@ -176,17 +176,18 @@ describe("Studio integration", () => {
   });
 
   it("memory_and_knowledge_tabs_render_fixture_data_through_the_gate", async () => {
-    // Cadeia exercitada: rota /memory → MemoryPage → ServiceGate('memory') → getMemories;
-    // navegação → KnowledgePage → ServiceGate('rag') → listCollections/listDocuments.
+    // Cadeia exercitada: rota /memory/memories → MemoryPage → ServiceGate('memory') →
+    // getMemories; Back → drill Knowledge Base → KnowledgePage → ServiceGate('rag').
     const userEvent = (await import("@testing-library/user-event")).default;
-    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/memory"] });
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/memory/memories"] });
     render(
       <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
         <App router={router} />
       </DataSourceProvider>,
     );
     expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
-    await userEvent.click(screen.getByRole("button", { name: /knowledge/i }));
+    await userEvent.click(screen.getByRole("button", { name: /back/i }));
+    await userEvent.click(await screen.findByRole("button", { name: "Knowledge Base" }));
     await userEvent.click(await screen.findByRole("button", { name: /product docs/i }));
     expect(await screen.findByRole("button", { name: /getting-started/i })).toBeTruthy();
   });
@@ -216,12 +217,13 @@ describe("Studio integration", () => {
     // 3. Traces (placeholder honesto, dentro do submenu Observability)
     await userEvent.click(screen.getByRole("button", { name: "Traces" }));
     expect((await screen.findAllByText(/theo-lens/)).length).toBeGreaterThan(0);
-    // 4. Back para o menu raiz → Memory
+    // 4. Back para o menu raiz → Memory (drill → /memory/memories)
     await userEvent.click(screen.getByRole("button", { name: /back/i }));
     await userEvent.click(await screen.findByRole("button", { name: "Memory" }));
     expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
-    // 5. Knowledge
-    await userEvent.click(screen.getByRole("button", { name: "Knowledge" }));
+    // 5. Knowledge Base (Back → drill → /knowledge/collections)
+    await userEvent.click(screen.getByRole("button", { name: /back/i }));
+    await userEvent.click(await screen.findByRole("button", { name: "Knowledge Base" }));
     expect(await screen.findByRole("button", { name: /product docs/i })).toBeTruthy();
 
     // Prova de métricas (wiring pillar c — ADR D5)

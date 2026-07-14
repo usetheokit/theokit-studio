@@ -5,8 +5,10 @@
 import {
   Activity,
   BarChart3,
+  BookOpen,
   BookOpenText,
   Bot,
+  Boxes,
   Braces,
   Brain,
   ClipboardCheck,
@@ -15,13 +17,20 @@ import {
   FlaskConical,
   FolderKanban,
   Gauge,
+  History,
   LayoutGrid,
+  ListChecks,
   type LucideIcon,
+  Plug,
   ScrollText,
+  Search,
   Server,
   Settings,
+  Share2,
   Telescope,
+  Users,
   Waypoints,
+  Webhook,
   Workflow,
   Wrench,
 } from "lucide-react";
@@ -149,19 +158,112 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     description: "Structured logs emitted by agents and services.",
     implemented: false,
   },
+  // Memory — submenu espelhando o theo-cloud dashboard (menu `memory`).
   {
     path: "/memory",
-    label: "Memory",
-    icon: Brain,
+    label: "Overview",
+    icon: LayoutGrid,
+    description: "Memory at a glance: scopes, entities and recent activity.",
+    implemented: false,
+  },
+  {
+    path: "/memory/memories",
+    label: "Memories",
+    icon: ListChecks,
     description: "Scoped memories from theo-memory: what the agent remembers.",
     implemented: true,
   },
   {
+    path: "/memory/episodes",
+    label: "Episodes",
+    icon: History,
+    description: "Bi-temporal event timeline over the subject's memories.",
+    implemented: false,
+  },
+  {
+    path: "/memory/playground",
+    label: "Playground",
+    icon: FlaskConical,
+    description: "Live remember / recall / reflect surface against theo-memory.",
+    implemented: false,
+  },
+  {
+    path: "/memory/entities",
+    label: "Entities",
+    icon: Users,
+    description: "Entities extracted from memories and their attributes.",
+    implemented: false,
+  },
+  {
+    path: "/memory/graph",
+    label: "Graph",
+    icon: Share2,
+    description: "Entity relation graph view over the memory store.",
+    implemented: false,
+  },
+  {
+    path: "/memory/skills",
+    label: "Skills",
+    icon: Boxes,
+    description: "Read-only skill library learned from memories.",
+    implemented: false,
+  },
+  {
+    path: "/memory/exports",
+    label: "Exports",
+    icon: BookOpen,
+    description: "Export memory snapshots for backup or analysis.",
+    implemented: false,
+  },
+  {
+    path: "/memory/webhooks",
+    label: "Webhooks",
+    icon: Webhook,
+    description: "Webhooks fired on memory writes and reflections.",
+    implemented: false,
+  },
+  // Knowledge Base — submenu espelhando o theo-cloud dashboard (menu `rag`).
+  {
     path: "/knowledge",
-    label: "Knowledge",
-    icon: BookOpenText,
+    label: "Overview",
+    icon: LayoutGrid,
+    description: "Knowledge base at a glance: collections, documents and retrieval.",
+    implemented: false,
+  },
+  {
+    path: "/knowledge/collections",
+    label: "Collections",
+    icon: Boxes,
     description: "Collections, documents and the theo-rag retrieval playground.",
     implemented: true,
+  },
+  {
+    path: "/knowledge/connectors",
+    label: "Connectors",
+    icon: Plug,
+    description: "Connectors that ingest external sources into collections.",
+    implemented: false,
+  },
+  {
+    path: "/knowledge/documents",
+    label: "Documents",
+    icon: ScrollText,
+    description: "All documents across collections with chunking details.",
+    implemented: false,
+  },
+  {
+    path: "/knowledge/ask",
+    label: "Ask",
+    icon: Search,
+    description: "Ask questions against the knowledge base and inspect answers.",
+    implemented: false,
+  },
+  {
+    path: "/knowledge/analytics",
+    label: "Analytics",
+    icon: Activity,
+    description: "Retrieval quality and usage analytics for the knowledge base.",
+    implemented: false,
   },
   {
     path: "/settings",
@@ -240,7 +342,20 @@ export const MENUS: Record<string, MenuDefinition> = {
       },
       {
         title: "Data",
-        items: [item("/memory"), item("/knowledge")],
+        items: [
+          {
+            label: "Memory",
+            path: "/memory/memories",
+            icon: Brain,
+            drillsInto: "memory",
+          },
+          {
+            label: "Knowledge Base",
+            path: "/knowledge/collections",
+            icon: BookOpenText,
+            drillsInto: "knowledge",
+          },
+        ],
       },
       {
         items: [item("/settings")],
@@ -277,6 +392,43 @@ export const MENUS: Record<string, MenuDefinition> = {
       },
     ],
   },
+  memory: {
+    id: "memory",
+    title: "Memory",
+    parent: "main",
+    groups: [
+      {
+        items: [
+          item("/memory"),
+          item("/memory/memories"),
+          item("/memory/episodes"),
+          item("/memory/playground"),
+          item("/memory/entities"),
+          item("/memory/graph"),
+          item("/memory/skills"),
+          item("/memory/exports"),
+          item("/memory/webhooks"),
+        ],
+      },
+    ],
+  },
+  knowledge: {
+    id: "knowledge",
+    title: "Knowledge Base",
+    parent: "main",
+    groups: [
+      {
+        items: [
+          item("/knowledge"),
+          item("/knowledge/collections"),
+          item("/knowledge/connectors"),
+          item("/knowledge/documents"),
+          item("/knowledge/ask"),
+          item("/knowledge/analytics"),
+        ],
+      },
+    ],
+  },
 };
 
 /** Accessor fail-fast — menu inexistente é bug de programação, não estado de UI. */
@@ -295,6 +447,12 @@ export function resolveActiveMenu(pathname: string): string {
   }
   if (pathname.startsWith("/observability")) {
     return "observability";
+  }
+  if (pathname.startsWith("/memory")) {
+    return "memory";
+  }
+  if (pathname.startsWith("/knowledge")) {
+    return "knowledge";
   }
   return "main";
 }

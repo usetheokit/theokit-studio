@@ -120,7 +120,7 @@ function MemoryList() {
   );
 }
 
-const surface = getSurface("/memory");
+const surface = getSurface("/memory/memories");
 
 export function MemoryPage() {
   return (
