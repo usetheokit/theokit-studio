@@ -20,28 +20,67 @@ function renderShell(initialEntries: string[], extraChildren?: Parameters<typeof
   return router;
 }
 
-describe("Shell (T2.1)", () => {
-  it("root_redirects_to_playground", async () => {
+describe("Shell (T2.1 + drill-down IA)", () => {
+  it("root_redirects_to_agents", async () => {
     renderShell(["/"]);
-    expect(await screen.findByRole("heading", { name: /playground/i, level: 1 })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Agents", level: 1 })).toBeTruthy();
   });
 
-  it("sidebar_navigates_to_all_five_surfaces", async () => {
-    renderShell(["/playground"]);
-    const surfaces = [
-      { item: /events/i, heading: /events/i },
-      { item: /memory/i, heading: /memory/i },
-      { item: /knowledge/i, heading: /knowledge/i },
-      { item: /traces/i, heading: /traces/i },
-      { item: /playground/i, heading: /playground/i },
+  it("sidebar_navigates_all_root_surfaces", async () => {
+    renderShell(["/agents"]);
+    // Itens do menu raiz (label do botão === heading da página placeholder/real).
+    const rootSurfaces = [
+      "Workflows",
+      "Processors",
+      "MCP Servers",
+      "Tools",
+      "Workspaces",
+      "Request Context",
+      "Memory",
+      "Knowledge",
+      "Settings",
+      "Agents",
     ];
-    let headingsVisitadas = 0;
-    for (const s of surfaces) {
-      await userEvent.click(screen.getByRole("button", { name: s.item }));
-      expect(await screen.findByRole("heading", { name: s.heading, level: 1 })).toBeTruthy();
-      headingsVisitadas += 1;
+    for (const label of rootSurfaces) {
+      await userEvent.click(screen.getByRole("button", { name: label }));
+      expect(await screen.findByRole("heading", { name: label, level: 1 })).toBeTruthy();
     }
-    expect(headingsVisitadas).toBe(5);
+  });
+
+  it("evaluation_drilldown_shows_submenu_and_back_returns_to_root", async () => {
+    renderShell(["/agents"]);
+    await userEvent.click(screen.getByRole("button", { name: "Evaluation" }));
+    // Painel trocou para o submenu (padrão theo-cloud) e a rota foi para o Overview.
+    expect(await screen.findByRole("heading", { name: "Overview", level: 1 })).toBeTruthy();
+    for (const label of ["Scorers", "Datasets", "Experiments"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Scorers" }));
+    expect(await screen.findByRole("heading", { name: "Scorers", level: 1 })).toBeTruthy();
+    // Back retorna ao menu raiz (e navega para a raiz → redirect /agents).
+    await userEvent.click(screen.getByRole("button", { name: /back/i }));
+    expect(await screen.findByRole("button", { name: "Agents" })).toBeTruthy();
+  });
+
+  it("observability_drilldown_lands_on_events_with_metrics_traces_logs", async () => {
+    renderShell(["/agents"]);
+    await userEvent.click(screen.getByRole("button", { name: "Observability" }));
+    expect(await screen.findByRole("heading", { name: "Events", level: 1 })).toBeTruthy();
+    for (const label of ["Metrics", "Traces", "Logs"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
+    await userEvent.click(screen.getByRole("button", { name: "Traces" }));
+    expect(await screen.findByRole("heading", { name: "Traces", level: 1 })).toBeTruthy();
+  });
+
+  it("legacy_paths_redirect_to_new_ia", async () => {
+    renderShell(["/playground"]);
+    expect(await screen.findByRole("heading", { name: "Agents", level: 1 })).toBeTruthy();
+  });
+
+  it("legacy_events_and_traces_paths_redirect", async () => {
+    renderShell(["/events"]);
+    expect(await screen.findByRole("heading", { name: "Events", level: 1 })).toBeTruthy();
   });
 
   it("breadcrumb_reflects_active_route", async () => {
@@ -53,7 +92,7 @@ describe("Shell (T2.1)", () => {
   it("unknown_route_renders_not_found_empty_state", async () => {
     renderShell(["/nope"]);
     expect(await screen.findByText(/not found/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: /playground/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Agents" })).toBeTruthy();
   });
 
   it("route_crash_renders_error_element_and_sidebar_survives", async () => {
@@ -66,8 +105,8 @@ describe("Shell (T2.1)", () => {
     const alertEl = await screen.findByRole("alert");
     expect(alertEl.textContent).toContain("boom de rota");
     // Sidebar sobrevive e continua navegável:
-    await userEvent.click(screen.getByRole("button", { name: /memory/i }));
-    expect(await screen.findByRole("heading", { name: /memory/i, level: 1 })).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Memory" }));
+    expect(await screen.findByRole("heading", { name: "Memory", level: 1 })).toBeTruthy();
     spy.mockRestore();
   });
 

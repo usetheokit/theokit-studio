@@ -9,7 +9,7 @@ import type { AgentSummary } from "../../data/types";
 import type { ChatPart } from "./event-to-part";
 import { useRunPlayback } from "./use-run-playback";
 
-const surface = getSurface("/playground");
+const surface = getSurface("/agents");
 
 // Q2 (plano § Unresolved) resolvida: em vez de useAgentStream (transport próprio),
 // composição controlada com ChatMessage.Root/Content + ToolCallCard — dogfooding direto
@@ -221,7 +221,7 @@ export function PlaygroundPage() {
 
   return (
     <section className="flex h-full flex-col">
-      <PageHeader icon={surface.icon} title="Playground" description={surface.description} />
+      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
       {loadError && (
         <p role="alert" className="mx-8 mt-4 text-red-400 text-sm">
           {loadError}

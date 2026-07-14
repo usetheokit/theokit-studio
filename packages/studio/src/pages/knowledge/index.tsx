@@ -196,7 +196,7 @@ const surface = getSurface("/knowledge");
 export function KnowledgePage() {
   return (
     <section>
-      <PageHeader icon={surface.icon} title="Knowledge" description={surface.description} />
+      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
       <div className="px-8 py-6">
         <ServiceGate service="rag">
           <KnowledgeBrowser />

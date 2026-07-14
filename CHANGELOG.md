@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Studio IA completa Mastra-parity com sidebar drill-down no padrão theo-cloud dashboard
+  (dogfood): raiz com Agents/Workflows/Processors/MCP Servers/Tools/Workspaces/Request
+  Context + Data (Memory, Knowledge) + Settings; submenus Evaluation (Overview, Scorers,
+  Datasets, Experiments) e Observability (Events, Metrics, Traces, Logs) com back button
+  e slide; superfícies não implementadas ganham placeholder honesto "Planned"; rotas
+  novas /agents e /observability/* com redirects dos paths antigos (/playground, /events,
+  /traces); copy PT restante do empty-state de Events traduzido (M5 dogfood)
 - Studio Playground agora é agents-first (paridade com Mastra Studio, dogfood): a entrada
   é a lista de agentes (tabela Name | Description | Model com filtro) e o chat abre ao
   clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)

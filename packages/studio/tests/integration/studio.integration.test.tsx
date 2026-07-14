@@ -75,7 +75,7 @@ describe("Studio integration", () => {
     document.body.innerHTML = "";
   });
 
-  it("shell_renders_three_nav_sections_directly", async () => {
+  it("shell_renders_root_menu_with_mastra_parity_items", async () => {
     const router = createMemoryRouter([
       { path: "/", element: <Shell />, children: [{ index: true, element: <div /> }] },
     ]);
@@ -85,8 +85,22 @@ describe("Studio integration", () => {
       </DataSourceProvider>,
     );
     const smoke = await screen.findByTestId("studio-smoke");
-    for (const section of ["Playground", "Observability", "Data"]) {
-      expect(smoke.textContent).toContain(section);
+    for (const entry of [
+      "Agents",
+      "Workflows",
+      "Processors",
+      "MCP Servers",
+      "Tools",
+      "Workspaces",
+      "Request Context",
+      "Evaluation",
+      "Observability",
+      "Data",
+      "Memory",
+      "Knowledge",
+      "Settings",
+    ]) {
+      expect(smoke.textContent).toContain(entry);
     }
   });
 
@@ -153,7 +167,8 @@ describe("Studio integration", () => {
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
 
-    await userEvent.click(screen.getByRole("button", { name: /events/i }));
+    // Drill-down: o item raiz "Observability" navega direto para /observability/events.
+    await userEvent.click(screen.getByRole("button", { name: "Observability" }));
     const rows = await screen.findAllByTestId("event-row");
     expect(rows.length).toBeGreaterThan(0);
     expect(metrics.snapshot().stream_events_played_total.total).toBeGreaterThan(0);
@@ -195,18 +210,19 @@ describe("Studio integration", () => {
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "where is my order?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
-    // 2. Events
-    await userEvent.click(screen.getByRole("button", { name: /events/i }));
+    // 2. Events (drill-down: item raiz Observability navega para /observability/events)
+    await userEvent.click(screen.getByRole("button", { name: "Observability" }));
     expect((await screen.findAllByTestId("event-row")).length).toBe(DEFAULT_RUN.length);
-    // 3. Memory
-    await userEvent.click(screen.getByRole("button", { name: /memory/i }));
-    expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
-    // 4. Knowledge
-    await userEvent.click(screen.getByRole("button", { name: /knowledge/i }));
-    expect(await screen.findByRole("button", { name: /product docs/i })).toBeTruthy();
-    // 5. Traces (placeholder honesto)
-    await userEvent.click(screen.getByRole("button", { name: /traces/i }));
+    // 3. Traces (placeholder honesto, dentro do submenu Observability)
+    await userEvent.click(screen.getByRole("button", { name: "Traces" }));
     expect((await screen.findAllByText(/theo-lens/)).length).toBeGreaterThan(0);
+    // 4. Back para o menu raiz → Memory
+    await userEvent.click(screen.getByRole("button", { name: /back/i }));
+    await userEvent.click(await screen.findByRole("button", { name: "Memory" }));
+    expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
+    // 5. Knowledge
+    await userEvent.click(screen.getByRole("button", { name: "Knowledge" }));
+    expect(await screen.findByRole("button", { name: /product docs/i })).toBeTruthy();
 
     // Prova de métricas (wiring pillar c — ADR D5)
     const snap = metrics.snapshot();

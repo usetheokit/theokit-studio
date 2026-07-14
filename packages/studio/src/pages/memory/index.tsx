@@ -125,7 +125,7 @@ const surface = getSurface("/memory");
 export function MemoryPage() {
   return (
     <section>
-      <PageHeader icon={surface.icon} title="Memory" description={surface.description} />
+      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
       <div className="px-8 py-6">
         <ServiceGate service="memory">
           <MemoryList />

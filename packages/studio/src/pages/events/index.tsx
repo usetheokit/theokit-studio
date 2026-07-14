@@ -6,7 +6,7 @@ import { PageHeader } from "../../app/page-header";
 import { useRunLog } from "../../app/run-log";
 import { categorize, type EventCategory, FILTERABLE_CATEGORIES } from "./categorize";
 
-const surface = getSurface("/events");
+const surface = getSurface("/observability/events");
 
 // Cor do badge por categoria (paleta consistente com os notices do Playground).
 const CATEGORY_VARIANT: Record<
@@ -35,7 +35,7 @@ export function EventsPage() {
 
   return (
     <section>
-      <PageHeader icon={surface.icon} title="Events" description={surface.description} />
+      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
       <div className="px-8 py-6">
         {events.length === 0 ? (
           <div className="mx-auto max-w-2xl">
@@ -43,8 +43,8 @@ export function EventsPage() {
               title="No events yet"
               description={
                 <>
-                  Run an agent in the <Link to="/playground">Playground</Link> para ver o stream
-                  tipado aqui.
+                  Run an agent in <Link to="/agents">Agents</Link> to see the typed event stream
+                  here.
                 </>
               }
             />

@@ -1,11 +1,11 @@
 import { Sidebar } from "@usetheo/ui";
-import { FlaskConical, Hexagon } from "lucide-react";
+import { ArrowLeft, ChevronRight, FlaskConical, Hexagon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
-import { SURFACES } from "./nav-items";
+import { getMenu, MENUS, type MenuDefinition, resolveActiveMenu } from "./nav-items";
 
 interface RouteHandle {
   label?: string;
-  section?: string;
 }
 
 function Breadcrumb() {
@@ -38,59 +38,149 @@ export function SurfacePlaceholder({ title }: { title: string }) {
   );
 }
 
-const SECTIONS = ["Playground", "Observability", "Data"] as const;
+function LogoMark() {
+  return (
+    <div className="flex items-center gap-2.5">
+      <div className="relative flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-primary-deep to-primary/60 shadow-[0_0_20px_-4px] shadow-primary/60">
+        <Hexagon className="size-4 text-primary-foreground" aria-hidden />
+      </div>
+      <div className="leading-tight">
+        <span className="sr-only">TheoKit Studio</span>
+        <span
+          aria-hidden
+          className="block font-display font-semibold text-foreground text-sm tracking-tight"
+        >
+          TheoKit
+        </span>
+        <span
+          aria-hidden
+          className="block text-[11px] text-muted-foreground tracking-widest uppercase"
+        >
+          Studio
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function Shell() {
   const navigate = useNavigate();
   const location = useLocation();
-  return (
-    <div data-testid="studio-smoke" className="flex h-screen overflow-hidden bg-background">
-      <Sidebar className="w-60 shrink-0">
-        <Sidebar.Header className="px-4 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary via-primary-deep to-primary/60 shadow-[0_0_20px_-4px] shadow-primary/60">
-              <Hexagon className="size-4 text-primary-foreground" aria-hidden />
-            </div>
-            <div className="leading-tight">
-              <span className="sr-only">TheoKit Studio</span>
-              <span
-                aria-hidden
-                className="block font-display font-semibold text-foreground text-sm tracking-tight"
-              >
-                TheoKit
-              </span>
-              <span
-                aria-hidden
-                className="block text-[11px] text-muted-foreground tracking-widest uppercase"
-              >
-                Studio
-              </span>
-            </div>
+
+  // Drill-down (padrão theo-cloud dashboard / Vercel): o menu ativo é derivado
+  // da URL — browser back/forward também navega a sidebar corretamente.
+  const activeMenuId = resolveActiveMenu(location.pathname);
+  const activeMenu = getMenu(activeMenuId);
+
+  // Direção do slide: push (entrar em submenu) desliza da direita; pop (voltar)
+  // desliza da esquerda — mesma affordance do dashboard theo-cloud.
+  const prevMenuIdRef = useRef(activeMenuId);
+  const [slideDirection, setSlideDirection] = useState<"none" | "push" | "pop">("none");
+  useEffect(() => {
+    const prev = prevMenuIdRef.current;
+    if (prev === activeMenuId) {
+      return;
+    }
+    const prevDepth = MENUS[prev]?.parent ? 1 : 0;
+    const currentDepth = activeMenu.parent ? 1 : 0;
+    setSlideDirection(currentDepth > prevDepth ? "push" : "pop");
+    prevMenuIdRef.current = activeMenuId;
+    const t = setTimeout(() => setSlideDirection("none"), 200);
+    return () => clearTimeout(t);
+  }, [activeMenuId, activeMenu.parent]);
+
+  const isActive = (path: string) => {
+    // Submenu: match exato (senão "Overview" /evaluation acenderia em /evaluation/scorers).
+    if (activeMenu.parent) {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  const renderPanel = (menu: MenuDefinition) => (
+    <>
+      {menu.parent ? (
+        <Sidebar.Header className="px-3 py-3">
+          <div className="flex w-full flex-col">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 font-medium text-muted-foreground text-sm transition-colors hover:bg-muted/40 hover:text-foreground"
+              aria-label={`Back to ${MENUS[menu.parent]?.title ?? "main menu"}`}
+            >
+              <ArrowLeft className="size-4 shrink-0" aria-hidden />
+              <span>Back</span>
+            </button>
+            <p className="truncate px-2 pt-2 text-[11px] text-muted-foreground uppercase tracking-widest">
+              {menu.title}
+            </p>
           </div>
         </Sidebar.Header>
-        {SECTIONS.map((section) => (
-          <Sidebar.Section key={section} title={section}>
-            {SURFACES.filter((s) => s.section === section).map((s) => (
+      ) : (
+        <Sidebar.Header className="px-4 py-4">
+          <LogoMark />
+        </Sidebar.Header>
+      )}
+      {menu.groups.map((group) => (
+        // Key estável: título do grupo ou o path do primeiro item (únicos por menu).
+        <Sidebar.Section key={group.title ?? group.items[0]?.path} title={group.title}>
+          {group.items.map((navItem) => {
+            const Icon = navItem.icon;
+            return (
               <Sidebar.Item
-                key={s.path}
-                icon={s.icon}
-                active={location.pathname.startsWith(s.path)}
-                onClick={() => navigate(s.path)}
+                key={navItem.path}
+                icon={Icon}
+                active={isActive(navItem.path)}
+                onClick={() => navigate(navItem.path)}
+                title={navItem.label}
               >
-                {s.label}
+                <span className="flex w-full items-center justify-between gap-2">
+                  <span className="truncate">{navItem.label}</span>
+                  {navItem.drillsInto && (
+                    <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  )}
+                </span>
               </Sidebar.Item>
-            ))}
-          </Sidebar.Section>
-        ))}
-        <Sidebar.Footer className="px-4 py-3">
-          <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
-            <FlaskConical className="size-3.5 text-amber-400" aria-hidden />
-            <div className="leading-tight">
-              <span className="block font-medium text-foreground text-xs">Fixtures mode</span>
-              <span className="block text-[11px] text-muted-foreground">M5 · simulated data</span>
+            );
+          })}
+        </Sidebar.Section>
+      ))}
+    </>
+  );
+
+  const slideClass =
+    slideDirection === "push"
+      ? "animate-[slidein-right_180ms_ease-out]"
+      : slideDirection === "pop"
+        ? "animate-[slidein-left_180ms_ease-out]"
+        : "";
+
+  return (
+    <div data-testid="studio-smoke" className="flex h-screen overflow-hidden bg-background">
+      {/* Keyframes colocalizados (padrão theo-cloud) — sem poluir o index.css global. */}
+      <style>{`
+        @keyframes slidein-right {
+          from { transform: translateX(12%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slidein-left {
+          from { transform: translateX(-12%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
+      <Sidebar className="w-60 shrink-0">
+        <div key={activeMenuId} className={`flex h-full flex-col ${slideClass}`}>
+          {renderPanel(activeMenu)}
+          <Sidebar.Footer className="mt-auto px-4 py-3">
+            <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
+              <FlaskConical className="size-3.5 text-amber-400" aria-hidden />
+              <div className="leading-tight">
+                <span className="block font-medium text-foreground text-xs">Fixtures mode</span>
+                <span className="block text-[11px] text-muted-foreground">M5 · simulated data</span>
+              </div>
             </div>
-          </div>
-        </Sidebar.Footer>
+          </Sidebar.Footer>
+        </div>
       </Sidebar>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex h-14 shrink-0 items-center justify-between border-border/40 border-b bg-background/80 px-8 backdrop-blur">

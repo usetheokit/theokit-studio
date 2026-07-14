@@ -1,9 +1,11 @@
 import { EmptyState } from "@usetheo/ui";
+import type { ReactElement } from "react";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
 import { EventsPage } from "../pages/events";
 import { KnowledgePage } from "../pages/knowledge";
 import { MemoryPage } from "../pages/memory";
+import { PlannedSurfacePage } from "../pages/planned";
 import { PlaygroundPage } from "../pages/playground";
 import { TracesPage } from "../pages/traces";
 import { SURFACES } from "./nav-items";
@@ -20,6 +22,23 @@ function NotFound() {
   );
 }
 
+// Páginas reais deste M5; toda surface fora deste mapa renderiza o placeholder
+// honesto (PlannedSurfacePage) — IA Mastra-parity, dogfood 2026-07-14.
+const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
+  "/agents": <PlaygroundPage />,
+  "/observability/events": <EventsPage />,
+  "/observability/traces": <TracesPage />,
+  "/memory": <MemoryPage />,
+  "/knowledge": <KnowledgePage />,
+};
+
+// Redirects de compat: paths pré-drill-down continuam funcionando (deep links).
+const LEGACY_REDIRECTS: Record<string, string> = {
+  playground: "/agents",
+  events: "/observability/events",
+  traces: "/observability/traces",
+};
+
 export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
   return [
     {
@@ -27,24 +46,20 @@ export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
       element: <Shell />,
       hydrateFallbackElement: <SurfacePlaceholder title="Loading" />,
       children: [
-        { index: true, loader: () => redirect("/playground"), element: null },
+        { index: true, loader: () => redirect("/agents"), element: null },
+        ...Object.entries(LEGACY_REDIRECTS).map(
+          ([from, to]): RouteObject => ({
+            path: from,
+            loader: () => redirect(to),
+            element: null,
+          }),
+        ),
         ...SURFACES.map(
           (s): RouteObject => ({
             path: s.path.slice(1),
-            element:
-              s.path === "/traces" ? (
-                <TracesPage />
-              ) : s.path === "/playground" ? (
-                <PlaygroundPage />
-              ) : s.path === "/events" ? (
-                <EventsPage />
-              ) : s.path === "/memory" ? (
-                <MemoryPage />
-              ) : (
-                <KnowledgePage />
-              ),
+            element: IMPLEMENTED_PAGES[s.path] ?? <PlannedSurfacePage path={s.path} />,
             errorElement: <RouteError />,
-            handle: { label: s.label, section: s.section },
+            handle: { label: s.label },
           }),
         ),
         ...extraChildren.map((r) => ({ errorElement: <RouteError />, ...r })),
