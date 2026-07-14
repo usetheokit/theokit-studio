@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Traces tab honesta: placeholder theo-lens com instrução `theokit studio up` —
+  nenhuma trace UI reconstruída (invariante do produto) (M5 T4.3)
+- Studio service states: ServiceGate com skeleton/offline/online por serviço e métrica de
+  erro de health (graceful degradation) (M5 T2.2)
 - Studio shell navegável: 5 superfícies com sidebar/breadcrumb/deep-linking, error
   boundary por rota, bootstrap defensivo com startup-error e config seam do host (M5 T2.1)
 - Studio run-stream playback: roteiros tipados dos eventos reais do `@theokit/sdk` 3.4
