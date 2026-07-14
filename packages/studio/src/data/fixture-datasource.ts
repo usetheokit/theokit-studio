@@ -6,7 +6,9 @@ import {
 } from "./fixtures/knowledge";
 import { fixtureMemories } from "./fixtures/memory";
 import { fixtureAgents, fixtureSkills, fixtureTools, fixtureWorkflows } from "./fixtures/registry";
+import { DEFAULT_RUN, type StudioRunEvent } from "./fixtures/run-script";
 import { metrics } from "./metrics";
+import { play } from "./stream-player";
 import {
   type AgentSummary,
   EmptyQueryError,
@@ -27,6 +29,10 @@ export interface FixtureDataSourceOptions {
   scenario: FixtureScenario;
   /** Seam para testes (T2.2): sobrescrever comportamentos pontuais sem monkey-patch. */
   overrides?: Partial<Pick<StudioDataSource, "health">>;
+  /** Delay entre eventos do stream (0 default — determinístico em teste; ~40ms em dev). */
+  streamDelayMs?: number;
+  /** Roteiro do run (default: DEFAULT_RUN). */
+  runScript?: readonly StudioRunEvent[];
 }
 
 const HEALTH: Record<FixtureScenario, ServiceHealthMap> = {
@@ -49,7 +55,7 @@ const HEALTH: Record<FixtureScenario, ServiceHealthMap> = {
 };
 
 export function createFixtureDataSource(options: FixtureDataSourceOptions): StudioDataSource {
-  const { scenario, overrides } = options;
+  const { scenario, overrides, streamDelayMs = 0, runScript = DEFAULT_RUN } = options;
   const isEmpty = scenario === "empty";
 
   const counted = <T>(method: string, value: T): Promise<T> => {
@@ -65,6 +71,14 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
       counted("listSkills", isEmpty ? [] : [...fixtureSkills]),
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
+
+    async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal) {
+      metrics.increment("datasource_calls_total", "runAgent");
+      for await (const event of play(runScript, { delayMs: streamDelayMs, signal })) {
+        metrics.increment("stream_events_played_total");
+        yield event;
+      }
+    },
 
     getMemories: (scope?: MemoryScope): Promise<MemoryRecord[]> =>
       counted(

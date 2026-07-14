@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio run-stream playback: roteiros tipados dos eventos reais do `@theokit/sdk` 3.4
+  (`InteractionUpdate`/`RunEvent`, sem casts) + player com cancelamento (M5 T1.2)
 - Studio data layer (DIP): interface `StudioDataSource` + `FixtureDataSource` com cenários
   default/empty/offline, erros tipados de fronteira e métricas dev in-memory (M5 T1.1)
 - `@theokit/studio` package scaffold: Vite + React 19 + TS strict + Vitest + Tailwind v4 +

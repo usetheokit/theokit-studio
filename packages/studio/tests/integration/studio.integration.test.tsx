@@ -33,4 +33,15 @@ describe("Studio integration", () => {
     expect(await screen.findByTestId("probe")).toBeTruthy();
     expect(metrics.snapshot().datasource_calls_total.listAgents).toBe(1);
   });
+
+  it("run_stream_plays_end_to_end_through_the_datasource", async () => {
+    // Exercita o pipeline runAgent → play (stream-player) → eventos tipados do SDK.
+    const ds = createFixtureDataSource({ scenario: "default" });
+    const types: string[] = [];
+    for await (const event of ds.runAgent("support-agent", "status do pedido?")) {
+      types.push(event.type);
+    }
+    expect(types.at(-1)).toBe("turn-ended");
+    expect(metrics.snapshot().stream_events_played_total.total).toBeGreaterThan(0);
+  });
 });

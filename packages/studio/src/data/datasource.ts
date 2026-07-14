@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { StudioRunEvent } from "./fixtures/run-script";
 import type {
   AgentSummary,
   KnowledgeCollection,
@@ -19,6 +20,11 @@ export interface StudioDataSource {
   listTools(): Promise<ToolSummary[]>;
   listSkills(): Promise<SkillSummary[]>;
   listWorkflows(): Promise<WorkflowSummary[]>;
+  runAgent(
+    agentId: string,
+    prompt: string,
+    signal?: AbortSignal,
+  ): AsyncIterable<StudioRunEvent["event"]>;
   getMemories(scope?: MemoryScope): Promise<MemoryRecord[]>;
   listCollections(): Promise<KnowledgeCollection[]>;
   listDocuments(collectionId: string): Promise<KnowledgeDocument[]>;
