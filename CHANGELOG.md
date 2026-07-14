@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- `review`: `consolidate_findings.py` só descobria findings `*.yml` e dropava
+  silenciosamente os `*.yaml` dos agentes — o report consolidado saía READY_TO_MERGE com
+  0 findings; agora descobre ambas as extensões (regression test adicionado; achado
+  durante o review do M5)
 - Review M5 (batch): ciclo de import routes↔shell quebrado via `nav-items.ts`; tipos de
   evento movidos para o domínio (`data/types.ts`); send durante run ativo habilitado
   (contrato do plano — novo send aborta o anterior); erro de stream vira notice visível e
