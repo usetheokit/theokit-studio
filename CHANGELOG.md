@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)
 
 ### Added
+- Studio Processors detail (dogfood): clicar na linha abre o detail com identidade
+  (nome, slug, badges das fases implementadas, "Attached to N agents"), select de Phase
+  restrito às fases que o processor implementa com descrição contextual, Test Message
+  editável, Run Processor desabilitado com nota honesta (fixtures) e painel de Output;
+  botão "All processors" volta para a lista (M5 dogfood)
 - Studio Mastra-parity screens (dogfood, tela a tela contra o Mastra Studio local):
   Workflows (lista + detail com grafo vertical de steps, painel de run honesto
   desabilitado em fixtures e recent runs), Processors (matriz de capacidades
