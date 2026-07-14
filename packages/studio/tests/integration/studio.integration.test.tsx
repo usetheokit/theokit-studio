@@ -2,12 +2,14 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { App } from "../../src/app";
 import { buildRoutes } from "../../src/app/routes";
+import { ServiceGate, ServiceOfflineState, useServiceHealth } from "../../src/app/service-state";
 import { Shell } from "../../src/app/shell";
 import { bootstrap, parseStudioConfig } from "../../src/bootstrap";
 import { DataSourceProvider, useDataSource } from "../../src/data/datasource";
 import { createFixtureDataSource } from "../../src/data/fixture-datasource";
 import { metrics } from "../../src/data/metrics";
 import { mount } from "../../src/main";
+import { TracesPage } from "../../src/pages/traces";
 import { renderStartupError } from "../../src/startup-error";
 
 // Teste de integração incremental (Fase Final expande para as 5 superfícies + prova
@@ -86,6 +88,51 @@ describe("Studio integration", () => {
     for (const section of ["Playground", "Observability", "Data"]) {
       expect(smoke.textContent).toContain(section);
     }
+  });
+
+  it("traces_route_renders_TracesPage_with_lens_offline_placeholder", async () => {
+    // Rota real (/traces → TracesPage) + render direto do componente: mesmo resultado.
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/traces"] });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <App router={router} />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText(/theo-lens/)).toBeTruthy();
+    expect(await screen.findByText(/theokit studio up/)).toBeTruthy();
+    expect(screen.queryByTestId("trace-tree")).toBeNull();
+  });
+
+  it("traces_page_direct_render_matches_route_behavior", async () => {
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <TracesPage />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText(/theo-lens/)).toBeTruthy();
+  });
+
+  it("service_offline_state_renders_actionable_hint_directly", () => {
+    render(<ServiceOfflineState service="rag" />);
+    expect(screen.getByTestId("service-offline").textContent).toContain("theokit studio up");
+    expect(screen.getByTestId("service-offline").textContent).toContain("theo-rag");
+  });
+
+  it("service_gate_resolves_health_end_to_end_for_online_service", async () => {
+    function HealthProbe() {
+      const health = useServiceHealth("memory");
+      return <span data-testid="health-state">{health}</span>;
+    }
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <ServiceGate service="memory">
+          <p>memory content online</p>
+        </ServiceGate>
+        <HealthProbe />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText("memory content online")).toBeTruthy();
+    expect((await screen.findByTestId("health-state")).textContent).toBe("online");
   });
 
   it("run_stream_plays_end_to_end_through_the_datasource", async () => {
