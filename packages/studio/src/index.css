@@ -1,0 +1,9 @@
+/* Q1 (plano § Unresolved) resolvida 2026-07-14 (README + theo-ui-provider.d.ts):
+   setup canônico = tokens.css + styles.css no entrypoint; TheoUIProvider compõe
+   ThemeProvider (themes=builtinThemes) + Toaster — tema/modo explicitados no app.tsx
+   via theme={{ defaultTheme: "violet-forge", defaultMode: "dark" }}. Não há preset
+   Tailwind obrigatório para CONSUMIR componentes; Tailwind v4 fica para as classes
+   utilitárias próprias do Studio. */
+@import "@theokit/ui/tokens.css";
+@import "@theokit/ui/styles.css";
+@import "tailwindcss";
