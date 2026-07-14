@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Memory tab: browser de memórias com escopo, busca e filtro sobre fixtures (M5 T4.1)
 - Studio Event Inspector: timeline crua dos eventos tipados do último run com filtro por
   categoria e payload expandível (M5 T3.2)
 - Studio Playground: chat com playback do stream de eventos tipados (`Run.stream()`),
