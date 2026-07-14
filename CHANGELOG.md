@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- `plan-confidence` checker: `_scan_blueprint_refs` não resolvia blueprints no layout
+  plugin-install (`.claude/knowledge-base/...`), marcando toda citação `Blueprint §"X"`
+  como fabricada; regression test adicionado (achado durante o plan do M5)
 - `discover-plan-confidence` scorer: `_parse_thresholds` ignorava o formato documentado
   `band.<name> = <valor>` de `rules/discover-plan-thresholds.txt` (só aceitava `NAME | valor`),
   produzindo verdict INVALID incondicional; regression test adicionado (achado durante o
