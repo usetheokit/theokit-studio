@@ -29,4 +29,16 @@
     color: var(--foreground);
     font-family: var(--font-sans, "Geist", system-ui, sans-serif);
   }
+  /* O preflight do Tailwind v4 não põe pointer em controles (o styles.css do design
+     system fazia isso — regra herdada aqui após a troca para pipeline único). */
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }

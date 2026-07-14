@@ -46,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Studio: cursor pointer em componentes clicáveis (regressão da troca p/ pipeline Tailwind
+  único — o preflight v4 não estiliza cursor de controles; not-allowed em desabilitados)
 - Studio UI sem estilo (dogfood): root-cause era ordem de cascade layers — o
   `tokens-v4.css` do design system abre `@layer utilities` antes do statement canônico,
   fazendo o preflight (`* { padding: 0 }`) vencer todas as utilities; corrigido declarando
