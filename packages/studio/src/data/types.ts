@@ -58,13 +58,25 @@ export interface ProcessorSummary {
   usedBy: number;
 }
 
+export interface McpExposedTool {
+  name: string;
+  description: string;
+  /** origem do item exposto: tool direta, wrapper de agente ou de workflow. */
+  kind: "tool" | "agent" | "workflow";
+}
+
 export interface McpServerSummary {
   id: string;
   name: string;
+  version: string;
+  /** endpoint SSE (real-time) — o exibido na lista. */
   url: string;
+  /** endpoint HTTP stateless (streamable responses). */
+  httpUrl: string;
   agents: number;
   tools: number;
   workflows: number;
+  availableTools: McpExposedTool[];
 }
 
 export interface ScorerSummary {

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Studio MCP Server detail (dogfood): clicar na linha abre o detail com nome + badge de
+  versão, três cards de transporte (HTTP stateless, SSE real-time e CLI via
+  npx mcp-remote) com endpoint copiável, e painel "Available Tools" listando o que o
+  server expõe com origem por ícone (tool direta, wrapper de agente, wrapper de
+  workflow); botão "All MCP servers" volta para a lista (M5 dogfood)
+
 ### Changed
 - Studio Memory e Knowledge Base viram drill-downs com paridade total ao menu do
   theo-cloud dashboard (dogfood): Memory → Overview, Memories (real), Episodes,

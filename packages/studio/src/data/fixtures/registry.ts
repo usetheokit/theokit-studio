@@ -109,9 +109,32 @@ export const fixtureMcpServers: readonly McpServerSummary[] = Object.freeze([
   {
     id: "demo-mcp-server",
     name: "Demo MCP Server",
+    version: "1.0.0",
     url: "http://localhost:8787/mcp/demo-mcp-server/sse",
+    httpUrl: "http://localhost:8787/mcp/demo-mcp-server/mcp",
     agents: 1,
     tools: 5,
     workflows: 1,
+    availableTools: [
+      { name: "lookupOrder", description: "Look up an order by its ID", kind: "tool" },
+      {
+        name: "refundOrder",
+        description: "Refund an order (requires human approval above $500)",
+        kind: "tool",
+      },
+      { name: "searchDocs", description: "Search the product documentation", kind: "tool" },
+      {
+        name: "ask_supportAgent",
+        description:
+          "Ask agent 'Support Agent' a question. Agent description: Answers support tickets with access to the knowledge base",
+        kind: "agent",
+      },
+      {
+        name: "run_customerOnboarding",
+        description:
+          "Run workflow 'customer-onboarding'. Workflow description: Customer onboarding flow from signup to first value",
+        kind: "workflow",
+      },
+    ],
   },
 ]);
