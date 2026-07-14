@@ -1,6 +1,7 @@
 import { EmptyState } from "@usetheo/ui";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
+import { PlaygroundPage } from "../pages/playground";
 import { TracesPage } from "../pages/traces";
 import { RouteError } from "./route-error";
 import { Shell, SurfacePlaceholder } from "./shell";
@@ -46,7 +47,14 @@ export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
         ...SURFACES.map(
           (s): RouteObject => ({
             path: s.path.slice(1),
-            element: s.path === "/traces" ? <TracesPage /> : placeholder(s.label),
+            element:
+              s.path === "/traces" ? (
+                <TracesPage />
+              ) : s.path === "/playground" ? (
+                <PlaygroundPage />
+              ) : (
+                placeholder(s.label)
+              ),
             errorElement: <RouteError />,
             handle: { label: s.label, section: s.section },
           }),
