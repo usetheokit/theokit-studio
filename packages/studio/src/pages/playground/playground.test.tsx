@@ -14,9 +14,12 @@ function renderPlayground(ds = createFixtureDataSource({ scenario: "default" }))
   return ds;
 }
 
+// Padrão agents-first (Mastra): a entrada é a lista de agentes; o chat abre no clique.
 async function pickAgent(name = "Support Agent") {
-  await userEvent.click(screen.getByRole("combobox", { name: /agent/i }));
-  await userEvent.click(await screen.findByRole("option", { name }));
+  const rows = await screen.findAllByTestId("agent-row");
+  const row = rows.find((r) => r.textContent?.includes(name));
+  if (!row) throw new Error(`agent row not found: ${name}`);
+  await userEvent.click(row);
 }
 
 describe("Playground (T3.1)", () => {
@@ -26,7 +29,6 @@ describe("Playground (T3.1)", () => {
 
   it("sending_prompt_plays_stream_and_renders_final_message", async () => {
     renderPlayground();
-    await screen.findByRole("combobox", { name: /agent/i });
     await pickAgent();
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "where is my order?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
@@ -40,7 +42,6 @@ describe("Playground (T3.1)", () => {
 
   it("blank_prompt_send_is_noop_and_no_run_starts", async () => {
     renderPlayground();
-    await screen.findByRole("combobox", { name: /agent/i });
     await pickAgent();
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "   ");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
@@ -48,14 +49,34 @@ describe("Playground (T3.1)", () => {
     expect(metrics.snapshot().stream_events_played_total.total ?? 0).toBe(0);
   });
 
-  it("send_button_disabled_without_agent_selected", async () => {
-    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  it("composer_not_rendered_until_agent_picked", async () => {
     renderPlayground();
-    await screen.findByRole("combobox", { name: /agent/i });
-    const button = screen.getByRole("button", { name: /send/i });
-    expect((button as HTMLButtonElement).disabled).toBe(true);
-    expect(errorSpy).not.toHaveBeenCalled();
-    errorSpy.mockRestore();
+    await screen.findAllByTestId("agent-row");
+    expect(screen.queryByRole("textbox", { name: /prompt/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /send/i })).toBeNull();
+  });
+
+  it("filter_narrows_agents_list_and_no_match_shows_empty_row", async () => {
+    renderPlayground();
+    await screen.findAllByTestId("agent-row");
+    const filter = screen.getByRole("searchbox", { name: /filter agents/i });
+    await userEvent.type(filter, "support");
+    const rows = screen.getAllByTestId("agent-row");
+    expect(rows.length).toBe(1);
+    expect(rows[0]?.textContent).toContain("Support Agent");
+    await userEvent.clear(filter);
+    await userEvent.type(filter, "zzz-nonexistent");
+    expect(screen.queryAllByTestId("agent-row").length).toBe(0);
+    expect(screen.getByText(/no agents match/i)).toBeTruthy();
+  });
+
+  it("back_button_returns_to_agents_list", async () => {
+    renderPlayground();
+    await pickAgent();
+    expect(screen.getByRole("textbox", { name: /prompt/i })).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: /all agents/i }));
+    expect((await screen.findAllByTestId("agent-row")).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("textbox", { name: /prompt/i })).toBeNull();
   });
 
   it("unmount_during_run_aborts_playback", async () => {
@@ -66,7 +87,6 @@ describe("Playground (T3.1)", () => {
         <PlaygroundPage />
       </DataSourceProvider>,
     );
-    await screen.findByRole("combobox", { name: /agent/i });
     await pickAgent();
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
@@ -82,7 +102,6 @@ describe("Playground (T3.1)", () => {
     // (contrato do plano: "novo send aborta o anterior e inicia novo").
     const ds = createFixtureDataSource({ scenario: "default", streamDelayMs: 25 });
     renderPlayground(ds);
-    await screen.findByRole("combobox", { name: /agent/i });
     await pickAgent();
     const box = screen.getByRole("textbox", { name: /prompt/i });
     await userEvent.type(box, "primeiro");
@@ -115,7 +134,6 @@ describe("Playground (T3.1)", () => {
       },
     };
     renderPlayground(broken as unknown as ReturnType<typeof createFixtureDataSource>);
-    await screen.findByRole("combobox", { name: /agent/i });
     await pickAgent();
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));

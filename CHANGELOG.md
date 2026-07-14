@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Studio Playground agora é agents-first (paridade com Mastra Studio, dogfood): a entrada
+  é a lista de agentes (tabela Name | Description | Model com filtro) e o chat abre ao
+  clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)
+
 ### Added
 - Studio design pass (dogfood): ícones lucide por superfície (dep já presente via
   @theokit/ui), logo mark violet, PageHeader com tile de ícone, topbar com breadcrumb +

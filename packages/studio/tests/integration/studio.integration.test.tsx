@@ -145,8 +145,10 @@ describe("Studio integration", () => {
         <App router={router} />
       </DataSourceProvider>,
     );
-    await userEvent.click(await screen.findByRole("combobox", { name: /agent/i }));
-    await userEvent.click(await screen.findByRole("option", { name: "Support Agent" }));
+    const agentRows = await screen.findAllByTestId("agent-row");
+    const supportRow = agentRows.find((r) => r.textContent?.includes("Support Agent"));
+    if (!supportRow) throw new Error("agent row not found: Support Agent");
+    await userEvent.click(supportRow);
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "status?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
@@ -186,8 +188,10 @@ describe("Studio integration", () => {
       </DataSourceProvider>,
     );
     // 1. Playground: run completo
-    await userEvent.click(await screen.findByRole("combobox", { name: /agent/i }));
-    await userEvent.click(await screen.findByRole("option", { name: "Support Agent" }));
+    const agentRows = await screen.findAllByTestId("agent-row");
+    const supportRow = agentRows.find((r) => r.textContent?.includes("Support Agent"));
+    if (!supportRow) throw new Error("agent row not found: Support Agent");
+    await userEvent.click(supportRow);
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "where is my order?");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(await screen.findByText(/arrives on the 16th/)).toBeTruthy();
