@@ -1,6 +1,7 @@
 import { EmptyState } from "@usetheo/ui";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
+import { EventsPage } from "../pages/events";
 import { PlaygroundPage } from "../pages/playground";
 import { TracesPage } from "../pages/traces";
 import { RouteError } from "./route-error";
@@ -52,6 +53,8 @@ export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
                 <TracesPage />
               ) : s.path === "/playground" ? (
                 <PlaygroundPage />
+              ) : s.path === "/events" ? (
+                <EventsPage />
               ) : (
                 placeholder(s.label)
               ),

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRunLogOptional } from "../../app/run-log";
 import { useDataSource } from "../../data/datasource";
 import { applyEvent, initialPlayback, type PlaybackState, type StudioEvent } from "./event-to-part";
 
@@ -12,6 +13,7 @@ export interface RunPlayback {
 // atado ao unmount; novo send aborta o run anterior (sem interleaving de estado).
 export function useRunPlayback(): RunPlayback {
   const ds = useDataSource();
+  const runLog = useRunLogOptional();
   const [state, setState] = useState<PlaybackState>(initialPlayback);
   const [rawEvents, setRawEvents] = useState<readonly StudioEvent[]>([]);
   const abortRef = useRef<AbortController | null>(null);
@@ -37,6 +39,7 @@ export function useRunPlayback(): RunPlayback {
         isRunning: true,
       });
       setRawEvents([]);
+      runLog?.startRun();
       void (async () => {
         for await (const event of ds.runAgent(agentId, prompt, controller.signal)) {
           if (controller.signal.aborted) {
@@ -44,13 +47,14 @@ export function useRunPlayback(): RunPlayback {
           }
           setState((s) => applyEvent(s, event));
           setRawEvents((evts) => [...evts, event]);
+          runLog?.append(event);
         }
         if (!controller.signal.aborted) {
           setState((s) => ({ ...s, isRunning: false }));
         }
       })();
     },
-    [ds],
+    [ds, runLog],
   );
 
   return { state, rawEvents, send };

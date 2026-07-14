@@ -135,6 +135,29 @@ describe("Studio integration", () => {
     expect((await screen.findByTestId("health-state")).textContent).toBe("online");
   });
 
+  it("playground_run_then_events_inspector_shows_the_same_run", async () => {
+    // Jornada completa: PlaygroundPage (useRunPlayback → applyEvent) publica no
+    // RunLogProvider; EventsPage (categorize) mostra o MESMO run após navegar.
+    const userEvent = (await import("@testing-library/user-event")).default;
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/playground"] });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <App router={router} />
+      </DataSourceProvider>,
+    );
+    const select = await screen.findByRole("combobox", { name: /agent/i });
+    await userEvent.selectOptions(select, "support-agent");
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "status?");
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole("button", { name: /events/i }));
+    const rows = await screen.findAllByTestId("event-row");
+    expect(rows.length).toBeGreaterThan(0);
+    expect(metrics.snapshot().stream_events_played_total.total).toBeGreaterThan(0);
+    expect(metrics.snapshot().datasource_calls_total.runAgent).toBe(1);
+  });
+
   it("run_stream_plays_end_to_end_through_the_datasource", async () => {
     // Exercita o pipeline runAgent → play (stream-player) → eventos tipados do SDK.
     const ds = createFixtureDataSource({ scenario: "default" });

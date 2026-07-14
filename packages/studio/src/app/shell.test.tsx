@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { DataSourceProvider, useDataSource } from "../data/datasource";
 import { createFixtureDataSource } from "../data/fixture-datasource";
 import { buildRoutes } from "./routes";
+import { RunLogProvider } from "./run-log";
 
 // Router fresco por teste (independência — testing.md § 3; SEPA Phase 2).
 function renderShell(initialEntries: string[], extraChildren?: Parameters<typeof buildRoutes>[0]) {
@@ -11,7 +12,9 @@ function renderShell(initialEntries: string[], extraChildren?: Parameters<typeof
   const ds = createFixtureDataSource({ scenario: "default" });
   render(
     <DataSourceProvider value={ds}>
-      <RouterProvider router={router} />
+      <RunLogProvider>
+        <RouterProvider router={router} />
+      </RunLogProvider>
     </DataSourceProvider>,
   );
   return router;
@@ -20,7 +23,7 @@ function renderShell(initialEntries: string[], extraChildren?: Parameters<typeof
 describe("Shell (T2.1)", () => {
   it("root_redirects_to_playground", async () => {
     renderShell(["/"]);
-    expect(await screen.findByRole("heading", { name: /playground/i })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: /playground/i, level: 1 })).toBeTruthy();
   });
 
   it("sidebar_navigates_to_all_five_surfaces", async () => {
@@ -35,7 +38,7 @@ describe("Shell (T2.1)", () => {
     let headingsVisitadas = 0;
     for (const s of surfaces) {
       await userEvent.click(screen.getByRole("button", { name: s.item }));
-      expect(await screen.findByRole("heading", { name: s.heading })).toBeTruthy();
+      expect(await screen.findByRole("heading", { name: s.heading, level: 1 })).toBeTruthy();
       headingsVisitadas += 1;
     }
     expect(headingsVisitadas).toBe(5);
@@ -64,7 +67,7 @@ describe("Shell (T2.1)", () => {
     expect(alertEl.textContent).toContain("boom de rota");
     // Sidebar sobrevive e continua navegável:
     await userEvent.click(screen.getByRole("button", { name: /memory/i }));
-    expect(await screen.findByRole("heading", { name: /memory/i })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: /memory/i, level: 1 })).toBeTruthy();
     spy.mockRestore();
   });
 
