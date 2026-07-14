@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- `discover-plan-confidence` scorer: `_parse_thresholds` ignorava o formato documentado
+  `band.<name> = <valor>` de `rules/discover-plan-thresholds.txt` (só aceitava `NAME | valor`),
+  produzindo verdict INVALID incondicional; regression test adicionado (achado durante o
+  discover do M5)
 
 ### Security
 
