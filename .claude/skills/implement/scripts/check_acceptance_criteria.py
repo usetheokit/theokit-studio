@@ -150,6 +150,18 @@ def _changed_files(repo_root: Path, shas: list[str]) -> list[str]:
     return seen
 
 
+# Artefatos gerados por ferramenta: o budget de LoC (architecture.md) aplica-se a
+# módulos-FONTE; lockfiles/sums são regenerados e nunca revisados linha a linha.
+_GENERATED_ARTIFACT_NAMES = frozenset({
+    "pnpm-lock.yaml", "package-lock.json", "yarn.lock", "bun.lockb",
+    "Cargo.lock", "go.sum", "poetry.lock", "uv.lock", "composer.lock", "Gemfile.lock",
+})
+
+
+def _is_generated_artifact(rel_path: str) -> bool:
+    return Path(rel_path).name in _GENERATED_ARTIFACT_NAMES
+
+
 def _file_size_limit(criteria: list[Criterion]) -> int:
     for c in criteria:
         if c.category == "file_size":
@@ -180,6 +192,8 @@ def check_acceptance_criteria(
     if by_category.get("file_size") and repo_root is not None and changed:
         limit = _file_size_limit(criteria)
         for rel in changed:
+            if _is_generated_artifact(rel):
+                continue
             path = repo_root / rel
             if not path.is_file():
                 continue
