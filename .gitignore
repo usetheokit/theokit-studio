@@ -14,3 +14,5 @@ coverage/
 .claude/knowledge-base/discoveries/snapshots/**
 .claude/agents/**
 architect-output/
+.claude/knowledge-base/implementations/.progress-*.json
+.claude/halt-loop-prompts/

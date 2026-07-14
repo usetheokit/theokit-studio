@@ -118,7 +118,7 @@ ecossistema já tem). Versões pinned (range `^` gravado no package.json do paco
 | `vite` | ^7.3.6 | dev server + build | ≥7.3.6 = CLEAN no OSV (7.3.4 flagava GHSA-fx2h HIGH); v8 existe — pin por ADR D6 |
 | `@vitejs/plugin-react` | ^5.0.0 | plugin React do Vite | compatível com vite 7; 0 CVEs |
 | `typescript` | ^5.8.0 | strict typecheck | LOCKADO por CLAUDE.md § Toolchain (TS 5.8) — v7 existe mas o lock é o ADR |
-| `vitest` + `@vitest/coverage-v8` | ^3.2.11 | unit/component tests + coverage | ≥3.2.6 corrige GHSA-5xrq (CRITICAL — Vitest UI server RCE); 3.2.11 = CLEAN; v4 existe — pin por ADR D6 |
+| `vitest` + `@vitest/coverage-v8` | ^3.2.7 | unit/component tests + coverage | ≥3.2.6 corrige GHSA-5xrq (CRITICAL — Vitest UI server RCE); 3.2.7 = última 3.x, CLEAN no OSV; v4 existe — pin por ADR D6 |
 | `@testing-library/react` + `@testing-library/user-event` + `jsdom` | ^16.3.2 / ^14.6.1 / ^26.0.0 | component tests | padrão da categoria (Mastra idem — Blueprint §"Corner 1"); 0 CVEs |
 | `@biomejs/biome` | ^2.4.0 (root, já declarado) | lint/format | já no root; 0 CVEs |
 
@@ -213,7 +213,7 @@ os contadores para o exporter real.
 
 **Decision:** react-router pinado em ^7 (não ^8), vite em ^7 (não ^8), vitest em ^3 (não
 ^4) e typescript em ^5.8 (não ^7) — sempre na última patch CLEAN do major pinado
-(auditoria OSV 2026-07-14: react-router ≥7.18.1, vite ≥7.3.6, vitest ≥3.2.11).
+(auditoria OSV 2026-07-14: react-router ≥7.18.1, vite ≥7.3.6, vitest ≥3.2.7).
 
 **Rationale:** TS 5.8 é lock explícito do CLAUDE.md § Toolchain. Os demais: os padrões do
 blueprint foram extraídos de referências rodando esses majors; adotar majors lançados
@@ -327,6 +327,7 @@ RED:     app.smoke.test.tsx :: renders_design_system_component_inside_provider()
 GREEN:   App mínimo com TheoUIProvider + Badge
 REFACTOR: extrair Provider wrapper de teste para src/test/render.tsx
 VERIFY:  pnpm --filter @theokit/studio test
+ASSERT shape: expect(smokeElement).toBeTruthy() — componente do design system montado
 ```
 
 #### Concurrency tests
@@ -436,6 +437,7 @@ RED:  metrics.test.ts :: increments_counter_per_datasource_call() —
 GREEN: implementar o mínimo
 REFACTOR: dedup de builders de fixture
 VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(agents.length).toBeGreaterThan(0); expect(snapshotCount).toBe(2)
 ```
 
 #### Concurrency tests
@@ -615,6 +617,7 @@ RED:  shell.test.tsx :: route_crash_renders_error_element_and_sidebar_survives()
 RED:  bootstrap.test.ts :: malformed_studio_config_falls_back_to_fixtures_with_warning() —
       window.__STUDIO_CONFIG__ = 42 → app monta com fixtures; console.warn chamado 1x (EC-8)
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(headingsVisitadas).toBe(5); expect(alertEl.textContent).toContain('boom')
 ```
 
 #### Concurrency tests
@@ -674,6 +677,7 @@ RED:  service-state.test.tsx :: renders_children_when_service_online() — conte
 RED:  service-state.test.tsx :: health_rejection_renders_offline_and_increments_error_metric() —
       ds.health() rejeita → offline + metrics.health_errors_total === 1
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(hint.textContent).toContain('theokit studio up'); expect(errorCount).toBe(1)
 ```
 
 #### Concurrency tests
@@ -773,6 +777,7 @@ RED:  playground.test.tsx :: blank_prompt_send_is_noop_and_no_run_starts() —
       envia '   ' → nenhum evento no RunLog; metrics.runAgent não incrementa; botão
       desabilitado sem agente selecionado (EC-1)
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(finalText).toBe(expectedFromScript); expect(consoleErrorCalls).toBe(0)
 ```
 
 #### Concurrency tests
@@ -839,6 +844,7 @@ RED:  events.test.tsx :: long_script_renders_all_rows() — roteiro long (100+) 
 RED:  events.test.tsx :: filter_with_zero_matches_shows_no_match_message() —
       categoria sem eventos no roteiro → no-match (≠ empty state) (EC-7)
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(rowCount).toBe(eventCount); expect(visibleCategories).toEqual(selecionadas)
 ```
 
 #### Concurrency tests
@@ -900,6 +906,7 @@ RED:  memory.test.tsx :: search_without_match_shows_no_match_state_not_empty_sta
       digita 'zzz' → getByText(/no.*match/i) e queryByText(/no memories/i) === null
 RED:  memory.test.tsx :: offline_scenario_shows_service_offline_state() — getByText(/theokit studio up/)
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(scopeRows.length).toBeGreaterThan(0); expect(noMatchVisible).toBe(true)
 ```
 
 #### Concurrency tests
@@ -956,6 +963,7 @@ RED:  knowledge.test.tsx :: offline_scenario_shows_service_offline_state() — g
 RED:  knowledge.test.tsx :: collection_without_documents_shows_local_empty_state() —
       seleciona collection vazia da fixture → EmptyState local (EC-6)
 GREEN / REFACTOR / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(scores).toEqual(sortedDesc); expect(queryCallsWithBlank).toBe(0)
 ```
 
 #### Concurrency tests
@@ -999,6 +1007,7 @@ packages/studio/src/app/routes.tsx — página real
 RED:  traces.test.tsx :: always_renders_offline_placeholder_with_lens_explanation() —
       getByText(/theo-lens/) e getByText(/theokit studio up/); expect(queryByTestId('trace-tree')).toBeNull()
 GREEN / VERIFY: pnpm --filter @theokit/studio test
+ASSERT shape: expect(traceTreeEl).toBeNull(); expect(lensCopy).toBeTruthy()
 ```
 
 #### Concurrency tests
