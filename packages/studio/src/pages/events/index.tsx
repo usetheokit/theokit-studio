@@ -10,7 +10,10 @@ export function EventsPage() {
   const { events } = useRunLog();
   const [filter, setFilter] = useState<"all" | EventCategory>("all");
 
-  const visible = events.filter((e) => filter === "all" || categorize(e.type) === filter);
+  const indexed = events.map((event, ordinal) => ({ event, ordinal }));
+  const visible = indexed.filter(
+    ({ event }) => filter === "all" || categorize(event.type) === filter,
+  );
   const countBy = (cat: EventCategory) => events.filter((e) => categorize(e.type) === cat).length;
 
   return (
@@ -53,9 +56,9 @@ export function EventsPage() {
             <p className="mt-6 opacity-70">No events match this category.</p>
           ) : (
             <ol className="mt-4 space-y-2">
-              {visible.map((event, i) => (
+              {visible.map(({ event, ordinal }) => (
                 <li
-                  key={`${event.type}-${i}`}
+                  key={ordinal}
                   data-testid="event-row"
                   className="rounded border border-white/10 p-3"
                 >

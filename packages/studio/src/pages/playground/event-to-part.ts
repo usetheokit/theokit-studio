@@ -7,14 +7,17 @@ import { metrics } from "../../data/metrics";
 export type StudioEvent = StudioRunEvent["event"];
 
 export interface UserPart {
+  seq: number;
   kind: "user";
   text: string;
 }
 export interface TextPart {
+  seq: number;
   kind: "text";
   text: string;
 }
 export interface ToolPart {
+  seq: number;
   kind: "tool";
   callId: string;
   name: string;
@@ -23,11 +26,13 @@ export interface ToolPart {
   done: boolean;
 }
 export interface NoticePart {
+  seq: number;
   kind: "notice";
   notice: "permission-denied" | "rate-limit" | "tripwire";
   detail: string;
 }
 export interface UnknownPart {
+  seq: number;
   kind: "unknown";
   type: string;
 }
@@ -36,39 +41,50 @@ export type ChatPart = UserPart | TextPart | ToolPart | NoticePart | UnknownPart
 export interface PlaybackState {
   parts: ChatPart[];
   isRunning: boolean;
+  /** próximo seq de parte — chave estável de renderização (noArrayIndexKey) */
+  nextSeq: number;
 }
 
-export const initialPlayback: PlaybackState = { parts: [], isRunning: false };
+export const initialPlayback: PlaybackState = { parts: [], isRunning: false, nextSeq: 0 };
 
 const appendText = (state: PlaybackState, text: string): PlaybackState => {
   const last = state.parts.at(-1);
   if (last?.kind === "text") {
     return {
       ...state,
-      parts: [...state.parts.slice(0, -1), { kind: "text", text: last.text + text }],
+      parts: [...state.parts.slice(0, -1), { ...last, text: last.text + text }],
     };
   }
-  return { ...state, parts: [...state.parts, { kind: "text", text }] };
+  return {
+    ...state,
+    nextSeq: state.nextSeq + 1,
+    parts: [...state.parts, { seq: state.nextSeq, kind: "text", text }],
+  };
 };
 
 const upsertTool = (
   state: PlaybackState,
   callId: string,
-  patch: Omit<ToolPart, "kind" | "callId">,
+  patch: Omit<ToolPart, "kind" | "callId" | "seq">,
 ): PlaybackState => {
   const idx = state.parts.findIndex((p) => p.kind === "tool" && p.callId === callId);
-  const part: ToolPart = { kind: "tool", callId, ...patch };
   if (idx === -1) {
-    return { ...state, parts: [...state.parts, part] };
+    return {
+      ...state,
+      nextSeq: state.nextSeq + 1,
+      parts: [...state.parts, { seq: state.nextSeq, kind: "tool", callId, ...patch }],
+    };
   }
+  const existing = state.parts[idx] as ToolPart;
   const parts = [...state.parts];
-  parts[idx] = part;
+  parts[idx] = { ...existing, ...patch };
   return { ...state, parts };
 };
 
-const notice = (state: PlaybackState, part: NoticePart): PlaybackState => ({
+const notice = (state: PlaybackState, part: Omit<NoticePart, "seq">): PlaybackState => ({
   ...state,
-  parts: [...state.parts, part],
+  nextSeq: state.nextSeq + 1,
+  parts: [...state.parts, { seq: state.nextSeq, ...part }],
 });
 
 // Switch EXAUSTIVO: o guard `never` no default quebra o typecheck se o SDK 3.x adicionar
@@ -134,7 +150,11 @@ export function applyEvent(state: PlaybackState, event: StudioEvent): PlaybackSt
       metrics.increment("unknown_events_total");
       return {
         ...state,
-        parts: [...state.parts, { kind: "unknown", type: (event as { type: string }).type ?? "?" }],
+        nextSeq: state.nextSeq + 1,
+        parts: [
+          ...state.parts,
+          { seq: state.nextSeq, kind: "unknown", type: (event as { type: string }).type ?? "?" },
+        ],
       };
     }
   }

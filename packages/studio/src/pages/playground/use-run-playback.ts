@@ -35,8 +35,9 @@ export function useRunPlayback(): RunPlayback {
       const controller = new AbortController();
       abortRef.current = controller;
       setState({
-        parts: [{ kind: "user", text: prompt }],
+        parts: [{ seq: 0, kind: "user", text: prompt }],
         isRunning: true,
+        nextSeq: 1,
       });
       setRawEvents([]);
       runLog?.startRun();

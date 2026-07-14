@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio integration validation: jornada completa pelas 5 superfícies com prova de métricas
+  dev não-zero; keys de renderização estáveis; lint preset recommended restaurado (M5 Final)
 - Studio Knowledge tab: browser de collections/documents/chunks + retrieval playground com
   scores e validação de query na fronteira (M5 T4.2)
 - Studio Memory tab: browser de memórias com escopo, busca e filtro sobre fixtures (M5 T4.1)

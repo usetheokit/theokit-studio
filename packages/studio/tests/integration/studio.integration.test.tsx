@@ -174,6 +174,73 @@ describe("Studio integration", () => {
     expect(await screen.findByRole("button", { name: /getting-started/i })).toBeTruthy();
   });
 
+  it("final_phase_all_five_surfaces_navigable_with_nonzero_metrics", async () => {
+    // Fase Final do plano: navega as 5 superfícies no app inteiro e prova as métricas
+    // do Global DoD (datasource_calls_total > 0; stream_events ≥ roteiro default).
+    const userEvent = (await import("@testing-library/user-event")).default;
+    const { DEFAULT_RUN } = await import("../../src/data/fixtures/run-script");
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/playground"] });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <App router={router} />
+      </DataSourceProvider>,
+    );
+    // 1. Playground: run completo
+    const select = await screen.findByRole("combobox", { name: /agent/i });
+    await userEvent.selectOptions(select, "support-agent");
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "onde está o pedido?");
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    expect(await screen.findByText(/chega dia 16/)).toBeTruthy();
+    // 2. Events
+    await userEvent.click(screen.getByRole("button", { name: /events/i }));
+    expect((await screen.findAllByTestId("event-row")).length).toBe(DEFAULT_RUN.length);
+    // 3. Memory
+    await userEvent.click(screen.getByRole("button", { name: /memory/i }));
+    expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
+    // 4. Knowledge
+    await userEvent.click(screen.getByRole("button", { name: /knowledge/i }));
+    expect(await screen.findByRole("button", { name: /product docs/i })).toBeTruthy();
+    // 5. Traces (placeholder honesto)
+    await userEvent.click(screen.getByRole("button", { name: /traces/i }));
+    expect((await screen.findAllByText(/theo-lens/)).length).toBeGreaterThan(0);
+
+    // Prova de métricas (wiring pillar c — ADR D5)
+    const snap = metrics.snapshot();
+    const datasourceTotal = Object.values(snap.datasource_calls_total).reduce((a, b) => a + b, 0);
+    expect(datasourceTotal).toBeGreaterThan(0);
+    expect(snap.stream_events_played_total.total).toBeGreaterThanOrEqual(DEFAULT_RUN.length);
+    expect(snap.datasource_calls_total.runAgent).toBe(1);
+  });
+
+  it("useRunLog_outside_provider_throws_contextual_message", async () => {
+    const { useRunLog } = await import("../../src/app/run-log");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    function Probe() {
+      useRunLog();
+      return null;
+    }
+    expect(() => render(<Probe />)).toThrow(/RunLogProvider.*composition root/);
+    spy.mockRestore();
+  });
+
+  it("route_error_renders_non_error_thrown_values", async () => {
+    const { RouteError } = await import("../../src/app/route-error");
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const router = createMemoryRouter([
+      {
+        path: "/",
+        element: <div />,
+        errorElement: <RouteError />,
+        loader: () => {
+          throw "string crua";
+        },
+      },
+    ]);
+    render(<RouterProvider router={router} />);
+    expect((await screen.findByRole("alert")).textContent).toContain("string crua");
+    spy.mockRestore();
+  });
+
   it("run_stream_plays_end_to_end_through_the_datasource", async () => {
     // Exercita o pipeline runAgent → play (stream-player) → eventos tipados do SDK.
     const ds = createFixtureDataSource({ scenario: "default" });

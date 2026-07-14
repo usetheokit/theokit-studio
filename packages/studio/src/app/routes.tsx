@@ -35,10 +35,6 @@ function NotFound() {
   );
 }
 
-// Páginas reais entram nas fases 3-4; os placeholders já renderizam o <h1> definitivo
-// de cada superfície (SEPA: os testes de navegação sobrevivem à troca do miolo).
-const placeholder = (label: string) => <SurfacePlaceholder title={label} />;
-
 export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
   return [
     {

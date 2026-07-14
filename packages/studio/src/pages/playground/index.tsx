@@ -87,8 +87,8 @@ export function PlaygroundPage() {
             description="Escolha um agente e envie um prompt — o stream de eventos tipados aparece aqui e no Event Inspector."
           />
         )}
-        {state.parts.map((part, i) => (
-          <PartView key={`${part.kind}-${i}`} part={part} />
+        {state.parts.map((part) => (
+          <PartView key={part.seq} part={part} />
         ))}
       </div>
       <form onSubmit={handleSubmit} className="mt-4 flex items-end gap-3">
