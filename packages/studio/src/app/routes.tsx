@@ -2,6 +2,8 @@ import { EmptyState } from "@usetheo/ui";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
 import { EventsPage } from "../pages/events";
+import { KnowledgePage } from "../pages/knowledge";
+import { MemoryPage } from "../pages/memory";
 import { PlaygroundPage } from "../pages/playground";
 import { TracesPage } from "../pages/traces";
 import { RouteError } from "./route-error";
@@ -55,8 +57,10 @@ export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
                 <PlaygroundPage />
               ) : s.path === "/events" ? (
                 <EventsPage />
+              ) : s.path === "/memory" ? (
+                <MemoryPage />
               ) : (
-                placeholder(s.label)
+                <KnowledgePage />
               ),
             errorElement: <RouteError />,
             handle: { label: s.label, section: s.section },

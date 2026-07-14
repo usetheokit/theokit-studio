@@ -158,6 +158,22 @@ describe("Studio integration", () => {
     expect(metrics.snapshot().datasource_calls_total.runAgent).toBe(1);
   });
 
+  it("memory_and_knowledge_tabs_render_fixture_data_through_the_gate", async () => {
+    // Cadeia exercitada: rota /memory → MemoryPage → ServiceGate('memory') → getMemories;
+    // navegação → KnowledgePage → ServiceGate('rag') → listCollections/listDocuments.
+    const userEvent = (await import("@testing-library/user-event")).default;
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/memory"] });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <App router={router} />
+      </DataSourceProvider>,
+    );
+    expect((await screen.findAllByTestId("memory-row")).length).toBeGreaterThan(0);
+    await userEvent.click(screen.getByRole("button", { name: /knowledge/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /product docs/i }));
+    expect(await screen.findByRole("button", { name: /getting-started/i })).toBeTruthy();
+  });
+
   it("run_stream_plays_end_to_end_through_the_datasource", async () => {
     // Exercita o pipeline runAgent → play (stream-player) → eventos tipados do SDK.
     const ds = createFixtureDataSource({ scenario: "default" });
