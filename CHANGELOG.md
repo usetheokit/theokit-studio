@@ -42,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Studio UI sem estilo (dogfood): root-cause era ordem de cascade layers — o
+  `tokens-v4.css` do design system abre `@layer utilities` antes do statement canônico,
+  fazendo o preflight (`* { padding: 0 }`) vencer todas as utilities; corrigido declarando
+  `@layer properties, theme, base, components, utilities;` como primeira linha do
+  entrypoint CSS + pipeline Tailwind único (sem styles.css pré-buildado) + preset e
+  content scan por realpath (o scanner do Tailwind v4 não segue symlinks do pnpm)
 - `review`: `consolidate_findings.py` só descobria findings `*.yml` e dropava
   silenciosamente os `*.yaml` dos agentes — o report consolidado saía READY_TO_MERGE com
   0 findings; agora descobre ambas as extensões (regression test adicionado; achado
