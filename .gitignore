@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+.env
+
+# Claude Code cycle kit — versioned (skills/rules/hooks/commands/scripts + settings).
+# Only caches and large/generated artifacts underneath are ignored.
+.claude/**/__pycache__/
+.claude/**/*.pyc
+.claude/knowledge-base/references/**
+.claude/knowledge-base/tools/**
+.claude/knowledge-base/discoveries/snapshots/**
+.claude/agents/**
+architect-output/
