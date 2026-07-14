@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio shell navegável: 5 superfícies com sidebar/breadcrumb/deep-linking, error
+  boundary por rota, bootstrap defensivo com startup-error e config seam do host (M5 T2.1)
 - Studio run-stream playback: roteiros tipados dos eventos reais do `@theokit/sdk` 3.4
   (`InteractionUpdate`/`RunEvent`, sem casts) + player com cancelamento (M5 T1.2)
 - Studio data layer (DIP): interface `StudioDataSource` + `FixtureDataSource` com cenários

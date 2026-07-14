@@ -1,12 +1,13 @@
 import { TheoUIProvider } from "@theokit/ui";
-import { Badge } from "@usetheo/ui";
+import type { createBrowserRouter } from "react-router";
+import { RouterProvider } from "react-router";
 
-export function App() {
+type StudioRouter = ReturnType<typeof createBrowserRouter>;
+
+export function App({ router }: { router: StudioRouter }) {
   return (
     <TheoUIProvider theme={{ defaultTheme: "violet-forge", defaultMode: "dark" }}>
-      <main data-testid="studio-smoke" className="flex min-h-screen items-center justify-center">
-        <Badge>TheoKit Studio</Badge>
-      </main>
+      <RouterProvider router={router} />
     </TheoUIProvider>
   );
 }

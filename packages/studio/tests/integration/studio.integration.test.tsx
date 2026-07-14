@@ -1,8 +1,14 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { App } from "../../src/app";
+import { buildRoutes } from "../../src/app/routes";
+import { Shell } from "../../src/app/shell";
+import { bootstrap, parseStudioConfig } from "../../src/bootstrap";
 import { DataSourceProvider, useDataSource } from "../../src/data/datasource";
 import { createFixtureDataSource } from "../../src/data/fixture-datasource";
 import { metrics } from "../../src/data/metrics";
+import { mount } from "../../src/main";
+import { renderStartupError } from "../../src/startup-error";
 
 // Teste de integração incremental (Fase Final expande para as 5 superfícies + prova
 // completa de métricas, per plano § Final Phase — reconciliado no log da iteração 1).
@@ -11,9 +17,14 @@ describe("Studio integration", () => {
     metrics.reset();
   });
 
-  it("mounts_the_full_app_shell", () => {
-    render(<App />);
-    expect(screen.getByTestId("studio-smoke")).toBeTruthy();
+  it("mounts_the_full_app_shell", async () => {
+    const router = createMemoryRouter(buildRoutes(), { initialEntries: ["/"] });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <App router={router} />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByTestId("studio-smoke")).toBeTruthy();
   });
 
   it("data_layer_serves_a_component_through_provider_and_counts_metrics", async () => {
@@ -32,6 +43,49 @@ describe("Studio integration", () => {
     );
     expect(await screen.findByTestId("probe")).toBeTruthy();
     expect(metrics.snapshot().datasource_calls_total.listAgents).toBe(1);
+  });
+
+  it("boot_path_mounts_the_app_via_mount_and_parsed_config", async () => {
+    document.body.innerHTML = '<div id="boot-root"></div>';
+    const rootEl = document.getElementById("boot-root");
+    if (!rootEl) throw new Error("setup");
+    await act(async () => {
+      mount(rootEl, parseStudioConfig({ scenario: "default" }));
+    });
+    await waitFor(() => {
+      expect(rootEl.querySelector('[data-testid="studio-smoke"]')).toBeTruthy();
+    });
+    document.body.innerHTML = "";
+  });
+
+  it("bootstrap_without_root_renders_startup_error_alert", async () => {
+    document.body.innerHTML = "";
+    await expect(bootstrap()).rejects.toThrow(/#root/);
+    const alertEl = document.querySelector('[role="alert"]');
+    expect(alertEl?.textContent).toContain("TheoKit Studio failed to start");
+    document.body.innerHTML = "";
+  });
+
+  it("startup_error_direct_render_is_accessible", () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    renderStartupError(new Error("integration boom"), { mode: "development" });
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("integration boom");
+    document.body.innerHTML = "";
+  });
+
+  it("shell_renders_three_nav_sections_directly", async () => {
+    const router = createMemoryRouter([
+      { path: "/", element: <Shell />, children: [{ index: true, element: <div /> }] },
+    ]);
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <RouterProvider router={router} />
+      </DataSourceProvider>,
+    );
+    const smoke = await screen.findByTestId("studio-smoke");
+    for (const section of ["Playground", "Observability", "Data"]) {
+      expect(smoke.textContent).toContain(section);
+    }
   });
 
   it("run_stream_plays_end_to_end_through_the_datasource", async () => {
