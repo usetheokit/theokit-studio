@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio data layer (DIP): interface `StudioDataSource` + `FixtureDataSource` com cenários
+  default/empty/offline, erros tipados de fronteira e métricas dev in-memory (M5 T1.1)
 - `@theokit/studio` package scaffold: Vite + React 19 + TS strict + Vitest + Tailwind v4 +
   `@theokit/ui`/`@usetheo/ui`, smoke test verde e dev server funcional (M5 T0.1)
 - Roadmap amended: added M5 "Studio UX shell" — all Studio screens on fixtures, no
