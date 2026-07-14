@@ -1,5 +1,7 @@
 import { Badge, EmptyState, Input } from "@usetheo/ui";
 import { useEffect, useState } from "react";
+import { getSurface } from "../../app/nav-items";
+import { PageHeader } from "../../app/page-header";
 import { ServiceGate } from "../../app/service-state";
 import { useDataSource } from "../../data/datasource";
 import type { MemoryRecord, MemoryScope } from "../../data/types";
@@ -98,13 +100,17 @@ function MemoryList() {
       ) : (
         <ol className="mt-4 space-y-2">
           {visible.map((m) => (
-            <li key={m.id} data-testid="memory-row" className="rounded border border-white/10 p-3">
+            <li
+              key={m.id}
+              data-testid="memory-row"
+              className="rounded-xl border border-border/40 bg-card/60 p-4 transition-colors hover:border-border"
+            >
               <div className="flex items-center gap-2">
                 <Badge>{m.scope}</Badge>
-                <span className="text-xs opacity-60">{m.createdAt}</span>
+                <span className="font-mono text-muted-foreground text-xs">{m.createdAt}</span>
               </div>
               <p className="mt-2">{m.content}</p>
-              <div className="mt-2 flex gap-2 text-xs opacity-70">
+              <div className="mt-2 flex gap-2 text-muted-foreground text-xs">
                 {m.entities.map((e) => (
                   <code key={e}>{e}</code>
                 ))}
@@ -117,14 +123,13 @@ function MemoryList() {
   );
 }
 
+const surface = getSurface("/memory");
+
 export function MemoryPage() {
   return (
-    <section className="p-6">
-      <h1 className="text-xl font-semibold">Memory</h1>
-      <p className="mt-1 text-sm opacity-70">
-        Memórias com escopo do theo-memory (fixtures no M5; REST real no M3).
-      </p>
-      <div className="mt-4">
+    <section>
+      <PageHeader icon={surface.icon} title="Memory" description={surface.description} />
+      <div className="px-8 py-6">
         <ServiceGate service="memory">
           <MemoryList />
         </ServiceGate>

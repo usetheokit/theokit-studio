@@ -1,10 +1,15 @@
 import { ChatMessageContent, ChatMessageRoot, ToolCallCard } from "@theokit/ui";
-import { Badge, Button, EmptyState, Textarea } from "@usetheo/ui";
+import { Badge, Button, Textarea } from "@usetheo/ui";
+import { Bot, SendHorizonal, Sparkles } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
+import { getSurface } from "../../app/nav-items";
+import { PageHeader } from "../../app/page-header";
 import { useDataSource } from "../../data/datasource";
 import type { AgentSummary } from "../../data/types";
 import type { ChatPart } from "./event-to-part";
 import { useRunPlayback } from "./use-run-playback";
+
+const surface = getSurface("/playground");
 
 // Q2 (plano § Unresolved) resolvida: em vez de useAgentStream (transport próprio),
 // composição controlada com ChatMessage.Root/Content + ToolCallCard — dogfooding direto
@@ -34,16 +39,16 @@ function PartView({ part }: { part: ChatPart }) {
       );
     case "notice":
       return (
-        <div role="status" className="my-2">
+        <div role="status" className="my-1 flex items-center gap-2">
           <Badge variant={part.notice === "rate-limit" ? "warning" : "destructive"}>
             {part.notice}
           </Badge>
-          <span className="ml-2 text-sm opacity-80">{part.detail}</span>
+          <span className="text-muted-foreground text-sm">{part.detail}</span>
         </div>
       );
     case "unknown":
       return (
-        <div role="note" className="my-2 text-sm opacity-60">
+        <div role="note" className="my-1 text-muted-foreground text-sm">
           evento desconhecido: {part.type}
         </div>
       );
@@ -86,54 +91,76 @@ export function PlaygroundPage() {
     }
   };
 
+  const selectedAgent = agents.find((a) => a.id === agentId);
+
   return (
-    <section className="flex h-full flex-col p-6">
-      <h1 className="text-xl font-semibold">Playground</h1>
+    <section className="flex h-full flex-col">
+      <PageHeader icon={surface.icon} title="Playground" description={surface.description} />
       {loadError && (
-        <p role="alert" className="mt-2 text-sm text-red-400">
+        <p role="alert" className="mx-8 mt-4 text-red-400 text-sm">
           {loadError}
         </p>
       )}
-      <div className="mt-4 flex-1 space-y-3 overflow-auto" data-testid="chat-thread">
-        {state.parts.length === 0 && (
-          <EmptyState
-            title="Run an agent"
-            description="Escolha um agente e envie um prompt — o stream de eventos tipados aparece aqui e no Event Inspector."
-          />
-        )}
-        {state.parts.map((part) => (
-          <PartView key={part.seq} part={part} />
-        ))}
+      <div className="flex-1 overflow-auto px-8 py-6" data-testid="chat-thread">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3">
+          {state.parts.length === 0 && (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/40 border-dashed bg-card/40 px-8 py-16 text-center">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+                <Sparkles className="size-6" aria-hidden />
+              </div>
+              <h2 className="font-display font-semibold text-foreground text-lg">Run an agent</h2>
+              <p className="max-w-md text-muted-foreground text-sm">
+                Escolha um agente e envie um prompt — o stream de eventos tipados aparece aqui e no
+                Event Inspector.
+              </p>
+            </div>
+          )}
+          {state.parts.map((part) => (
+            <PartView key={part.seq} part={part} />
+          ))}
+        </div>
       </div>
-      <form onSubmit={handleSubmit} className="mt-4 flex items-end gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Agent
-          <select
-            aria-label="Agent"
-            className="rounded border border-white/20 bg-transparent p-2"
-            value={agentId}
-            onChange={(e) => setAgentId(e.target.value)}
-          >
-            <option value="">— selecione —</option>
-            {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Textarea
-          aria-label="Prompt"
-          className="flex-1"
-          rows={2}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Pergunte algo ao agente…"
-        />
-        <Button type="submit" disabled={agentId.length === 0}>
-          Send
-        </Button>
-      </form>
+      <div className="border-border/40 border-t bg-background/80 px-8 py-4 backdrop-blur">
+        <form onSubmit={handleSubmit} className="mx-auto max-w-3xl">
+          <div className="rounded-2xl border border-border/60 bg-card shadow-lg shadow-black/20 transition-colors focus-within:border-primary/50">
+            <Textarea
+              aria-label="Prompt"
+              className="min-h-[68px] resize-none border-0 bg-transparent px-4 pt-3 shadow-none focus-visible:ring-0"
+              rows={2}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Pergunte algo ao agente…"
+            />
+            <div className="flex items-center justify-between gap-3 px-3 pb-3">
+              <label className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/60 px-2.5 py-1.5 text-sm">
+                <Bot className="size-4 text-primary" aria-hidden />
+                <select
+                  aria-label="Agent"
+                  className="bg-transparent text-foreground text-sm outline-none"
+                  value={agentId}
+                  onChange={(e) => setAgentId(e.target.value)}
+                >
+                  <option value="">— selecione —</option>
+                  {agents.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedAgent?.model && (
+                  <span className="hidden text-muted-foreground text-xs sm:inline">
+                    {selectedAgent.model}
+                  </span>
+                )}
+              </label>
+              <Button type="submit" disabled={agentId.length === 0} className="gap-1.5">
+                Send
+                <SendHorizonal className="size-4" aria-hidden />
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
     </section>
   );
 }

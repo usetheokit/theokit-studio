@@ -11,7 +11,7 @@ describe("Traces placeholder (T4.3)", () => {
         <TracesPage />
       </DataSourceProvider>,
     );
-    const lensCopy = await screen.findByText(/theo-lens/);
+    const lensCopy = (await screen.findAllByText(/theo-lens/))[0];
     expect(lensCopy).toBeTruthy();
     expect(screen.getByText(/theokit studio up/)).toBeTruthy();
     const traceTreeEl = screen.queryByTestId("trace-tree");

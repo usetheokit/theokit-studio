@@ -1,5 +1,8 @@
 import { Badge, Button, EmptyState, Input } from "@usetheo/ui";
+import { FolderOpen } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
+import { getSurface } from "../../app/nav-items";
+import { PageHeader } from "../../app/page-header";
 import { ServiceGate } from "../../app/service-state";
 import { useDataSource } from "../../data/datasource";
 import type { KnowledgeCollection, KnowledgeDocument, RetrievalResult } from "../../data/types";
@@ -81,14 +84,22 @@ function KnowledgeBrowser() {
             <li key={c.id}>
               <button
                 type="button"
-                className={`w-full rounded p-2 text-left hover:bg-white/5 ${
-                  selected?.id === c.id ? "bg-white/10" : ""
+                className={`group flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left transition-colors ${
+                  selected?.id === c.id
+                    ? "border border-primary/30 bg-primary/10 text-foreground"
+                    : "border border-transparent text-muted-foreground hover:bg-card hover:text-foreground"
                 }`}
                 onClick={() => void openCollection(c)}
               >
-                {c.name}
-                <span className="ml-2 text-xs opacity-60">
-                  {c.documentCount} docs · {c.strategy}
+                <FolderOpen
+                  className={`size-4 shrink-0 ${selected?.id === c.id ? "text-primary" : "text-muted-foreground/70"}`}
+                  aria-hidden
+                />
+                <span className="min-w-0">
+                  <span className="block truncate font-medium text-sm">{c.name}</span>
+                  <span className="block text-muted-foreground text-xs">
+                    {c.documentCount} docs · {c.strategy}
+                  </span>
                 </span>
               </button>
             </li>
@@ -149,7 +160,7 @@ function KnowledgeBrowser() {
                     <li key={d.id}>
                       <button
                         type="button"
-                        className="w-full rounded p-2 text-left hover:bg-white/5"
+                        className="w-full rounded-lg border border-border/40 bg-card/60 px-3 py-2 text-left transition-colors hover:border-border"
                         onClick={() => setOpenDoc(d)}
                       >
                         {d.name}
@@ -180,16 +191,17 @@ function KnowledgeBrowser() {
   );
 }
 
+const surface = getSurface("/knowledge");
+
 export function KnowledgePage() {
   return (
-    <section className="p-6">
-      <h1 className="text-xl font-semibold">Knowledge</h1>
-      <p className="mt-1 text-sm opacity-70">
-        Collections, documentos e retrieval playground do theo-rag (fixtures no M5).
-      </p>
-      <ServiceGate service="rag">
-        <KnowledgeBrowser />
-      </ServiceGate>
+    <section>
+      <PageHeader icon={surface.icon} title="Knowledge" description={surface.description} />
+      <div className="px-8 py-6">
+        <ServiceGate service="rag">
+          <KnowledgeBrowser />
+        </ServiceGate>
+      </div>
     </section>
   );
 }

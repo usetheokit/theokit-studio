@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio design pass (dogfood): ícones lucide por superfície (dep já presente via
+  @theokit/ui), logo mark violet, PageHeader com tile de ícone, topbar com breadcrumb +
+  status pill, composer flutuante com seletor de agente e chip do modelo, Events com
+  badges coloridos por categoria e rows numeradas, atmosfera radial Violet Forge
 - Studio integration validation: jornada completa pelas 5 superfícies com prova de métricas
   dev não-zero; keys de renderização estáveis; lint preset recommended restaurado (M5 Final)
 - Studio Knowledge tab: browser de collections/documents/chunks + retrieval playground com

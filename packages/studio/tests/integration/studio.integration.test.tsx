@@ -98,7 +98,7 @@ describe("Studio integration", () => {
         <App router={router} />
       </DataSourceProvider>,
     );
-    expect(await screen.findByText(/theo-lens/)).toBeTruthy();
+    expect((await screen.findAllByText(/theo-lens/)).length).toBeGreaterThan(0);
     expect(await screen.findByText(/theokit studio up/)).toBeTruthy();
     expect(screen.queryByTestId("trace-tree")).toBeNull();
   });
@@ -109,7 +109,7 @@ describe("Studio integration", () => {
         <TracesPage />
       </DataSourceProvider>,
     );
-    expect(await screen.findByText(/theo-lens/)).toBeTruthy();
+    expect((await screen.findAllByText(/theo-lens/)).length).toBeGreaterThan(0);
   });
 
   it("service_offline_state_renders_actionable_hint_directly", () => {
