@@ -19,3 +19,6 @@
 # kotlin
 # ruby
 # csharp
+
+# Formato: LANGUAGE | MANIFEST | STATUS | NOTES
+typescript | package.json | ENABLED | monorepo pnpm — packages/studio (M5)

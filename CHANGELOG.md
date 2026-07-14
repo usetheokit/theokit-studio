@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `genkit-ai/genkit` (Apache-2.0) — catalog in ROADMAP § State-of-the-art references
 
 ### Changed
+- `code-quality`: linguagem `typescript` habilitada (primeiro pacote TS do monorepo — M5)
 
 ### Deprecated
 
