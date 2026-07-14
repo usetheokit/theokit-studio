@@ -8,5 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0] - 2026-07-14
+
+### Added
 - Repository founded: README, CLAUDE.md contract, ROADMAP (M0–M4), architecture proposal and
   verified competitive deep-research under `docs/` (bootstrap, no issue ref yet)
+
