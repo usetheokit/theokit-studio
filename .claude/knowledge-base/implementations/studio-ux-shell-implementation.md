@@ -20,16 +20,27 @@ conforme Global DoD do plano.
 
 | # | Task | Phase | Status |
 |---|---|---|---|
-| 1 | T0.1 — scaffold pacote + toolchain | Phase 0 | pending |
-| 2 | T1.1 — StudioDataSource + fixtures + metrics | Phase 1 | pending |
-| 3 | T1.2 — run-script + stream player | Phase 1 | pending |
-| 4 | T2.1 — rotas + sidebar + bootstrap | Phase 2 | pending |
-| 5 | T2.2 — ServiceGate + estados | Phase 2 | pending |
-| 6 | T3.1 — Playground | Phase 3 | pending |
-| 7 | T3.2 — Event Inspector | Phase 3 | pending |
-| 8 | T4.1 — Memory | Phase 4 | pending |
-| 9 | T4.2 — Knowledge | Phase 4 | pending |
-| 10 | T4.3 — Traces placeholder | Phase 4 | pending |
-| 11 | Final — Integration Validation | Final | pending |
+| 1 | T0.1 — scaffold pacote + toolchain | Phase 0 | committed |
+| 2 | T1.1 — StudioDataSource + fixtures + metrics | Phase 1 | committed |
+| 3 | T1.2 — run-script + stream player | Phase 1 | committed |
+| 4 | T2.1 — rotas + sidebar + bootstrap | Phase 2 | committed |
+| 5 | T2.2 — ServiceGate + estados | Phase 2 | committed |
+| 6 | T3.1 — Playground | Phase 3 | committed |
+| 7 | T3.2 — Event Inspector | Phase 3 | committed |
+| 8 | T4.1 — Memory | Phase 4 | committed |
+| 9 | T4.2 — Knowledge | Phase 4 | committed |
+| 10 | T4.3 — Traces placeholder | Phase 4 | committed |
+| 11 | Final — Integration Validation | Final | committed |
 
 Mini-review de fase após fechar cada Phase 0/1/2/3/4 (mini_review.py).
+
+## Resultado (2026-07-14)
+
+Todas as 10 tasks + Fase Final committed (16 commits em develop). Wiring triad por task
+(a/b PASS; c provado no integration test via metrics não-zero — ADR D5). Mini-reviews das
+fases 0/1/2/3/4: PHASE_REVIEW_PASS. Gates finais: 86/86 testes, coverage 98.77% (src/data
+97.9% ≥ 90; funcs 100%), build ✓, typecheck 0 erros, biome 0 (preset recommended
+restaurado após o migrate tê-lo silenciado). SEPA consultado em todas as iterações
+(logs em studio-ux-shell/sepa-iterations/ + achados aplicados por task nos iteration-logs).
+
+<promise>IMPLEMENTATION_COMPLETE</promise>
