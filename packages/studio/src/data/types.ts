@@ -12,6 +12,8 @@ export interface ToolSummary {
   id: string;
   name: string;
   description: string;
+  /** quantos agentes registrados usam esta tool (0 quando nenhum). */
+  usedBy?: number;
 }
 
 export interface SkillSummary {
@@ -20,11 +22,93 @@ export interface SkillSummary {
   description: string;
 }
 
+export interface WorkflowStep {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface WorkflowRunSummary {
+  id: string;
+  status: "success" | "failed";
+  finishedAt: string;
+}
+
 export interface WorkflowSummary {
   id: string;
   name: string;
   description: string;
-  steps: number;
+  steps: WorkflowStep[];
+  /** rótulo do input esperado pelo primeiro step (painel de run do detail). */
+  inputLabel: string;
+  recentRuns: WorkflowRunSummary[];
+}
+
+export interface ProcessorSummary {
+  id: string;
+  name: string;
+  description?: string;
+  /** hooks do pipeline que o processor implementa (matriz de capacidades). */
+  hooks: {
+    input: boolean;
+    step: boolean;
+    stream: boolean;
+    result: boolean;
+  };
+  usedBy: number;
+}
+
+export interface McpServerSummary {
+  id: string;
+  name: string;
+  url: string;
+  agents: number;
+  tools: number;
+  workflows: number;
+}
+
+export interface ScorerSummary {
+  id: string;
+  name: string;
+  description: string;
+  source: "code" | "studio";
+  agents: number;
+}
+
+export interface DatasetSummary {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  target: string;
+  updatedAt: string;
+  experiments: number;
+  /** taxa de sucesso agregada dos experiments (0..1). */
+  successRate: number;
+}
+
+export interface ExperimentSummary {
+  id: string;
+  dataset: string;
+  target: string;
+  status: "completed" | "running" | "failed";
+  items: number;
+  succeeded: number;
+  failed: number;
+  finishedAt: string;
+}
+
+export interface WorkspaceFileEntry {
+  name: string;
+  kind: "dir" | "file";
+  /** tamanho em bytes (apenas kind === "file"). */
+  sizeBytes?: number;
+}
+
+export interface WorkspaceSummary {
+  id: string;
+  name: string;
+  files: WorkspaceFileEntry[];
 }
 
 export type MemoryScope = "user" | "session" | "agent";

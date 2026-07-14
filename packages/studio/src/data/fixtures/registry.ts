@@ -1,4 +1,11 @@
-import type { AgentSummary, SkillSummary, ToolSummary, WorkflowSummary } from "../types";
+import type {
+  AgentSummary,
+  McpServerSummary,
+  ProcessorSummary,
+  SkillSummary,
+  ToolSummary,
+  WorkflowSummary,
+} from "../types";
 
 export const fixtureAgents: readonly AgentSummary[] = Object.freeze([
   {
@@ -23,13 +30,14 @@ export const fixtureAgents: readonly AgentSummary[] = Object.freeze([
 
 // Cenário de volume (Drawback 3 do plano): 50+ itens para validar listas grandes.
 export const fixtureTools: readonly ToolSummary[] = Object.freeze([
-  { id: "web-search", name: "webSearch", description: "Web search with allowlist" },
-  { id: "read-file", name: "readFile", description: "Reads workspace files" },
-  { id: "write-file", name: "writeFile", description: "Writes workspace files" },
+  { id: "web-search", name: "webSearch", description: "Web search with allowlist", usedBy: 2 },
+  { id: "read-file", name: "readFile", description: "Reads workspace files", usedBy: 1 },
+  { id: "write-file", name: "writeFile", description: "Writes workspace files", usedBy: 1 },
   ...Array.from({ length: 52 }, (_, i) => ({
     id: `mcp-tool-${i + 1}`,
     name: `mcpTool${i + 1}`,
     description: `Tool ${i + 1} exposed by a sample MCP server`,
+    usedBy: i % 3 === 0 ? 1 : 0,
   })),
 ]);
 
@@ -42,13 +50,68 @@ export const fixtureWorkflows: readonly WorkflowSummary[] = Object.freeze([
   {
     id: "onboarding",
     name: "customer-onboarding",
-    description: "Customer onboarding flow",
-    steps: 4,
+    description: "Customer onboarding flow from signup to first value",
+    inputLabel: "Customer email",
+    steps: [
+      { id: "verify-account", name: "verify-account", description: "Verify the new account" },
+      {
+        id: "provision-workspace",
+        name: "provision-workspace",
+        description: "Provision the customer workspace",
+      },
+      {
+        id: "send-welcome",
+        name: "send-welcome",
+        description: "Send the welcome sequence",
+      },
+      {
+        id: "schedule-checkin",
+        name: "schedule-checkin",
+        description: "Schedule the first check-in",
+      },
+    ],
+    recentRuns: [
+      { id: "3f2a9c1d-run", status: "success", finishedAt: "2026-07-14T17:39:00Z" },
+      { id: "8b1e4f7a-run", status: "success", finishedAt: "2026-07-14T16:02:00Z" },
+      { id: "c9d02e5b-run", status: "failed", finishedAt: "2026-07-13T22:14:00Z" },
+    ],
   },
   {
     id: "escalation",
     name: "ticket-escalation",
-    description: "Ticket escalation flow",
-    steps: 3,
+    description: "Escalates unresolved tickets to a human queue",
+    inputLabel: "Ticket ID",
+    steps: [
+      { id: "classify", name: "classify", description: "Classify severity and topic" },
+      { id: "attempt-answer", name: "attempt-answer", description: "Try an automated answer" },
+      { id: "handoff", name: "handoff", description: "Hand off to the on-call human" },
+    ],
+    recentRuns: [{ id: "77aa01bc-run", status: "success", finishedAt: "2026-07-14T12:30:00Z" }],
+  },
+]);
+
+export const fixtureProcessors: readonly ProcessorSummary[] = Object.freeze([
+  {
+    id: "unicode-normalizer",
+    name: "Unicode Normalizer",
+    hooks: { input: true, step: false, stream: false, result: false },
+    usedBy: 1,
+  },
+  {
+    id: "moderation",
+    name: "Moderation",
+    hooks: { input: true, step: false, stream: true, result: true },
+    usedBy: 1,
+  },
+]);
+
+export const fixtureMcpServers: readonly McpServerSummary[] = Object.freeze([
+  {
+    id: "demo-mcp-server",
+    name: "Demo MCP Server",
+    url: "http://localhost:8787/mcp/demo-mcp-server/sse",
+    agents: 1,
+    tools: 5,
+    workflows: 1,
   },
 ]);

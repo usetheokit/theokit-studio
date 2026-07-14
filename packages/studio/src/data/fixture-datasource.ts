@@ -1,12 +1,21 @@
 import type { StudioDataSource } from "./datasource";
+import { fixtureDatasets, fixtureExperiments, fixtureScorers } from "./fixtures/evaluation";
 import {
   fixtureCollections,
   fixtureDocuments,
   fixtureRetrievalResults,
 } from "./fixtures/knowledge";
 import { fixtureMemories } from "./fixtures/memory";
-import { fixtureAgents, fixtureSkills, fixtureTools, fixtureWorkflows } from "./fixtures/registry";
+import {
+  fixtureAgents,
+  fixtureMcpServers,
+  fixtureProcessors,
+  fixtureSkills,
+  fixtureTools,
+  fixtureWorkflows,
+} from "./fixtures/registry";
 import { DEFAULT_RUN } from "./fixtures/run-script";
+import { fixtureWorkspaces } from "./fixtures/workspace";
 import { metrics } from "./metrics";
 import { play } from "./stream-player";
 import {
@@ -72,6 +81,12 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
       counted("listSkills", isEmpty ? [] : [...fixtureSkills]),
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
+    listProcessors: () => counted("listProcessors", isEmpty ? [] : [...fixtureProcessors]),
+    listMcpServers: () => counted("listMcpServers", isEmpty ? [] : [...fixtureMcpServers]),
+    listScorers: () => counted("listScorers", isEmpty ? [] : [...fixtureScorers]),
+    listDatasets: () => counted("listDatasets", isEmpty ? [] : [...fixtureDatasets]),
+    listExperiments: () => counted("listExperiments", isEmpty ? [] : [...fixtureExperiments]),
+    listWorkspaces: () => counted("listWorkspaces", isEmpty ? [] : [...fixtureWorkspaces]),
 
     async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal) {
       metrics.increment("datasource_calls_total", "runAgent");

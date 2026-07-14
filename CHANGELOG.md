@@ -25,6 +25,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)
 
 ### Added
+- Studio Mastra-parity screens (dogfood, tela a tela contra o Mastra Studio local):
+  Workflows (lista + detail com grafo vertical de steps, painel de run honesto
+  desabilitado em fixtures e recent runs), Processors (matriz de capacidades
+  input/step/stream/result), MCP Servers, Tools (55 itens com filtro), Workspaces
+  (file browser read-only), Request Context (editor JSON com validação na fronteira e
+  save em memória), Evaluation Overview (cards de contagem) + Scorers + Datasets +
+  Experiments, Metrics (métricas REAIS in-memory do dev loop — window.__STUDIO_METRICS__),
+  Logs (empty state honesto) e Settings (Theme + endpoints do stack read-only);
+  interface StudioDataSource ganha listProcessors/listMcpServers/listScorers/
+  listDatasets/listExperiments/listWorkspaces; componente compartilhado EntityTable +
+  hook useListing (DRY na 4ª repetição do boilerplate de listagem) (M5 dogfood)
 - Studio design pass (dogfood): ícones lucide por superfície (dep já presente via
   @theokit/ui), logo mark violet, PageHeader com tile de ícone, topbar com breadcrumb +
   status pill, composer flutuante com seletor de agente e chip do modelo, Events com

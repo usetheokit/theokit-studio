@@ -1,16 +1,22 @@
 import { createContext, useContext } from "react";
 import type {
   AgentSummary,
+  DatasetSummary,
+  ExperimentSummary,
   KnowledgeCollection,
   KnowledgeDocument,
+  McpServerSummary,
   MemoryRecord,
   MemoryScope,
+  ProcessorSummary,
   RetrievalResult,
+  ScorerSummary,
   ServiceHealthMap,
   SkillSummary,
   StudioRunEvent,
   ToolSummary,
   WorkflowSummary,
+  WorkspaceSummary,
 } from "./types";
 // Contrato único de dados das 5 superfícies (ADR D2 — DIP: o domínio da UI define a
 // interface; adapters implementam. M5: FixtureDataSource; M1+: adapters reais).
@@ -20,6 +26,12 @@ export interface StudioDataSource {
   listTools(): Promise<ToolSummary[]>;
   listSkills(): Promise<SkillSummary[]>;
   listWorkflows(): Promise<WorkflowSummary[]>;
+  listProcessors(): Promise<ProcessorSummary[]>;
+  listMcpServers(): Promise<McpServerSummary[]>;
+  listScorers(): Promise<ScorerSummary[]>;
+  listDatasets(): Promise<DatasetSummary[]>;
+  listExperiments(): Promise<ExperimentSummary[]>;
+  listWorkspaces(): Promise<WorkspaceSummary[]>;
   runAgent(
     agentId: string,
     prompt: string,
