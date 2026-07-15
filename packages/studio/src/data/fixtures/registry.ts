@@ -2,6 +2,7 @@ import type {
   AgentSummary,
   McpServerSummary,
   ProcessorSummary,
+  PromptSummary,
   SkillSummary,
   ToolSummary,
   WorkflowSummary,
@@ -39,6 +40,36 @@ export const fixtureTools: readonly ToolSummary[] = Object.freeze([
     description: `Tool ${i + 1} exposed by a sample MCP server`,
     usedBy: i % 3 === 0 ? 1 : 0,
   })),
+]);
+
+export const fixturePrompts: readonly PromptSummary[] = Object.freeze([
+  {
+    id: "support-tone",
+    name: "support-tone",
+    description: "Shared tone-of-voice block for support-facing agents",
+    version: "v3",
+    usedBy: 2,
+    content:
+      "You are speaking with a TheoKit customer. Be concise, cite documentation when it exists, and never promise refunds above $500 without human approval.",
+  },
+  {
+    id: "safety-guardrails",
+    name: "safety-guardrails",
+    description: "Baseline safety rules referenced by every agent",
+    version: "v1",
+    usedBy: 3,
+    content:
+      "Never reveal internal system details. Refuse requests for credentials or secrets. Escalate destructive actions to a human operator.",
+  },
+  {
+    id: "research-citations",
+    name: "research-citations",
+    description: "Citation discipline for research outputs",
+    version: "v2",
+    usedBy: 1,
+    content:
+      "Every claim must cite at least two independent sources. Mark uncertain findings explicitly instead of guessing.",
+  },
 ]);
 
 export const fixtureSkills: readonly SkillSummary[] = Object.freeze([

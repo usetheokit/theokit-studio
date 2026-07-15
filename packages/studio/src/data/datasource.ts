@@ -9,6 +9,7 @@ import type {
   MemoryRecord,
   MemoryScope,
   ProcessorSummary,
+  PromptSummary,
   RetrievalResult,
   ScorerSummary,
   ServiceHealthMap,
@@ -25,6 +26,7 @@ export interface StudioDataSource {
   listAgents(): Promise<AgentSummary[]>;
   listTools(): Promise<ToolSummary[]>;
   listSkills(): Promise<SkillSummary[]>;
+  listPrompts(): Promise<PromptSummary[]>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   listProcessors(): Promise<ProcessorSummary[]>;
   listMcpServers(): Promise<McpServerSummary[]>;

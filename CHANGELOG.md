@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Prompts (dogfood, tela que faltava da paridade Mastra): lista de prompt blocks
+  reutilizáveis/versionados (Name | Description | Version | Used by, com filtro),
+  detail read-only com o conteúdo publicado e nota honesta (edição/versionamento chegam
+  com o registry real), botão Create Prompt como fake door honesto; item "Prompts" no
+  menu raiz entre Agents e Workflows (ordem Mastra); StudioDataSource ganha
+  listPrompts() com fixtures (M5 dogfood)
 - Studio MCP tool detail (dogfood): cada tool exposta no detail do server agora é
   clicável e abre o detail com descrição, form "Input Data" derivado do input schema
   da fixture (labels + required), Submit desabilitado com nota honesta (fixtures) e

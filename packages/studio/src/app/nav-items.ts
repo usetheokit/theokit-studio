@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   ListChecks,
   type LucideIcon,
+  MessageSquareText,
   Plug,
   ScrollText,
   Search,
@@ -56,6 +57,12 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     label: "Agents",
     icon: Bot,
     description: "Chat with any registered agent and watch the typed event stream live.",
+  },
+  {
+    path: "/prompts",
+    label: "Prompts",
+    icon: MessageSquareText,
+    description: "Reusable, versioned prompt blocks referenced by your agents.",
   },
   {
     path: "/workflows",
@@ -283,6 +290,7 @@ export const MENUS: Record<string, MenuDefinition> = {
       {
         items: [
           item("/agents"),
+          item("/prompts"),
           item("/workflows"),
           item("/processors"),
           item("/mcp-servers"),

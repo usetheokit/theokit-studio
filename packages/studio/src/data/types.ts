@@ -22,6 +22,17 @@ export interface SkillSummary {
   description: string;
 }
 
+export interface PromptSummary {
+  id: string;
+  name: string;
+  description: string;
+  /** versão publicada do bloco (prompt-ops: overrides versionados sobre o baseline). */
+  version: string;
+  /** quantos agentes referenciam este bloco nas instructions. */
+  usedBy: number;
+  content: string;
+}
+
 export interface WorkflowStep {
   id: string;
   name: string;

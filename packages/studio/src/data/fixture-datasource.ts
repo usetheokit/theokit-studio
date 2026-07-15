@@ -10,6 +10,7 @@ import {
   fixtureAgents,
   fixtureMcpServers,
   fixtureProcessors,
+  fixturePrompts,
   fixtureSkills,
   fixtureTools,
   fixtureWorkflows,
@@ -79,6 +80,7 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listTools: (): Promise<ToolSummary[]> => counted("listTools", isEmpty ? [] : [...fixtureTools]),
     listSkills: (): Promise<SkillSummary[]> =>
       counted("listSkills", isEmpty ? [] : [...fixtureSkills]),
+    listPrompts: () => counted("listPrompts", isEmpty ? [] : [...fixturePrompts]),
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
     listProcessors: () => counted("listProcessors", isEmpty ? [] : [...fixtureProcessors]),

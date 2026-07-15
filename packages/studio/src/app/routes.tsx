@@ -17,6 +17,7 @@ import { MetricsPage } from "../pages/metrics";
 import { PlannedSurfacePage } from "../pages/planned";
 import { PlaygroundPage } from "../pages/playground";
 import { ProcessorsPage } from "../pages/processors";
+import { PromptsPage } from "../pages/prompts";
 import { RequestContextPage } from "../pages/request-context";
 import { SettingsPage } from "../pages/settings";
 import { ToolsPage } from "../pages/tools";
@@ -41,6 +42,7 @@ function NotFound() {
 // honesto (PlannedSurfacePage) — IA Mastra-parity, dogfood 2026-07-14.
 const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
   "/agents": <PlaygroundPage />,
+  "/prompts": <PromptsPage />,
   "/workflows": <WorkflowsPage />,
   "/processors": <ProcessorsPage />,
   "/mcp-servers": <McpServersPage />,
