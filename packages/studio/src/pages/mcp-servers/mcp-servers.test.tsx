@@ -64,7 +64,10 @@ describe("MCP Servers (Mastra-parity clone)", () => {
 
     expect(await screen.findByTestId("mcp-tool-detail")).toBeTruthy();
     // Form derivado do input schema da fixture (2 campos do refundOrder).
-    expect(screen.getByLabelText(/order id/i)).toBeTruthy();
+    // Fake door SÓ na execução: os campos aceitam digitação (dogfood 2026-07-15).
+    const orderId = screen.getByLabelText(/order id/i) as HTMLInputElement;
+    await userEvent.type(orderId, "ORD-1234");
+    expect(orderId.value).toBe("ORD-1234");
     expect(screen.getByLabelText(/amount \(usd\)/i)).toBeTruthy();
     // Submit desabilitado em fixtures mode (honestidade — nada de invocação simulada).
     const submit = screen.getByRole("button", { name: /submit/i }) as HTMLButtonElement;

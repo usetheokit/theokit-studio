@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
+  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
+  honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Security
 

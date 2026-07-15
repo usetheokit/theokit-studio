@@ -54,9 +54,8 @@ function WorkflowDetail({ workflow, onBack }: { workflow: WorkflowSummary; onBac
             </label>
             <input
               id="workflow-run-input"
-              className="mt-1.5 h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-foreground text-sm outline-none placeholder:text-muted-foreground"
+              className="mt-1.5 h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50"
               placeholder={workflow.inputLabel}
-              disabled
             />
           </div>
           <Button className="mt-3 w-full gap-1.5" disabled title="Runs land with the real registry">

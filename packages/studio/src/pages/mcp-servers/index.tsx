@@ -146,9 +146,8 @@ function ExposedToolDetail({
                 </label>
                 <input
                   id={`tool-input-${field.name}`}
-                  className="mt-1.5 h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-foreground text-sm outline-none placeholder:text-muted-foreground"
+                  className="mt-1.5 h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50"
                   placeholder={field.label}
-                  disabled
                 />
               </div>
             ))}
