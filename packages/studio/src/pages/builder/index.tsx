@@ -1,13 +1,21 @@
-import { Badge, Button, Select, Textarea } from "@usetheo/ui";
+import { Badge, Button, EmptyState, Select, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
   Bot,
+  Boxes,
   Bug,
+  ChevronDown,
+  ChevronRight,
+  Clock,
   FolderKanban,
+  GitCommitHorizontal,
+  LayoutTemplate,
   Pin,
   Plus,
   Search,
   ShieldCheck,
+  SquarePen,
+  Undo2,
   Wrench,
 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -15,13 +23,24 @@ import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
 import { useDataSource } from "../../data/datasource";
-import { BUILDER_SCRIPTED_ARTIFACT, BUILDER_SCRIPTED_REPLY } from "../../data/fixtures/registry";
-import type { BuilderMessage, BuilderSessionDetail } from "../../data/types";
+import {
+  BUILDER_SCRIPTED_FILES,
+  BUILDER_SCRIPTED_REPLY,
+  BUILDER_SCRIPTED_WORK_LOG,
+} from "../../data/fixtures/registry";
+import type { BuilderArtifactFile, BuilderMessage, BuilderSessionDetail } from "../../data/types";
 
 const surface = getSurface("/builder");
 
-// Intenções de construção (cards da home). Clicar preenche o composer com um ponto
-// de partida — comportamento local real; a sessão roteirizada abre no envio.
+// Vistas internas navegáveis da sidebar do builder (estrutura de app de code
+// assistant): home (nova sessão), sessão aberta, e as entradas de navegação.
+type BuilderView =
+  | { kind: "home" }
+  | { kind: "session"; session: BuilderSessionDetail }
+  | { kind: "skills" }
+  | { kind: "scheduled" }
+  | { kind: "templates" };
+
 const BUILD_INTENTS = [
   {
     id: "new-agent",
@@ -53,56 +72,75 @@ const BUILD_INTENTS = [
   },
 ] as const;
 
-// Resposta roteirizada para follow-ups dentro da sessão (fixtures).
 const FOLLOW_UP_REPLY: BuilderMessage = {
   role: "assistant",
-  text: "Applied — the artifact on the right reflects the change. Anything else to adjust?",
+  text: "Applied — the review panel on the right reflects the change. Anything else to adjust?",
 };
 
-function diffLineClass(line: string): string {
-  if (line.startsWith("+++") || line.startsWith("---")) {
-    return "text-muted-foreground";
-  }
-  if (line.startsWith("+")) {
-    return "bg-emerald-500/10 text-emerald-300";
-  }
-  if (line.startsWith("-")) {
-    return "bg-red-500/10 text-red-300";
-  }
-  return "text-foreground";
+// ---------------------------------------------------------------------------
+// Diff rendering (painel Review) — parser próprio, linhas numeradas old/new.
+// ---------------------------------------------------------------------------
+
+interface DiffRow {
+  kind: "add" | "del" | "ctx" | "meta";
+  oldNo?: number;
+  newNo?: number;
+  text: string;
 }
 
-function ArtifactViewer({ artifact }: { artifact: NonNullable<BuilderSessionDetail["artifact"]> }) {
+function parseDiff(diff: string): DiffRow[] {
+  const rows: DiffRow[] = [];
+  let oldNo = 1;
+  let newNo = 1;
+  for (const line of diff.split("\n")) {
+    if (line.startsWith("+++") || line.startsWith("---")) {
+      rows.push({ kind: "meta", text: line });
+      continue;
+    }
+    if (line.startsWith("+")) {
+      rows.push({ kind: "add", newNo: newNo++, text: line });
+      continue;
+    }
+    if (line.startsWith("-")) {
+      rows.push({ kind: "del", oldNo: oldNo++, text: line });
+      continue;
+    }
+    rows.push({ kind: "ctx", oldNo: oldNo++, newNo: newNo++, text: line });
+  }
+  return rows;
+}
+
+const DIFF_ROW_CLASS: Record<DiffRow["kind"], string> = {
+  add: "bg-emerald-500/10 text-emerald-300",
+  del: "bg-red-500/10 text-red-300",
+  ctx: "text-foreground",
+  meta: "text-muted-foreground",
+};
+
+function FileDiff({ file }: { file: BuilderArtifactFile }) {
   return (
     <div
-      className="flex min-h-0 w-[42%] shrink-0 flex-col overflow-hidden rounded-xl border border-border/40"
-      data-testid="builder-artifact"
+      className="overflow-hidden rounded-xl border border-border/40"
+      data-testid="review-file-diff"
+      data-path={file.path}
     >
-      <div className="flex items-center gap-2 border-border/40 border-b bg-card/80 px-4 py-2">
-        <span className="truncate font-medium font-mono text-foreground text-sm">
-          {artifact.name}
-        </span>
-        <Badge variant="outline" className="ml-auto shrink-0">
-          Diff
-        </Badge>
+      <div className="flex items-center gap-2 border-border/40 border-b bg-card/80 px-3 py-1.5 font-mono text-xs">
+        <span className="truncate text-foreground">{file.path}</span>
+        <span className="ml-auto shrink-0 text-emerald-400">+{file.additions}</span>
+        <span className="shrink-0 text-red-400">-{file.deletions}</span>
       </div>
-      <pre className="min-h-0 flex-1 overflow-auto p-3 font-mono text-xs leading-relaxed">
-        {artifact.diff.split("\n").map((line, i) => (
+      <pre className="overflow-auto font-mono text-xs leading-relaxed">
+        {parseDiff(file.diff).map((row, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: linhas de diff são posicionais
           <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: linhas de diff são posicionais
             key={i}
-            data-testid={
-              line.startsWith("+++") || line.startsWith("---")
-                ? "diff-line-meta"
-                : line.startsWith("+")
-                  ? "diff-line-add"
-                  : line.startsWith("-")
-                    ? "diff-line-del"
-                    : "diff-line-ctx"
-            }
-            className={`block px-2 ${diffLineClass(line)}`}
+            data-testid={`diff-line-${row.kind}`}
+            className={`flex ${DIFF_ROW_CLASS[row.kind]}`}
           >
-            {line || " "}
+            <span className="w-10 shrink-0 select-none border-border/30 border-r px-1 text-right text-muted-foreground/60">
+              {row.kind === "meta" ? "" : (row.newNo ?? row.oldNo)}
+            </span>
+            <span className="min-w-0 flex-1 whitespace-pre px-2">{row.text || " "}</span>
           </span>
         ))}
       </pre>
@@ -110,23 +148,176 @@ function ArtifactViewer({ artifact }: { artifact: NonNullable<BuilderSessionDeta
   );
 }
 
-function MessageBubble({ message }: { message: BuilderMessage }) {
-  const isUser = message.role === "user";
+// Painel Review (direita): tab + toolbar com contadores agregados e Commit
+// (fake door honesto) + diffs por arquivo + árvore "All files".
+function ReviewPanel({
+  files,
+  selectedPath,
+  onSelect,
+}: {
+  files: BuilderArtifactFile[];
+  selectedPath: string | null;
+  onSelect: (path: string) => void;
+}) {
+  const additions = files.reduce((a, f) => a + f.additions, 0);
+  const deletions = files.reduce((a, f) => a + f.deletions, 0);
+  const shown = selectedPath ? files.filter((f) => f.path === selectedPath) : files;
+
   return (
     <div
-      data-testid="builder-message"
-      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm ${
-        isUser
-          ? "self-end bg-primary/15 text-foreground"
-          : "self-start border border-border/40 bg-card/60 text-foreground"
-      }`}
+      className="flex min-h-0 w-full flex-col overflow-hidden rounded-xl border border-border/40"
+      data-testid="builder-review"
     >
-      {message.text}
+      <div className="flex items-center gap-1 border-border/40 border-b bg-card/80 px-3 py-2">
+        <span className="rounded-full bg-muted/50 px-3 py-0.5 font-medium text-foreground text-xs">
+          Review
+        </span>
+        <span className="ml-auto flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">
+            Unstaged <span className="text-emerald-400">+{additions}</span>{" "}
+            <span className="text-red-400">-{deletions}</span>
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled
+            title="Commits land when Studio attaches to a real registry"
+            className="h-6 gap-1 px-2 text-xs"
+          >
+            <GitCommitHorizontal className="size-3.5" aria-hidden />
+            Commit
+          </Button>
+        </span>
+      </div>
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-auto p-3">
+          {shown.map((file) => (
+            <FileDiff key={file.path} file={file} />
+          ))}
+        </div>
+        <div className="w-36 shrink-0 overflow-auto border-border/40 border-l px-2 py-2.5">
+          <button
+            type="button"
+            onClick={() => onSelect("")}
+            className={`flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-left text-xs transition-colors hover:bg-muted/40 ${
+              selectedPath === null ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            <ChevronDown className="size-3" aria-hidden />
+            All files
+          </button>
+          <ul className="mt-1 space-y-0.5">
+            {files.map((file) => {
+              const name = file.path.split("/").at(-1) ?? file.path;
+              const active = selectedPath === file.path;
+              return (
+                <li key={file.path}>
+                  <button
+                    type="button"
+                    data-testid="review-tree-file"
+                    onClick={() => onSelect(file.path)}
+                    className={`w-full truncate rounded-md px-1.5 py-1 text-left font-mono text-xs transition-colors hover:bg-muted/40 ${
+                      active ? "bg-muted/50 text-foreground" : "text-muted-foreground"
+                    }`}
+                    title={file.path}
+                  >
+                    {name}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
 
-// Vista de sessão: thread do chat + viewer do artefato à direita.
+// ---------------------------------------------------------------------------
+// Thread da sessão: pill do usuário, work log expansível, card de arquivos.
+// ---------------------------------------------------------------------------
+
+function WorkLog({ workedFor, steps }: { workedFor: string; steps: string[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
+        aria-expanded={open}
+      >
+        <Clock className="size-3.5" aria-hidden />
+        Worked for {workedFor}
+        {open ? (
+          <ChevronDown className="size-3.5" aria-hidden />
+        ) : (
+          <ChevronRight className="size-3.5" aria-hidden />
+        )}
+      </button>
+      {open && (
+        <ul className="mt-2 space-y-1 border-border/40 border-l pl-3" data-testid="builder-worklog">
+          {steps.map((step) => (
+            <li key={step} className="text-muted-foreground text-xs">
+              {step}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function EditedFilesCard({
+  files,
+  onReview,
+}: {
+  files: BuilderArtifactFile[];
+  onReview: () => void;
+}) {
+  const additions = files.reduce((a, f) => a + f.additions, 0);
+  const deletions = files.reduce((a, f) => a + f.deletions, 0);
+  return (
+    <div
+      className="rounded-xl border border-border/40 bg-card/60 p-3"
+      data-testid="builder-edited-files"
+    >
+      <div className="flex items-center gap-2">
+        <SquarePen className="size-4 shrink-0 text-primary" aria-hidden />
+        <span className="font-medium text-foreground text-sm">
+          Edited {files.length} file{files.length === 1 ? "" : "s"}
+        </span>
+        <span className="font-mono text-emerald-400 text-xs">+{additions}</span>
+        <span className="font-mono text-red-400 text-xs">-{deletions}</span>
+        <span className="ml-auto flex items-center gap-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled
+            title="Undo lands when Studio attaches to a real registry"
+            className="h-7 gap-1 px-2 text-xs"
+          >
+            <Undo2 className="size-3.5" aria-hidden />
+            Undo
+          </Button>
+          <Button size="sm" variant="secondary" onClick={onReview} className="h-7 px-2 text-xs">
+            Review
+          </Button>
+        </span>
+      </div>
+      <ul className="mt-2 space-y-1 border-border/40 border-t pt-2">
+        {files.map((file) => (
+          <li key={file.path} className="flex items-center gap-2 font-mono text-xs">
+            <span className="truncate text-muted-foreground">{file.path}</span>
+            <span className="ml-auto shrink-0 text-emerald-400">+{file.additions}</span>
+            <span className="shrink-0 text-red-400">-{file.deletions}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function SessionView({
   session,
   onSend,
@@ -135,6 +326,8 @@ function SessionView({
   onSend: (text: string) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const reviewRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -158,11 +351,38 @@ function SessionView({
       </div>
       <div className="flex min-h-0 flex-1 gap-4">
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto pr-1">
-            {session.messages.map((m, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
-              <MessageBubble key={i} message={m} />
-            ))}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto pr-1">
+            {session.messages.map((m, i) =>
+              m.role === "user" ? (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                  key={i}
+                  data-testid="builder-message"
+                  className="max-w-[85%] self-end rounded-2xl bg-primary/15 px-4 py-2.5 text-foreground text-sm"
+                >
+                  {m.text}
+                </div>
+              ) : (
+                // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                <div key={i} className="flex flex-col gap-2.5">
+                  {i === 1 && <WorkLog workedFor={session.workedFor} steps={session.workLog} />}
+                  <div
+                    data-testid="builder-message"
+                    className="text-foreground text-sm leading-relaxed"
+                  >
+                    {m.text}
+                  </div>
+                  {i === session.messages.length - 1 && session.files.length > 0 && (
+                    <EditedFilesCard
+                      files={session.files}
+                      onReview={() =>
+                        reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                      }
+                    />
+                  )}
+                </div>
+              ),
+            )}
           </div>
           <form onSubmit={handleSubmit} className="mt-3">
             <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-card p-2 transition-colors focus-within:border-primary/50">
@@ -172,7 +392,7 @@ function SessionView({
                 rows={1}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ask for changes…"
+                placeholder="Do anything — @ to reference skills"
               />
               <Button
                 type="submit"
@@ -185,15 +405,83 @@ function SessionView({
             </div>
           </form>
         </div>
-        {session.artifact && <ArtifactViewer artifact={session.artifact} />}
+        {session.files.length > 0 && (
+          <div ref={reviewRef} className="flex min-h-0 w-[46%] shrink-0">
+            <ReviewPanel
+              files={session.files}
+              selectedPath={selectedPath}
+              onSelect={(path) => setSelectedPath(path === "" ? null : path)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// Home + shell de três painéis do Agent Builder (assistente de código para agentes).
-// Sessões são roteirizadas em fixtures — mesma premissa dos runs do playground,
-// claramente rotuladas ("Simulated session" + banner global de fixtures mode).
+// ---------------------------------------------------------------------------
+// Vistas das entradas de navegação da sidebar (Skills / Scheduled / Templates).
+// ---------------------------------------------------------------------------
+
+function SkillsView() {
+  const { items: skills, loadError } = useListing((d) => d.listSkills());
+  return (
+    <div className="mx-auto w-full max-w-2xl px-8 py-6" data-testid="builder-skills-view">
+      <h2 className="font-display font-semibold text-foreground text-lg">Skills</h2>
+      <p className="mt-1 text-muted-foreground text-sm">
+        Registered skills the assistant can reference in build sessions with @.
+      </p>
+      {loadError && (
+        <p role="alert" className="mt-3 text-red-400 text-sm">
+          {loadError}
+        </p>
+      )}
+      <ul className="mt-4 space-y-2">
+        {skills.map((skill) => (
+          <li
+            key={skill.id}
+            data-testid="builder-skill"
+            className="flex items-start gap-3 rounded-xl border border-border/40 bg-card/60 px-4 py-3"
+          >
+            <Boxes className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+            <div className="min-w-0">
+              <p className="font-medium font-mono text-foreground text-sm">{skill.name}</p>
+              <p className="mt-0.5 text-muted-foreground text-xs">{skill.description}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function ScheduledView() {
+  return (
+    <div className="mx-auto w-full max-w-2xl px-8 py-16" data-testid="builder-scheduled-view">
+      <EmptyState
+        title="No scheduled sessions"
+        description="Recurring build sessions land when Studio attaches to a real registry."
+      />
+    </div>
+  );
+}
+
+function TemplatesView() {
+  return (
+    <div className="mx-auto w-full max-w-2xl px-8 py-16" data-testid="builder-templates-view">
+      <EmptyState
+        title="No templates yet"
+        description="Agent templates land when Studio attaches to a real registry."
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Página: sidebar de app (nova sessão → busca → navegação → pinned/projects/tasks)
+// + vista ativa. Sessões roteirizadas em fixtures, claramente rotuladas.
+// ---------------------------------------------------------------------------
+
 export function AgentBuilderPage() {
   const ds = useDataSource();
   const { items: sessions, loadError } = useListing((d) => d.listBuilderSessions());
@@ -201,11 +489,10 @@ export function AgentBuilderPage() {
   const [target, setTarget] = useState("new");
   const [prompt, setPrompt] = useState("");
   const [query, setQuery] = useState("");
-  const [openSession, setOpenSession] = useState<BuilderSessionDetail | null>(null);
+  const [view, setView] = useState<BuilderView>({ kind: "home" });
   const [openError, setOpenError] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Atalhos do app (padrão de code assistant): ⌘K busca, ⌘N nova sessão.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) {
@@ -217,7 +504,7 @@ export function AgentBuilderPage() {
       }
       if (e.key.toLowerCase() === "n") {
         e.preventDefault();
-        setOpenSession(null);
+        setView({ kind: "home" });
         setPrompt("");
       }
     };
@@ -233,7 +520,7 @@ export function AgentBuilderPage() {
   const openById = (sessionId: string) => {
     setOpenError(null);
     ds.getBuilderSession(sessionId)
-      .then(setOpenSession)
+      .then((session) => setView({ kind: "session", session }))
       .catch((error: unknown) =>
         setOpenError(error instanceof Error ? error.message : String(error)),
       );
@@ -245,27 +532,60 @@ export function AgentBuilderPage() {
     if (text.length === 0) {
       return;
     }
-    // Sessão efêmera roteirizada (fixtures): user msg + resposta + artefato scaffold.
-    setOpenSession({
-      id: "draft-session",
-      title: text.length > 48 ? `${text.slice(0, 48)}…` : text,
-      agentId: target === "new" ? undefined : target,
-      lastActivity: "now",
-      pinned: false,
-      messages: [{ role: "user", text }, { ...BUILDER_SCRIPTED_REPLY }],
-      artifact: { ...BUILDER_SCRIPTED_ARTIFACT },
+    setView({
+      kind: "session",
+      session: {
+        id: "draft-session",
+        title: text.length > 48 ? `${text.slice(0, 48)}…` : text,
+        agentId: target === "new" ? undefined : target,
+        lastActivity: "now",
+        pinned: false,
+        workedFor: BUILDER_SCRIPTED_WORK_LOG.workedFor,
+        workLog: [...BUILDER_SCRIPTED_WORK_LOG.steps],
+        messages: [{ role: "user", text }, { ...BUILDER_SCRIPTED_REPLY }],
+        files: structuredClone([...BUILDER_SCRIPTED_FILES]),
+      },
     });
     setPrompt("");
   };
 
   const sendFollowUp = (text: string) => {
-    setOpenSession((current) =>
-      current
+    setView((current) =>
+      current.kind === "session"
         ? {
-            ...current,
-            messages: [...current.messages, { role: "user", text }, { ...FOLLOW_UP_REPLY }],
+            kind: "session",
+            session: {
+              ...current.session,
+              messages: [
+                ...current.session.messages,
+                { role: "user", text },
+                { ...FOLLOW_UP_REPLY },
+              ],
+            },
           }
         : current,
+    );
+  };
+
+  const navEntry = (
+    label: string,
+    icon: React.ElementType,
+    kind: Extract<BuilderView, { kind: "skills" | "scheduled" | "templates" }>["kind"],
+  ) => {
+    const Icon = icon;
+    const active = view.kind === kind;
+    return (
+      <button
+        type="button"
+        onClick={() => setView({ kind })}
+        aria-current={active ? "page" : undefined}
+        className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition-colors hover:bg-muted/40 ${
+          active ? "bg-muted/50 text-foreground" : "text-foreground"
+        }`}
+      >
+        <Icon className="size-4 text-muted-foreground" aria-hidden />
+        <span className="flex-1 text-left">{label}</span>
+      </button>
     );
   };
 
@@ -278,7 +598,30 @@ export function AgentBuilderPage() {
         </p>
       )}
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-72 shrink-0 flex-col gap-4 overflow-auto border-border/40 border-r px-4 py-5 md:flex">
+        <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-auto border-border/40 border-r px-4 py-5 md:flex">
+          {/* Título com switcher (estrutura de app) */}
+          <button
+            type="button"
+            className="flex items-center gap-1 px-1 font-semibold text-foreground text-sm tracking-tight"
+            title="Assistant switcher lands with the real registry"
+            disabled
+          >
+            Agent Builder
+            <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
+          </button>
+          {/* Ordem da referência: nova sessão → busca → navegação */}
+          <button
+            type="button"
+            onClick={() => {
+              setView({ kind: "home" });
+              setPrompt("");
+            }}
+            className="flex w-full items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-foreground text-sm transition-colors hover:bg-muted/60"
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="flex-1 text-left">New session</span>
+            <kbd className="font-mono text-[10px] text-muted-foreground">⌘N</kbd>
+          </button>
           <div className="relative">
             <Search
               className="-translate-y-1/2 absolute top-1/2 left-2.5 size-3.5 text-muted-foreground"
@@ -297,18 +640,11 @@ export function AgentBuilderPage() {
               ⌘K
             </kbd>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setOpenSession(null);
-              setPrompt("");
-            }}
-            className="flex w-full items-center gap-2 rounded-lg bg-muted/40 px-2.5 py-1.5 text-foreground text-sm transition-colors hover:bg-muted/60"
-          >
-            <Plus className="size-4" aria-hidden />
-            <span className="flex-1 text-left">New session</span>
-            <kbd className="font-mono text-[10px] text-muted-foreground">⌘N</kbd>
-          </button>
+          <nav aria-label="Builder views" className="space-y-0.5">
+            {navEntry("Skills", Boxes, "skills")}
+            {navEntry("Scheduled", Clock, "scheduled")}
+            {navEntry("Templates", LayoutTemplate, "templates")}
+          </nav>
           {pinned.length > 0 && (
             <section>
               <h2 className="mb-1.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
@@ -369,8 +705,14 @@ export function AgentBuilderPage() {
             </ul>
           </section>
         </aside>
-        {openSession ? (
-          <SessionView session={openSession} onSend={sendFollowUp} />
+        {view.kind === "session" ? (
+          <SessionView session={view.session} onSend={sendFollowUp} />
+        ) : view.kind === "skills" ? (
+          <SkillsView />
+        ) : view.kind === "scheduled" ? (
+          <ScheduledView />
+        ) : view.kind === "templates" ? (
+          <TemplatesView />
         ) : (
           <div className="flex min-w-0 flex-1 items-center justify-center overflow-auto px-8 py-6">
             <div className="w-full max-w-2xl">
@@ -401,7 +743,6 @@ export function AgentBuilderPage() {
                 })}
               </div>
               <form onSubmit={startSession} className="mt-6">
-                {/* Barra de contexto (alvo da sessão) acoplada ao topo do composer */}
                 <div className="mx-3 flex items-center justify-between gap-3 rounded-t-xl border border-border/40 border-b-0 bg-card/60 px-4 pt-1.5 pb-3 text-muted-foreground text-xs">
                   <span className="flex items-center gap-2">
                     <Bot className="size-3.5" aria-hidden />
@@ -435,7 +776,7 @@ export function AgentBuilderPage() {
                     rows={2}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Describe the agent to build…"
+                    placeholder="Do anything — @ to reference skills"
                   />
                   <div className="mt-2 flex items-center justify-between">
                     <span className="rounded-md border border-border/60 bg-background px-2 py-1 font-mono text-muted-foreground text-xs">

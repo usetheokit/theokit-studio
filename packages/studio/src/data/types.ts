@@ -37,16 +37,23 @@ export interface BuilderMessage {
   text: string;
 }
 
-export interface BuilderArtifact {
-  /** arquivo alvo do artefato (ex.: "agents/support-agent.ts"). */
-  name: string;
-  /** diff unificado exibido no viewer (+/- coloridos). */
+export interface BuilderArtifactFile {
+  /** caminho do arquivo alterado (ex.: "agents/support-agent.ts"). */
+  path: string;
+  additions: number;
+  deletions: number;
+  /** diff unificado exibido no painel de review (+/- coloridos). */
   diff: string;
 }
 
 export interface BuilderSessionDetail extends BuilderSessionSummary {
   messages: BuilderMessage[];
-  artifact?: BuilderArtifact;
+  /** duração exibida no log de trabalho (fixture display-ready, ex.: "2m 30s"). */
+  workedFor: string;
+  /** passos do log de trabalho (expansível na thread). */
+  workLog: string[];
+  /** arquivos editados pela sessão (painel Review à direita). */
+  files: BuilderArtifactFile[];
 }
 
 export interface PromptSummary {

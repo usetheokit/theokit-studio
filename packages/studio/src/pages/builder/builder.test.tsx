@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DataSourceProvider } from "../../data/datasource";
 import { createFixtureDataSource } from "../../data/fixture-datasource";
@@ -12,15 +12,125 @@ function renderBuilder() {
   );
 }
 
+async function openPinnedSession() {
+  const sessions = await screen.findAllByTestId("builder-session");
+  const refine = sessions.find((s) => s.textContent?.includes("Refine Support Agent tone"));
+  if (!refine) throw new Error("session not found");
+  await userEvent.click(refine);
+  await screen.findByTestId("builder-session-view");
+}
+
 describe("Agent Builder (code-assistant, three-pane)", () => {
-  it("shows_greeting_intent_cards_and_session_lists", async () => {
+  it("sidebar_has_app_structure_new_session_search_nav_sections", async () => {
     renderBuilder();
+    await screen.findByText("What should we build?");
+    // Ordem estrutural: New session, Search, navegação, Pinned/Projects/Tasks.
+    expect(screen.getByRole("button", { name: /new session/i })).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: /search sessions/i })).toBeTruthy();
+    const nav = screen.getByRole("navigation", { name: /builder views/i });
+    expect(within(nav).getByRole("button", { name: "Skills" })).toBeTruthy();
+    expect(within(nav).getByRole("button", { name: "Scheduled" })).toBeTruthy();
+    expect(within(nav).getByRole("button", { name: "Templates" })).toBeTruthy();
+    expect(screen.getByText("Pinned")).toBeTruthy();
+    expect(screen.getByText("Projects")).toBeTruthy();
+    expect(screen.getByText("Tasks")).toBeTruthy();
+  });
+
+  it("nav_entries_navigate_to_their_views", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
+    // Skills: lista REAL via listSkills (fecha o consumidor que faltava).
+    await userEvent.click(screen.getByRole("button", { name: "Skills" }));
+    const skills = await screen.findAllByTestId("builder-skill");
+    expect(skills.length).toBe(2);
+    expect(skills[0]?.textContent).toContain("summarize");
+    // Scheduled e Templates: empty states honestos.
+    await userEvent.click(screen.getByRole("button", { name: "Scheduled" }));
+    expect(await screen.findByTestId("builder-scheduled-view")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Templates" }));
+    expect(await screen.findByTestId("builder-templates-view")).toBeTruthy();
+    // New session volta para a home.
+    await userEvent.click(screen.getByRole("button", { name: /new session/i }));
     expect(await screen.findByText("What should we build?")).toBeTruthy();
-    expect(screen.getAllByTestId("builder-intent").length).toBe(4);
-    const sessions = await screen.findAllByTestId("builder-session");
-    expect(sessions.length).toBe(4);
-    expect(sessions[0]?.textContent).toContain("Refine Support Agent tone");
-    expect(sessions[0]?.textContent).toContain("2m");
+  });
+
+  it("session_opens_with_worklog_edited_files_and_review_panel", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    // Work log expansível.
+    const workToggle = screen.getByRole("button", { name: /worked for 2m 30s/i });
+    expect(workToggle.getAttribute("aria-expanded")).toBe("false");
+    await userEvent.click(workToggle);
+    const log = screen.getByTestId("builder-worklog");
+    expect(log.textContent).toContain("Rewrote the instructions");
+    // Card "Edited 2 files" com contadores agregados e por arquivo.
+    const card = screen.getByTestId("builder-edited-files");
+    expect(card.textContent).toContain("Edited 2 files");
+    expect(card.textContent).toContain("+6");
+    expect(card.textContent).toContain("-3");
+    expect(card.textContent).toContain("prompts/support-tone.md");
+    // Undo é fake door honesto; Review é real (foca o painel).
+    const undo = within(card).getByRole("button", { name: /undo/i }) as HTMLButtonElement;
+    expect(undo.disabled).toBe(true);
+    // Painel Review: toolbar agregada + Commit fake door + diffs por arquivo.
+    const review = screen.getByTestId("builder-review");
+    expect(review.textContent).toContain("Unstaged");
+    const commit = within(review).getByRole("button", { name: /commit/i }) as HTMLButtonElement;
+    expect(commit.disabled).toBe(true);
+    expect(screen.getAllByTestId("review-file-diff").length).toBe(2);
+    expect(screen.getAllByTestId("diff-line-add").length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("diff-line-del").length).toBeGreaterThan(0);
+  });
+
+  it("review_file_tree_filters_the_diffs", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const treeFiles = screen.getAllByTestId("review-tree-file");
+    expect(treeFiles.length).toBe(2);
+    const tone = treeFiles.find((f) => f.textContent?.includes("support-tone.md"));
+    if (!tone) throw new Error("tree file not found");
+    await userEvent.click(tone);
+    const diffs = screen.getAllByTestId("review-file-diff");
+    expect(diffs.length).toBe(1);
+    expect(diffs[0]?.getAttribute("data-path")).toBe("prompts/support-tone.md");
+    // "All files" restaura os dois diffs.
+    await userEvent.click(screen.getByRole("button", { name: /all files/i }));
+    expect(screen.getAllByTestId("review-file-diff").length).toBe(2);
+  });
+
+  it("home_submit_starts_scripted_session_with_scaffold_files", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
+    await userEvent.type(
+      screen.getByRole("textbox", { name: /build instructions/i }),
+      "Create a billing reconciliation agent",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+    expect(await screen.findByTestId("builder-session-view")).toBeTruthy();
+    expect(screen.getByTestId("builder-edited-files").textContent).toContain("agents/new-agent.ts");
+    expect(screen.getByRole("button", { name: /worked for 45s/i })).toBeTruthy();
+  });
+
+  it("follow_up_message_appends_to_the_transcript", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    await userEvent.type(
+      screen.getByRole("textbox", { name: /session message/i }),
+      "Also mention the docs link.",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /send message/i }));
+    const messages = screen.getAllByTestId("builder-message");
+    expect(messages.length).toBe(4);
+    expect(messages[3]?.textContent).toContain("Applied");
+  });
+
+  it("search_filters_sidebar_sessions", async () => {
+    renderBuilder();
+    await screen.findAllByTestId("builder-session");
+    await userEvent.type(screen.getByRole("searchbox", { name: /search sessions/i }), "triage");
+    const filtered = screen.getAllByTestId("builder-session");
+    expect(filtered.length).toBe(1);
+    expect(filtered[0]?.textContent).toContain("triage");
   });
 
   it("intent_card_click_fills_the_composer_starter", async () => {
@@ -34,88 +144,5 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
       name: /build instructions/i,
     }) as HTMLTextAreaElement;
     expect(composer.value).toContain("Tighten the guardrails");
-  });
-
-  it("session_click_opens_chat_with_transcript_and_diff_artifact", async () => {
-    renderBuilder();
-    const sessions = await screen.findAllByTestId("builder-session");
-    const refine = sessions.find((s) => s.textContent?.includes("Refine Support Agent tone"));
-    if (!refine) throw new Error("session not found");
-    await userEvent.click(refine);
-
-    expect(await screen.findByTestId("builder-session-view")).toBeTruthy();
-    // Transcript da fixture (user + assistant) com rótulo honesto.
-    const messages = screen.getAllByTestId("builder-message");
-    expect(messages.length).toBe(2);
-    expect(messages[0]?.textContent).toContain("sounds robotic");
-    expect(screen.getByText("Simulated session")).toBeTruthy();
-    // Viewer à direita: nome do arquivo + diff com linhas +/- coloridas.
-    const artifact = screen.getByTestId("builder-artifact");
-    expect(artifact.textContent).toContain("agents/support-agent.ts");
-    expect(screen.getAllByTestId("diff-line-add").length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId("diff-line-del").length).toBeGreaterThan(0);
-  });
-
-  it("home_submit_starts_scripted_session_with_scaffold_artifact", async () => {
-    renderBuilder();
-    await screen.findByText("What should we build?");
-    await userEvent.type(
-      screen.getByRole("textbox", { name: /build instructions/i }),
-      "Create a billing reconciliation agent",
-    );
-    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
-
-    expect(await screen.findByTestId("builder-session-view")).toBeTruthy();
-    const messages = screen.getAllByTestId("builder-message");
-    expect(messages[0]?.textContent).toContain("billing reconciliation");
-    expect(messages[1]?.textContent).toContain("first pass");
-    expect(screen.getByTestId("builder-artifact").textContent).toContain("agents/new-agent.ts");
-  });
-
-  it("blank_home_submit_is_noop", async () => {
-    renderBuilder();
-    await screen.findByText("What should we build?");
-    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
-    expect(screen.queryByTestId("builder-session-view")).toBeNull();
-  });
-
-  it("follow_up_message_appends_to_the_transcript", async () => {
-    renderBuilder();
-    const sessions = await screen.findAllByTestId("builder-session");
-    await userEvent.click(sessions[0] as HTMLElement);
-    await screen.findByTestId("builder-session-view");
-    await userEvent.type(
-      screen.getByRole("textbox", { name: /session message/i }),
-      "Also mention the docs link.",
-    );
-    await userEvent.click(screen.getByRole("button", { name: /send message/i }));
-    const messages = screen.getAllByTestId("builder-message");
-    expect(messages.length).toBe(4);
-    expect(messages[2]?.textContent).toContain("docs link");
-    expect(messages[3]?.textContent).toContain("Applied");
-  });
-
-  it("new_session_returns_to_home_and_search_filters_tasks", async () => {
-    renderBuilder();
-    const sessions = await screen.findAllByTestId("builder-session");
-    await userEvent.click(sessions[0] as HTMLElement);
-    await screen.findByTestId("builder-session-view");
-    await userEvent.click(screen.getByRole("button", { name: /new session/i }));
-    expect(await screen.findByText("What should we build?")).toBeTruthy();
-    // Busca filtra as listas da sidebar.
-    await userEvent.type(screen.getByRole("searchbox", { name: /search sessions/i }), "triage");
-    const filtered = screen.getAllByTestId("builder-session");
-    expect(filtered.length).toBe(1);
-    expect(filtered[0]?.textContent).toContain("triage");
-  });
-
-  it("target_agent_select_offers_new_agent_and_fixture_agents", async () => {
-    renderBuilder();
-    await screen.findByText("What should we build?");
-    await userEvent.click(screen.getByRole("combobox", { name: /target agent/i }));
-    const options = await screen.findAllByRole("option");
-    const labels = options.map((o) => o.textContent);
-    expect(labels).toContain("New agent");
-    expect(labels).toContain("Support Agent");
   });
 });

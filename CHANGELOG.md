@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — estrutura de app de code assistant completa (dogfood, passo a
+  passo sobre as referências visuais): sidebar reordenada (título com switcher →
+  New session ⌘N → Search ⌘K → navegação Skills/Scheduled/Templates → Pinned →
+  Projects → Tasks), vista de Skills consumindo listSkills real (fecha o achado
+  F-wire-2 do review), Scheduled/Templates com empty states honestos; sessão ganha
+  work log expansível ("Worked for Xs" com passos), card "Edited N files +A −R" com
+  contadores por arquivo, Undo (fake door honesto) e Review; painel Review à direita
+  com tab, toolbar "Unstaged +A −R" + Commit (fake door honesto), diffs por arquivo
+  com números de linha e árvore "All files" que filtra os diffs (M5 dogfood)
 - Studio Agent Builder em três painéis (dogfood): sidebar de app com Search (⌘K real,
   filtra sessões), New session (⌘N) e seções Pinned/Projects/Tasks clicáveis; clicar
   numa sessão abre o chat com transcript (bolhas user/assistant, badge "Simulated
