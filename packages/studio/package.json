@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@theokit/ui": "^1.0.3",
-    "@usetheo/ui": "^0.17.0",
+    "@usetheo/ui": "^0.22.0",
     "lucide-react": "^0.471.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
