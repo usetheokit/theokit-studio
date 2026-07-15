@@ -59,6 +59,10 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 <!-- ADR-DEFER-WIRING-B: sendErrorEnvelope/sendJson (plugin/http.ts) são helpers HTTP internos compartilhados; o comportamento (shape do envelope, guard writableEnded) é exercitado em toda asserção de envelope sobre HTTP REAL nos testes de integração (404/500) — referência nominal em tests/integration/ seria artificial (gaming do grep). Pilar (a) PASS: importados por index.ts e reflection-api.ts. -->
 
+**Desvio T1.3 (workflow shape, SEPA pre-COMMIT):** o plano especificava `{id, name, description?, source, agents: string[]}` (dedup por workflow); implementado `{id: "agent/sub", name, agent, source, note}` — UMA entry por par (agent, subagent). Rationale: id único por par dá procedência mais clara e a nota theokit-sdk#123 viaja por entry; T3.1 consome ESTE shape conscientemente. Gap conhecido (followup F2): fixture decorator-based p/ exercitar workflows de ponta a ponta (builder não declara subagents — assert de integração é fraco por consequência honesta).
+
+**Obrigação T1.2 (`skillsEnabled`) — QUITADA em T1.3** com shape superior (`skills {enabled?, autoInject?}` objeto; "enabled ausente = todas" preservado).
+
 **Desvio T1.2 (SEPA pre-COMMIT):** `skillsEnabled` do pseudo-code de T1.2 NÃO entrou no `ReflectionAgent` — OBRIGAÇÃO em T1.3: adicionar `skillsEnabled?: string[] | boolean` mapeado de `compiled.skills?.enabled` (matéria-prima do fallback de skills do Q3).
 
 ## Halt-loop audit trail
@@ -71,6 +75,7 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 | # | Observed during | Description | Recommended owner |
 |---|---|---|---|
+| F2 | T1.3 | Fixture decorator-based (@SubAgents) para exercitar workflows de ponta a ponta na integração | próximo plano |
 | F1 | plan D3 | Deduplicar `scanStudioAgents` quando o theokit exportar `scanAgents` publicamente em `theokit/server/scan` | próximo plano |
 
 ## Validation report

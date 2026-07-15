@@ -1,4 +1,4 @@
-import { relative } from "node:path";
+import { join, relative } from "node:path";
 import { compileAgentModule } from "@theokit/agents/bridge";
 import { type AgentFileNode, scanStudioAgents } from "./agent-scan";
 
@@ -20,6 +20,11 @@ export interface ReflectionAgent {
   tools?: ReflectionTool[];
   /** nomes de subagents declarados (via @SubAgents; builder agents → []). */
   subagents?: string[];
+  /**
+   * SkillsSettings do SDK preservado como objeto: `enabled` AUSENTE significa
+   * "todas as skills descobertas", não "nenhuma" (distinção que um array achatado perderia).
+   */
+  skills?: { enabled?: string[]; autoInject?: boolean };
   error?: string;
 }
 
@@ -69,6 +74,9 @@ function toReflectionAgent(
     model: compiled.model,
     tools: compiled.tools.map((t) => ({ name: t.name, description: t.description })),
     subagents: Object.keys(compiled.agents),
+    skills: compiled.skills
+      ? { enabled: compiled.skills.enabled, autoInject: compiled.skills.autoInject }
+      : undefined,
   };
 }
 
@@ -98,4 +106,111 @@ export async function listReflectionAgents(deps: ListAgentsDeps): Promise<ListAg
     }
   }
   return { items };
+}
+
+// ————— Agregados (T1.3) — funções puras testáveis sem IO —————
+
+export interface AggregatedTool extends ReflectionTool {
+  /** quantos agents usam a tool (dedup por name; primeira descrição vence). */
+  usedBy: number;
+}
+
+export interface AggregatedWorkflow {
+  id: string;
+  name: string;
+  agent: string;
+  source: "subagent";
+  note: string;
+}
+
+const WORKFLOW_NOTE =
+  "subagent declarado no agent (enumeração de instâncias de workflow é gap do SDK — theokit-sdk#123)";
+
+/** Agrega tools/workflows dos agents compilados. Itens degradados (error) são pulados. */
+export function aggregateReflection(agents: ReflectionAgent[]): {
+  tools: AggregatedTool[];
+  workflows: AggregatedWorkflow[];
+} {
+  const byName = new Map<string, { description: string; usedBy: number }>();
+  const workflows: AggregatedWorkflow[] = [];
+  for (const agent of agents) {
+    if (agent.error) continue;
+    for (const tool of agent.tools ?? []) {
+      const seen = byName.get(tool.name);
+      if (seen) {
+        seen.usedBy += 1;
+      } else {
+        byName.set(tool.name, { description: tool.description, usedBy: 1 });
+      }
+    }
+    for (const sub of agent.subagents ?? []) {
+      workflows.push({
+        id: `${agent.name}/${sub}`,
+        name: sub,
+        agent: agent.name,
+        source: "subagent",
+        note: WORKFLOW_NOTE,
+      });
+    }
+  }
+  const tools = [...byName.entries()]
+    .map(([name, v]) => ({ name, description: v.description, usedBy: v.usedBy }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  workflows.sort((a, b) => a.id.localeCompare(b.id));
+  return { tools, workflows };
+}
+
+// ————— Skills (T1.3) —————
+
+export interface ReflectionSkill {
+  name: string;
+  description: string;
+  category?: string;
+}
+
+export interface ListSkillsDeps {
+  projectRoot: string;
+  /**
+   * discover injetado (DIP): default = discoverSkills do @theokit/sdk/skills sobre a
+   * convenção do ecossistema `<root>/.theokit/skills/<name>/SKILL.md`. discoverSkills
+   * real NUNCA lança (dir ausente → []); o branch degraded cobre discovers injetados.
+   */
+  discover?: (dir: string) => Promise<ReflectionSkill[]>;
+}
+
+export interface ListSkillsResult {
+  items: ReflectionSkill[];
+  /** nomes de skills com frontmatter inválido (puladas — visíveis, nunca silenciosas). */
+  invalid?: string[];
+  degraded?: string;
+}
+
+/** Enumera skills da convenção `.theokit/skills` com degradação honesta. */
+export async function listReflectionSkills(deps: ListSkillsDeps): Promise<ListSkillsResult> {
+  const skillsDir = join(deps.projectRoot, ".theokit/skills");
+  try {
+    if (deps.discover) {
+      return { items: await deps.discover(skillsDir) };
+    }
+    const { discoverSkills } = await import("@theokit/sdk/skills");
+    const invalid: string[] = [];
+    const skills = await discoverSkills(skillsDir, {
+      // Skill malformada é pulada — mas nunca em silêncio (error-handling.md § 2).
+      onInvalidSkill: (info: { name: string; code: string; message: string }) =>
+        invalid.push(`${info.name}: ${info.code} — ${info.message}`),
+    });
+    return {
+      items: skills.map((s) => ({
+        name: s.name,
+        description: s.description,
+        category: s.category,
+      })),
+      invalid: invalid.length > 0 ? invalid : undefined,
+    };
+  } catch (error) {
+    return {
+      items: [],
+      degraded: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { sendErrorEnvelope, sendJson } from "./http";
-import { listReflectionAgents } from "./reflection-api";
+import { aggregateReflection, listReflectionAgents, listReflectionSkills } from "./reflection-api";
 
 /**
  * `@theokit/studio/plugin` — monta a reflection API (`/_studio/api/*`) e (T2.2) a SPA
@@ -48,6 +48,15 @@ interface StudioContext {
   options: StudioPluginOptions;
 }
 
+function loadAgents(ctx: StudioContext) {
+  return listReflectionAgents({
+    projectRoot: ctx.server.config.root,
+    agentsDir: ctx.options.agentsDir,
+    // Hot-reload grátis: o Vite invalida o module graph — por isso nunca cacheamos.
+    load: (filePath) => ctx.server.ssrLoadModule(filePath),
+  });
+}
+
 async function handleStudioRequest(
   pathname: string,
   _req: IncomingMessage,
@@ -59,13 +68,17 @@ async function handleStudioRequest(
     return;
   }
   if (pathname === "/_studio/api/agents") {
-    const result = await listReflectionAgents({
-      projectRoot: ctx.server.config.root,
-      agentsDir: ctx.options.agentsDir,
-      // Hot-reload grátis: o Vite invalida o module graph — por isso nunca cacheamos.
-      load: (filePath) => ctx.server.ssrLoadModule(filePath),
-    });
-    sendJson(res, 200, result);
+    sendJson(res, 200, await loadAgents(ctx));
+    return;
+  }
+  if (pathname === "/_studio/api/tools" || pathname === "/_studio/api/workflows") {
+    // Agregados derivam da MESMA compilação por request (nunca cacheada — hot-reload).
+    const { tools, workflows } = aggregateReflection((await loadAgents(ctx)).items);
+    sendJson(res, 200, pathname.endsWith("tools") ? { items: tools } : { items: workflows });
+    return;
+  }
+  if (pathname === "/_studio/api/skills") {
+    sendJson(res, 200, await listReflectionSkills({ projectRoot: ctx.server.config.root }));
     return;
   }
   if (pathname.startsWith(API_PREFIX)) {

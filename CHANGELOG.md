@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T1.3 — endpoints agregados da reflection: `GET /_studio/api/tools` (dedup por nome com
+  `usedBy` contando agents; primeira descrição vence; ordenado), `GET /_studio/api/workflows`
+  (subagents declarados com `source: "subagent"` e nota honesta citando o gap theokit-sdk#123)
+  e `GET /_studio/api/skills` (convenção `.theokit/skills/<name>/SKILL.md` via `discoverSkills`
+  do SDK; skills malformadas listadas em `invalid`, nunca puladas em silêncio; degradação
+  honesta em falha do discover); agents agora expõem `skills {enabled?, autoInject?}` por
+  agent (enabled ausente = todas — distinção preservada) (#m1)
 - M1 T1.2 — reflection de agents no plugin: `GET /_studio/api/agents` enumera os agents do
   projeto (scan da convenção theokit `agents/<name>.ts` — espelho testado do fonte — +
   `compileAgentModule` do `@theokit/agents/bridge` via `ssrLoadModule`, sem manifest e sem

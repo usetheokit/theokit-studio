@@ -3,7 +3,11 @@ import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
 import { theokitStudio } from "../../plugin";
 import { scanStudioAgents } from "../../plugin/agent-scan";
-import { listReflectionAgents } from "../../plugin/reflection-api";
+import {
+  aggregateReflection,
+  listReflectionAgents,
+  listReflectionSkills,
+} from "../../plugin/reflection-api";
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -60,6 +64,34 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(support?.tools?.[0]?.name).toBe("lookupOrder");
     // Item degradado (nested exporta não-agent) presente com error — nunca omitido.
     expect(body.items.find((a) => a.name === "nested")).toBeTruthy();
+  });
+
+  it("test_tools_workflows_and_skills_aggregates_over_real_http", async () => {
+    // T1.3: agregados derivados da compilação real + skills da convenção .theokit/skills.
+    const tools = (await (await fetch(`${baseUrl}/_studio/api/tools`)).json()) as {
+      items: Array<{ name: string; usedBy: number }>;
+    };
+    // lookupOrder é compartilhada por support e team/support (fixture) → usedBy 2.
+    expect(tools.items.find((t) => t.name === "lookupOrder")?.usedBy).toBe(2);
+    const workflows = (await (await fetch(`${baseUrl}/_studio/api/workflows`)).json()) as {
+      items: unknown[];
+    };
+    expect(Array.isArray(workflows.items)).toBe(true);
+    const skills = (await (await fetch(`${baseUrl}/_studio/api/skills`)).json()) as {
+      items: Array<{ name: string }>;
+    };
+    expect(skills.items.map((s) => s.name)).toEqual(["demo-skill"]);
+
+    // Paridade HTTP == chamada direta (mesmo loader do server) — o endpoint é uma
+    // projeção fiel das funções puras, nunca uma segunda implementação.
+    const fixtureRoot = join(import.meta.dirname, "../fixtures/demo-project");
+    const direct = await listReflectionAgents({
+      projectRoot: fixtureRoot,
+      load: (file) => server.ssrLoadModule(file),
+    });
+    expect(aggregateReflection(direct.items).tools).toEqual(tools.items);
+    const directSkills = await listReflectionSkills({ projectRoot: fixtureRoot });
+    expect(directSkills.items).toEqual(skills.items);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {
