@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — largura do chat redimensionável na sessão (dogfood): splitter
+  arrastável entre o chat e o painel lateral (pointer drag + setas do teclado no
+  separator focável, com aria-valuenow e clamp 25–75%); implementação própria sem
+  dependência nova (M5 dogfood)
 - Studio Agent Builder — painel lateral de detalhes da sessão (dogfood): default à
   direita com seções "Branch details" (Changes com contadores +A −R que abre o Review,
   Git actions como fake door honesto, "Pull request status unavailable") e "Artifacts"

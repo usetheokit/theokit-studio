@@ -124,6 +124,25 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByTestId("builder-details")).toBeTruthy();
   });
 
+  it("chat_width_is_resizable_via_separator_keyboard", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const separator = screen.getByRole("separator", { name: /resize chat/i });
+    const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
+    expect(chatPane.style.width).toBe("54%");
+    // Setas redimensionam (acessível sem mouse); clamp em 25–75.
+    separator.focus();
+    await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
+    expect(chatPane.style.width).toBe("46%");
+    await userEvent.keyboard("{ArrowRight}");
+    expect(chatPane.style.width).toBe("50%");
+    for (let i = 0; i < 20; i++) {
+      await userEvent.keyboard("{ArrowLeft}");
+    }
+    expect(chatPane.style.width).toBe("25%");
+    expect(separator.getAttribute("aria-valuenow")).toBe("25");
+  });
+
   it("home_submit_starts_scripted_session_with_scaffold_files", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");

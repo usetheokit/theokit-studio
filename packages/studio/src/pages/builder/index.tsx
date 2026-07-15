@@ -426,6 +426,29 @@ function SessionView({
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   // Painel direito: detalhes (default, padrão da referência) ou o Review com diffs.
   const [rightPane, setRightPane] = useState<"details" | "review">("details");
+  // Largura do chat em % (splitter arrastável entre chat e painel; clamp 25–75).
+  const [chatPct, setChatPct] = useState(54);
+  const paneContainerRef = useRef<HTMLDivElement>(null);
+
+  const clampPct = (pct: number) => Math.min(75, Math.max(25, pct));
+
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault();
+    const container = paneContainerRef.current;
+    if (!container) {
+      return;
+    }
+    const rect = container.getBoundingClientRect();
+    const onMove = (ev: PointerEvent) => {
+      setChatPct(clampPct(((ev.clientX - rect.left) / rect.width) * 100));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -447,8 +470,12 @@ function SessionView({
           {session.agentId ?? "new agent"}
         </span>
       </div>
-      <div className="flex min-h-0 flex-1 gap-4">
-        <div className="flex min-w-0 flex-1 flex-col">
+      <div ref={paneContainerRef} className="flex min-h-0 flex-1">
+        <div
+          className="flex min-w-0 flex-col"
+          style={session.files.length > 0 ? { width: `${chatPct}%` } : { width: "100%" }}
+          data-testid="builder-chat-pane"
+        >
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto pr-1">
             {session.messages.map((m, i) =>
               m.role === "user" ? (
@@ -502,7 +529,32 @@ function SessionView({
           </form>
         </div>
         {session.files.length > 0 && (
-          <div className="flex min-h-0 w-[46%] shrink-0">
+          // biome-ignore lint/a11y/useFocusableInteractive: separator É focável (tabIndex 0)
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize chat"
+            aria-valuenow={Math.round(chatPct)}
+            aria-valuemin={25}
+            aria-valuemax={75}
+            tabIndex={0}
+            onPointerDown={startResize}
+            onKeyDown={(e) => {
+              // Acessibilidade: setas redimensionam sem mouse.
+              if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                setChatPct((p) => clampPct(p - 4));
+              }
+              if (e.key === "ArrowRight") {
+                e.preventDefault();
+                setChatPct((p) => clampPct(p + 4));
+              }
+            }}
+            className="mx-1.5 w-1.5 shrink-0 cursor-col-resize rounded-full bg-border/40 transition-colors hover:bg-primary/50 focus-visible:bg-primary/60 focus-visible:outline-none"
+          />
+        )}
+        {session.files.length > 0 && (
+          <div className="flex min-h-0 min-w-0 flex-1">
             {rightPane === "review" ? (
               <ReviewPanel
                 files={session.files}
