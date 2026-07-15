@@ -34,6 +34,10 @@ export interface StudioDataSource {
   listDatasets(): Promise<DatasetSummary[]>;
   listExperiments(): Promise<ExperimentSummary[]>;
   listWorkspaces(): Promise<WorkspaceSummary[]>;
+  /** conteúdo de um arquivo do workspace; rejeita erro tipado se não existir. */
+  readWorkspaceFile(workspaceId: string, path: string): Promise<string>;
+  /** cria pasta na sessão; rejeita erro tipado em nome vazio/duplicado. */
+  createWorkspaceFolder(workspaceId: string, path: string): Promise<void>;
   runAgent(
     agentId: string,
     prompt: string,

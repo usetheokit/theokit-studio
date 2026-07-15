@@ -130,10 +130,11 @@ export interface ExperimentSummary {
 }
 
 export interface WorkspaceFileEntry {
-  name: string;
+  /** caminho completo relativo à raiz do workspace (ex.: "data/orders.csv"). */
+  path: string;
   kind: "dir" | "file";
-  /** tamanho em bytes (apenas kind === "file"). */
-  sizeBytes?: number;
+  /** conteúdo do arquivo (apenas kind === "file"); tamanho deriva daqui. */
+  content?: string;
 }
 
 export interface WorkspaceSummary {
@@ -215,5 +216,33 @@ export class UnknownCollectionError extends Error {
   constructor(collectionId: string) {
     super(`Knowledge collection '${collectionId}' does not exist`);
     this.name = "UnknownCollectionError";
+  }
+}
+
+export class UnknownWorkspaceError extends Error {
+  constructor(workspaceId: string) {
+    super(`Workspace '${workspaceId}' does not exist`);
+    this.name = "UnknownWorkspaceError";
+  }
+}
+
+export class UnknownWorkspacePathError extends Error {
+  constructor(path: string) {
+    super(`Workspace path '${path}' does not exist or is not a file`);
+    this.name = "UnknownWorkspacePathError";
+  }
+}
+
+export class DuplicateWorkspacePathError extends Error {
+  constructor(path: string) {
+    super(`Workspace path '${path}' already exists`);
+    this.name = "DuplicateWorkspacePathError";
+  }
+}
+
+export class BlankFolderNameError extends Error {
+  constructor() {
+    super("Folder name must not be blank");
+    this.name = "BlankFolderNameError";
   }
 }

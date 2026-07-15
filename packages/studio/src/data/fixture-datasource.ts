@@ -21,6 +21,8 @@ import { metrics } from "./metrics";
 import { play } from "./stream-player";
 import {
   type AgentSummary,
+  BlankFolderNameError,
+  DuplicateWorkspacePathError,
   EmptyQueryError,
   type FixtureScenario,
   type KnowledgeCollection,
@@ -33,7 +35,10 @@ import {
   type StudioRunEvent,
   type ToolSummary,
   UnknownCollectionError,
+  UnknownWorkspaceError,
+  UnknownWorkspacePathError,
   type WorkflowSummary,
+  type WorkspaceSummary,
 } from "./types";
 
 export interface FixtureDataSourceOptions {
@@ -69,6 +74,10 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
   const { scenario, overrides, streamDelayMs = 0, runScript = DEFAULT_RUN } = options;
   const isEmpty = scenario === "empty";
 
+  // Estado de SESSÃO dos workspaces (por instância do datasource): operações de
+  // pasta/arquivo agem sobre esta cópia — reset no reload, como o Request Context.
+  const workspaceState: WorkspaceSummary[] = isEmpty ? [] : structuredClone([...fixtureWorkspaces]);
+
   const counted = <T>(method: string, value: T): Promise<T> => {
     metrics.increment("datasource_calls_total", method);
     return Promise.resolve(structuredClone(value) as T);
@@ -88,7 +97,38 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listScorers: () => counted("listScorers", isEmpty ? [] : [...fixtureScorers]),
     listDatasets: () => counted("listDatasets", isEmpty ? [] : [...fixtureDatasets]),
     listExperiments: () => counted("listExperiments", isEmpty ? [] : [...fixtureExperiments]),
-    listWorkspaces: () => counted("listWorkspaces", isEmpty ? [] : [...fixtureWorkspaces]),
+    listWorkspaces: () => counted("listWorkspaces", workspaceState),
+
+    readWorkspaceFile: (workspaceId: string, path: string): Promise<string> => {
+      metrics.increment("datasource_calls_total", "readWorkspaceFile");
+      const ws = workspaceState.find((w) => w.id === workspaceId);
+      if (!ws) {
+        return Promise.reject(new UnknownWorkspaceError(workspaceId));
+      }
+      const entry = ws.files.find((e) => e.path === path && e.kind === "file");
+      if (!entry || entry.content === undefined) {
+        return Promise.reject(new UnknownWorkspacePathError(path));
+      }
+      return Promise.resolve(entry.content);
+    },
+
+    createWorkspaceFolder: (workspaceId: string, path: string): Promise<void> => {
+      metrics.increment("datasource_calls_total", "createWorkspaceFolder");
+      const ws = workspaceState.find((w) => w.id === workspaceId);
+      if (!ws) {
+        return Promise.reject(new UnknownWorkspaceError(workspaceId));
+      }
+      // Validação na fronteira (error-handling.md § 2): nome vazio ou colisão rejeitam.
+      const name = path.split("/").at(-1) ?? "";
+      if (name.trim().length === 0) {
+        return Promise.reject(new BlankFolderNameError());
+      }
+      if (ws.files.some((e) => e.path === path)) {
+        return Promise.reject(new DuplicateWorkspacePathError(path));
+      }
+      ws.files.push({ path, kind: "dir" });
+      return Promise.resolve();
+    },
 
     async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal) {
       metrics.increment("datasource_calls_total", "runAgent");

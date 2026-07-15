@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Workspaces interativo (dogfood): navegar em pastas com breadcrumb clicável,
+  abrir arquivo em viewer lateral (nome + Close + conteúdo mono com tamanho real),
+  criar pasta (validação na fronteira: nome vazio/duplicado vira erro tipado visível)
+  e refresh refazendo a chamada real ao datasource; operações agem sobre estado de
+  SESSÃO do fixture datasource (nota honesta: reset no reload, workspace real chega
+  com o dev server); StudioDataSource ganha readWorkspaceFile/createWorkspaceFolder
+  e useListing ganha reload() (M5 dogfood)
 - Studio Prompts create view (dogfood): "Create Prompt" abre a tela de criação em duas
   colunas — Configuration (Name obrigatório, Description) e Content (editor mono com
   hint de template variables), seção Variables funcional com sintaxe {{variableName}},

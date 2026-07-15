@@ -7,10 +7,13 @@ import { type StudioDataSource, useDataSource } from "../data/datasource";
 export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
   items: T[];
   loadError: string | null;
+  /** refetch explícito (ex.: botão refresh) — nova chamada contada nas métricas. */
+  reload: () => void;
 } {
   const ds = useDataSource();
   const [items, setItems] = useState<T[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [version, setVersion] = useState(0);
   const loadRef = useRef(load);
   loadRef.current = load;
 
@@ -31,7 +34,7 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
     return () => {
       ignore = true;
     };
-  }, [ds]);
+  }, [ds, version]);
 
-  return { items, loadError };
+  return { items, loadError, reload: () => setVersion((v) => v + 1) };
 }
