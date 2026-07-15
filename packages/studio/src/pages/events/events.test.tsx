@@ -60,7 +60,10 @@ describe("Event Inspector (T3.2)", () => {
     const first = screen.getAllByTestId("event-row")[0];
     if (!first) throw new Error("sem rows");
     const details = within(first).getByRole("group"); // <details>
-    expect(details.querySelector("pre")?.textContent).toContain("step-started");
+    // M7 T3.1: payload via JsonViewer da lib (não mais <pre> cru)
+    expect(details.querySelector('[data-slot="json-viewer"]')).not.toBeNull();
+    expect(details.querySelector("pre")).toBeNull();
+    expect(details.textContent).toContain("step-started");
   });
 });
 
@@ -74,5 +77,18 @@ describe("categorize (T3.2 — pura)", () => {
     expect(categorize("task_started")).toBe("task");
     expect(categorize("turn-ended")).toBe("lifecycle");
     expect(categorize("qualquer-coisa")).toBe("lifecycle");
+  });
+});
+
+describe("event inspector — JsonViewer + DescriptionList (M7 T3.1)", () => {
+  it("test_payload_rendered_via_jsonviewer_not_pre", () => {
+    renderEvents();
+    expect(document.body.querySelector('[data-slot="json-viewer"]')).not.toBeNull();
+    expect(document.body.querySelector("pre")).toBeNull();
+  });
+
+  it("test_event_summary_uses_description_list", () => {
+    renderEvents();
+    expect(document.body.querySelector('[data-slot="description-list"]')).not.toBeNull();
   });
 });

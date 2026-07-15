@@ -1,4 +1,4 @@
-import { Badge, EmptyState, Select } from "@usetheo/ui";
+import { Badge, DescriptionList, EmptyState, JsonViewer, Select } from "@usetheo/ui";
 import { useState } from "react";
 import { Link } from "react-router";
 import { getSurface } from "../../app/nav-items";
@@ -93,9 +93,24 @@ export function EventsPage() {
                       <summary className="cursor-pointer text-muted-foreground text-xs hover:text-foreground">
                         payload
                       </summary>
-                      <pre className="mt-1.5 overflow-auto rounded-lg border border-border/40 bg-background/80 p-3 font-mono text-xs">
-                        {JSON.stringify(event, null, 2)}
-                      </pre>
+                      {/* M7 T3.1: resumo em DescriptionList + payload completo no JsonViewer da lib */}
+                      <div className="mt-1.5 rounded-lg border border-border/40 bg-background/80 p-3">
+                        <DescriptionList layout="horizontal" dense>
+                          <DescriptionList.Item>
+                            <DescriptionList.Term>type</DescriptionList.Term>
+                            <DescriptionList.Detail>
+                              <code className="font-mono text-xs">{event.type}</code>
+                            </DescriptionList.Detail>
+                          </DescriptionList.Item>
+                          <DescriptionList.Item>
+                            <DescriptionList.Term>category</DescriptionList.Term>
+                            <DescriptionList.Detail>{categorize(event.type)}</DescriptionList.Detail>
+                          </DescriptionList.Item>
+                        </DescriptionList>
+                        <div className="mt-2">
+                          <JsonViewer value={event} collapsed={1} />
+                        </div>
+                      </div>
                     </details>
                   </li>
                 ))}
