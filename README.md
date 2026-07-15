@@ -26,7 +26,7 @@ Studio degrades gracefully: without Docker, the playground and event inspector s
 
 ## Design
 
-See [`docs/theokit-studio-arquitetura-proposta.md`](./docs/theokit-studio-arquitetura-proposta.md) (architecture) and [`docs/studio-deep-research-2026-07-14.md`](./docs/studio-deep-research-2026-07-14.md) (competitive research), plus [`ROADMAP.md`](./ROADMAP.md).
+See [`docs/theokit-studio-arquitetura-proposta.md`](./docs/theokit-studio-arquitetura-proposta.md) (architecture), [`docs/studio-deep-research-2026-07-14.md`](./docs/studio-deep-research-2026-07-14.md) (competitive research) and [`docs/mastra-studio-blueprint-clonagem-2026-07-14.md`](./docs/mastra-studio-blueprint-clonagem-2026-07-14.md) (hands-on Mastra Studio capability blueprint), plus [`ROADMAP.md`](./ROADMAP.md).
 
 ## License
 

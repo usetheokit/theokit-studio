@@ -16,3 +16,4 @@ coverage/
 architect-output/
 .claude/knowledge-base/implementations/.progress-*.json
 .claude/halt-loop-prompts/
+.claude/.compaction-snapshots/
