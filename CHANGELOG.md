@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T3.2 — e2e `studio_e2e_reflection_and_run` (oráculo do Goal): sobe o `theokit dev`
+  real na fixture demo-project e valida a cadeia inteira — health, reflection dos agents
+  com tools, SPA em `/_studio` com config injetado, e run streamando NDJSON (toda linha
+  com `kind`, ≥1 `message`, última `done`) — a prova de que o M1 funciona ponta a ponta (#m1)
 - M1 T3.1 — Studio em live mode: `ReflectionDataSource` troca o adapter de fixtures pelo
   real via o seam DIP do M5 — agents/tools/skills/workflows/health vêm da reflection do
   dev server e o chat do playground roda o agent DE VERDADE (stream NDJSON traduzido para

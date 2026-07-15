@@ -83,6 +83,10 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 **Registro T3.1:** decisão (c) do ponto aberto — mapeador anti-corrupção `chunkToStudioEvent` (evidência: switch exaustivo com guard never em event-to-part.ts:141; chunk cru do bridge leria campos errados em silêncio). sessionId estável POR AGENT no adapter (multi-turn; usa o suporte de body.sessionId do T1.4). RunAgentParams (model/temperature/topP do painel M7) IGNORADOS com warn 1× — sem destino no run endpoint (gap honesto; followup F4). Ponto ÚNICO do mode no composition root (obrigação T2.1 QUITADA — verificado por grep: só main.tsx lê config.mode). ServiceName += studio tocou aditivamente: types.ts, fixture-datasource.ts (3 health maps), service-state.tsx (Record total — declarado p/ diff-cohesion). Abort cancela o READER explícito (lock do for-await impedia body.cancel()).
 
+**Registro T3.2 (adendo pre-COMMIT):** e2e GREEN-de-primeira é ESPERADO (test-only; código de produção nasceu RED-GREEN em T1.1–T3.1; o e2e é oráculo de integração, não feature). Restore de env simetrizado (bug pego pelo SEPA: `process.env.X = undefined` coage p/ string "undefined" truthy — vazaria key falsa; delete quando saved undefined p/ ambas as vars).
+
+**Registro T3.2:** e2e é test-only (nenhum símbolo de produção novo — o sistema foi montado em T1.1–T3.1). Sobreposição com tests/integration SANCIONADA pelo SEPA e documentada no header do arquivo (oráculo contratual vs fronteiras granulares — não deletar como duplicado). Edição do vitest.config dispensada (include default já cobre tests/e2e — registrado). Env key+dist com save/restore (nunca vaza pro worker).
+
 ## Followups (scope-creep avoided)
 
 | # | Observed during | Description | Recommended owner |
