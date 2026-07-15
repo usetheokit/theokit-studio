@@ -30,6 +30,7 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     renderShell(["/agents"]);
     // Itens do menu raiz (label do botão === heading da página placeholder/real).
     const rootSurfaces = [
+      "Agent Builder",
       "Prompts",
       "Workflows",
       "Processors",

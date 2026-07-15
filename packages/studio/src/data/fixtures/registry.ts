@@ -1,5 +1,6 @@
 import type {
   AgentSummary,
+  BuilderSessionSummary,
   McpServerSummary,
   ProcessorSummary,
   PromptSummary,
@@ -40,6 +41,36 @@ export const fixtureTools: readonly ToolSummary[] = Object.freeze([
     description: `Tool ${i + 1} exposed by a sample MCP server`,
     usedBy: i % 3 === 0 ? 1 : 0,
   })),
+]);
+
+export const fixtureBuilderSessions: readonly BuilderSessionSummary[] = Object.freeze([
+  {
+    id: "refine-support-tone",
+    title: "Refine Support Agent tone",
+    agentId: "support-agent",
+    lastActivity: "2m",
+    pinned: true,
+  },
+  {
+    id: "refund-approvals",
+    title: "Add refundOrder approvals to Support Agent",
+    agentId: "support-agent",
+    lastActivity: "1h",
+    pinned: false,
+  },
+  {
+    id: "scaffold-triage",
+    title: "Scaffold a billing triage agent",
+    lastActivity: "3h",
+    pinned: false,
+  },
+  {
+    id: "wire-websearch",
+    title: "Wire webSearch into Research Agent",
+    agentId: "research-agent",
+    lastActivity: "1d",
+    pinned: false,
+  },
 ]);
 
 export const fixturePrompts: readonly PromptSummary[] = Object.freeze([

@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type {
   AgentSummary,
+  BuilderSessionSummary,
   DatasetSummary,
   ExperimentSummary,
   KnowledgeCollection,
@@ -27,6 +28,7 @@ export interface StudioDataSource {
   listTools(): Promise<ToolSummary[]>;
   listSkills(): Promise<SkillSummary[]>;
   listPrompts(): Promise<PromptSummary[]>;
+  listBuilderSessions(): Promise<BuilderSessionSummary[]>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   listProcessors(): Promise<ProcessorSummary[]>;
   listMcpServers(): Promise<McpServerSummary[]>;

@@ -2,6 +2,7 @@ import { EmptyState } from "@usetheo/ui";
 import type { ReactElement } from "react";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
+import { AgentBuilderPage } from "../pages/builder";
 import {
   DatasetsPage,
   EvaluationOverviewPage,
@@ -42,6 +43,7 @@ function NotFound() {
 // honesto (PlannedSurfacePage) — IA Mastra-parity, dogfood 2026-07-14.
 const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
   "/agents": <PlaygroundPage />,
+  "/builder": <AgentBuilderPage />,
   "/prompts": <PromptsPage />,
   "/workflows": <WorkflowsPage />,
   "/processors": <ProcessorsPage />,

@@ -8,6 +8,7 @@ import {
 import { fixtureMemories } from "./fixtures/memory";
 import {
   fixtureAgents,
+  fixtureBuilderSessions,
   fixtureMcpServers,
   fixtureProcessors,
   fixturePrompts,
@@ -90,6 +91,8 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listSkills: (): Promise<SkillSummary[]> =>
       counted("listSkills", isEmpty ? [] : [...fixtureSkills]),
     listPrompts: () => counted("listPrompts", isEmpty ? [] : [...fixturePrompts]),
+    listBuilderSessions: () =>
+      counted("listBuilderSessions", isEmpty ? [] : [...fixtureBuilderSessions]),
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
     listProcessors: () => counted("listProcessors", isEmpty ? [] : [...fixtureProcessors]),

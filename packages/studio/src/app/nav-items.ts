@@ -17,6 +17,7 @@ import {
   FlaskConical,
   FolderKanban,
   Gauge,
+  Hammer,
   History,
   LayoutGrid,
   ListChecks,
@@ -57,6 +58,12 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     label: "Agents",
     icon: Bot,
     description: "Chat with any registered agent and watch the typed event stream live.",
+  },
+  {
+    path: "/builder",
+    label: "Agent Builder",
+    icon: Hammer,
+    description: "Build and refine agents with a specialized code assistant.",
   },
   {
     path: "/prompts",
@@ -290,6 +297,7 @@ export const MENUS: Record<string, MenuDefinition> = {
       {
         items: [
           item("/agents"),
+          item("/builder"),
           item("/prompts"),
           item("/workflows"),
           item("/processors"),

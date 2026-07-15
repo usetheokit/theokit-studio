@@ -22,6 +22,16 @@ export interface SkillSummary {
   description: string;
 }
 
+export interface BuilderSessionSummary {
+  id: string;
+  title: string;
+  /** agente alvo da sessão (quando já existe). */
+  agentId?: string;
+  /** atividade relativa exibida na lista (fixture display-ready, ex.: "2m"). */
+  lastActivity: string;
+  pinned: boolean;
+}
+
 export interface PromptSummary {
   id: string;
   name: string;

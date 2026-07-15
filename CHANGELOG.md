@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder (dogfood): nova superfície de construção de agentes no estilo
+  code-assistant — sidebar de sessões (Pinned + Recent, fixtures com atividade
+  relativa), home centrada "What should we build?" com 4 cards de intenção que
+  preenchem o composer (criar agente, adicionar tools, ajustar guardrails, diagnosticar
+  run), composer com barra de contexto (select de agente alvo + workspace) e badge do
+  modelo; envio e "New session" como fake doors honestos até o registry real;
+  StudioDataSource ganha listBuilderSessions(); item "Agent Builder" no menu raiz
+  (M5 dogfood)
 - Studio agent chat revisado (dogfood, paridade com o chat de agente do Mastra): abas
   por agente no header (Chat ativa; Editor/Evaluate/Review/Traces como fake doors
   honestos até seus milestones), painel lateral "Memory not enabled" explicando que
