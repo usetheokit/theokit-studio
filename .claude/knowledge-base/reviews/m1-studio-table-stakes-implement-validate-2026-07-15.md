@@ -1,23 +1,11 @@
 # Implement Validation — m1-studio-table-stakes
 
 **Date:** 2026-07-15
-**Verdict:** BLOCKED (cross-repo coordination) — M1 core COMPLETE, T4.1 pending human/release
+**Overall verdict:** BLOCKED (cross-repo coordination) — M1 core COMPLETE & validated; T4.1 pending human/release
 **Tasks:** 8/9 committed · 1 honestly blocked with reason (T4.1)
+**Completion promise:** `IMPLEMENTATION_COMPLETE` NOT emitted (DoD #7 unmet — endpoint in `theokit dev`). Honest BLOCKED > false completion (Unbreakable Rule 3).
 
-## Terminal state (honest)
-
-`<promise>IMPLEMENTATION_COMPLETE</promise>` is **NOT emitted** — the Global DoD item
-"reflection endpoint NO dev server do theokit" (Objective #7) is not met because T4.1 is
-BLOCKED on coordination, not on any code defect. Per Unbreakable Rule 3, honest BLOCKED >
-false completion.
-
-The M1 **core deliverable is complete and validated**: the `@theokit/studio/plugin` (reflection
-API + run NDJSON + SPA at `/_studio`), the `ReflectionDataSource` hybrid, and the Goal oracle
-e2e all pass. 7 of 8 plan objectives are closed. What remains (T4.1) is a cross-repo commit in
-the `theokit` repo that the plan explicitly designed to be non-blocking for this repo's
-deliverable (ADR D1 § Consequences + T4.1 Deep Dive escape hatch).
-
-## Validation chain (this repo — all green)
+## Real code gates — all green
 
 | Gate | Command | Result |
 |---|---|---|
@@ -25,52 +13,66 @@ deliverable (ADR D1 § Consequences + T4.1 Deep Dive escape hatch).
 | Typecheck | `pnpm --filter @theokit/studio typecheck` | ✅ exit 0 |
 | Lint (canonical, repo root) | `pnpm run check` | ✅ exit 0 |
 | Build (SPA + plugin) | `pnpm --filter @theokit/studio build` | ✅ dist/spa/index.html + dist/plugin/index.js |
-| Coverage | `pnpm --filter @theokit/studio test:coverage` | ✅ 97.16% stmts / 90.32% branches (target 90%) |
-| Checkpoint ↔ git | (manual cross-check) | ✅ every committed task points at an existing SHA |
+| Coverage | `test:coverage` | ✅ 97.16% stmts / 90.32% branches (target 90%) |
 | Goal oracle | `studio_e2e_reflection_and_run` | ✅ health + agents-with-tools + SPA-with-config + run-NDJSON |
 
-Critical-path coverage: `agent-scan.ts` 100%, `http.ts` 100%, `run-endpoint.ts` 91%,
-`static-serve.ts` 92% (traversal guard + fallback fully exercised), `bootstrap.ts` 96%.
+## Consolidated gate (`run_validation.py`) — 11 checks
 
-## Wiring triad (per new production symbol)
+| Check | Status | Note |
+|---|---|---|
+| progress_schema | ✅ PASS | enum values corrected (T3.2 wiring.a=null test-only; T4.1 wiring.a=fail cross-repo caller absent) |
+| npm test | ✅ PASS | 257/257 |
+| npm run typecheck | ✅ PASS | — |
+| wiring_triad | ✅ PASS | 221 symbols from diff, 197 resolved, **0 uncalled** (pillar a); independent recheck |
+| test_obligations | ✅ PASS | concurrency + failure tests present where the plan promised them |
+| code_quality | ⚠️ WARN | PASS_WITH_CAVEATS (89). Only cap: `symbol_fab_unverifiable_typescript` — the detector couldn't introspect via network; `tsc` PASS independently proves no fabricated symbol. NOT a real fabrication. |
+| acceptance_criteria | ⚠️ WARN | 23 criteria are executable-by-human evidence (build-exit-0, import-resolves, wc-≤500) — all verified in the real-gates table above; surfaced for `/review`, never a silently-ticked box |
+| patterns_consumption | N/A | plan cites no `*-patterns` skill (none exist) |
+| npm run lint / coverage | SKIP | script-name mismatch (`check`/`test:coverage` run manually above — green) |
+| **checkpoint_consistency** | ❌ FAIL (heuristic FP) | see below |
 
-Verified per-symbol during each task via `check_wiring.py`:
+### checkpoint_consistency FAIL — heuristic false-positive (documented, not a code defect)
 
-- `theokitStudio`, `scanStudioAgents`, `listReflectionAgents`, `aggregateReflection`,
-  `listReflectionSkills`, `handleAgentRun`, `matchRunPath`, `resolveSpaDir`,
-  `createReflectionDataSource`, `parseNdjson` — pillar (a) caller + (b) integration test PASS.
-- Internal helpers (`sendErrorEnvelope`/`sendJson`, `serveStudio`, `chunkToStudioEvent`) —
-  pillar (a) PASS; pillar (b) via HTTP-real integration marker (ADR-DEFER-WIRING-B, exercised
-  end-to-end, not a nominal grep).
-- Runtime metric (pillar c): `datasource_calls_total.listAgents` observed ≥ 1 in the
-  composition-root live-mode test (`test_composition_root_selects_hybrid_in_live_mode`).
+The gate flags: *"T4.1 is referenced by a real commit in git but the checkpoint marks it 'blocked'."*
+Commit `89156b7` carries "(T4.1 parcial)" and did **preparatory** T4.1 work in THIS repo
+(peer-vite compat fix `>=6 <9` + the ready-to-apply integration guide `docs/theokit-dev-integration.md`).
+It did **not** implement T4.1's actual deliverable — the cross-repo registration inside the
+`theokit` repo, which is coordination-blocked. The gate's own documented limitation
+(*"relies on the commit-message task-id convention"*) cannot distinguish a *prep commit
+referencing a task* from *the task's completion*. Keeping T4.1 `blocked` is the truthful
+status (the milestone deliverable is not met); relabeling it `committed` to satisfy the
+heuristic would misrepresent the cross-repo work as done. This FAIL is subsumed by the
+overall BLOCKED verdict — there is no code to fix, so no validation halt-loop applies (a
+coordination block halts per `cycle-implement § Stop conditions`, it does not iterate).
 
-## T4.1 — BLOCKED (coordination), pillar (a) ABSENT (not defer)
+## Wiring triad (per new production symbol — verified during each task)
+
+`theokitStudio`, `scanStudioAgents`, `listReflectionAgents`, `aggregateReflection`,
+`listReflectionSkills`, `handleAgentRun`, `matchRunPath`, `resolveSpaDir`,
+`createReflectionDataSource`, `parseNdjson` → pillar (a) caller + (b) integration test PASS.
+Internal helpers (`sendErrorEnvelope`/`sendJson`, `serveStudio`, `chunkToStudioEvent`) →
+pillar (a) PASS; pillar (b) via HTTP-real integration marker (exercised end-to-end).
+Runtime metric (c): `datasource_calls_total.listAgents` observed ≥ 1 in the composition-root
+live-mode test.
+
+## T4.1 — BLOCKED (coordination). Pillar (a) ABSENT, not defer
 
 Three independently-verified blockers (SEPA confirmed each against `git`):
 
-1. **Coordination.** `../theokit` has an in-flight feature (`decorator-file-based-parity`,
-   active halt-loop) with uncommitted changes to `packages/theo/package.json` — the exact file
-   T4.1 edits. Committing alongside it is the M7 hazard raised to cross-repo scope.
-2. **Publish order.** `@theokit/studio` is `private:true`/`0.0.0`; the theokit workspace does
-   not include it (sibling-links removed 2026-06-10). No non-invasive resolution path exists.
-3. **Vite major (resolved here).** theokit is on Vite 6; the plugin peer was `>=7 <9`. Fixed
-   in this repo: relaxed to `>=6 <9` (connect middleware is identical across Vite 5/6/7).
+1. **Coordination.** `../theokit` has an in-flight feature (`decorator-file-based-parity`)
+   with uncommitted changes to `packages/theo/package.json` — the exact file T4.1 edits.
+2. **Publish order.** `@theokit/studio` is `private:true`/`0.0.0`; the theokit workspace
+   excludes it (sibling links removed 2026-06-10).
+3. **Vite major (resolved here).** theokit on Vite 6; plugin peer relaxed `>=7 <9` → `>=6 <9`
+   (connect middleware identical across Vite 5/6/7).
 
-Ready-to-apply artifact: `docs/theokit-dev-integration.md` (exact diff — dependency +
-`plugins.push(theokitStudio())` + smoke test). Tracked in **theokit#133** (linked to #132).
-Owner of the cross-repo drawback: Paulo (per plan § Drawbacks & Risks).
-
-**Pillar (a) of T4.1's wiring triad is ABSENT by coordination** — the real caller in theokit's
-`configure-server-hook` does not exist yet. The `docs/` snippet is documentation, not a caller.
+Ready-to-apply artifact: `docs/theokit-dev-integration.md`. Tracked in **theokit#133**.
+Owner (per plan § Drawbacks): Paulo.
 
 ## Downstream
 
-- **`/review`** MAY run on this repo's delta (8 committed tasks — the M1 core is a coherent,
-  reviewable unit). The BLOCKED T4.1 is documented, not silently skipped.
-- **`/release`** of `@theokit/studio` publishes the package, which unblocks blocker #2. The
-  ROADMAP M1 checkbox does NOT flip until T4.1 lands in theokit (cycle-release § post-merge:
+- **`/review`** MAY run on this repo's 8-committed-task M1-core delta (a coherent unit).
+- **`/release`** of `@theokit/studio` publishes the package → unblocks blocker #2.
+- ROADMAP M1 checkbox does NOT flip until T4.1 lands in theokit (`cycle-release § post-merge`:
   "sem DoD completo, sem flip").
-- **Ecosystem issues filed** (Unbreakable Rule — máximo de contexto): theokit-sdk#123
-  (tools/workflows enumeration), theokit#132 (RunEvent bridge seam), theokit#133 (dev-server
-  registration).
+- Ecosystem issues filed: theokit-sdk#123, theokit#132, theokit#133.
