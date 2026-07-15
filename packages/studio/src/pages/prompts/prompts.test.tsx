@@ -22,11 +22,57 @@ describe("Prompts (Mastra-parity clone)", () => {
     expect(guardrails?.textContent).toContain("3");
   });
 
-  it("create_prompt_is_honest_fake_door_in_fixtures_mode", async () => {
+  it("create_prompt_opens_fillable_form_with_fake_door_only_at_submit", async () => {
     renderPrompts();
     await screen.findAllByTestId("prompt-row");
-    const create = screen.getByRole("button", { name: /create prompt/i }) as HTMLButtonElement;
-    expect(create.disabled).toBe(true);
+    await userEvent.click(screen.getByRole("button", { name: /^create prompt$/i }));
+
+    expect(await screen.findByTestId("prompt-create")).toBeTruthy();
+    // Form 100% preenchível (regra do dogfood: fake door só na mutação).
+    const nameInput = screen.getByLabelText(/name/i, { selector: "#prompt-name" });
+    await userEvent.type(nameInput, "billing-tone");
+    expect((nameInput as HTMLInputElement).value).toBe("billing-tone");
+    const contentEditor = screen.getByRole("textbox", { name: /prompt block content/i });
+    await userEvent.type(contentEditor, "Use {{}{{}customerName}} politely.");
+    // Mutação final desabilitada com nota honesta.
+    const submit = screen.getByRole("button", {
+      name: /create prompt block/i,
+    }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+  });
+
+  it("add_variable_validates_blank_and_duplicate_at_the_boundary", async () => {
+    renderPrompts();
+    await screen.findAllByTestId("prompt-row");
+    await userEvent.click(screen.getByRole("button", { name: /^create prompt$/i }));
+    await screen.findByTestId("prompt-create");
+
+    // Vazio → erro tipado visível, nada adicionado.
+    await userEvent.click(screen.getByRole("button", { name: /add variable/i }));
+    expect(screen.getByRole("alert").textContent).toContain("must not be blank");
+    expect(screen.queryAllByTestId("prompt-variable").length).toBe(0);
+    // Adiciona 'customerName' com sucesso.
+    await userEvent.type(screen.getByRole("textbox", { name: /variable name/i }), "customerName");
+    await userEvent.click(screen.getByRole("button", { name: /add variable/i }));
+    expect(screen.getAllByTestId("prompt-variable").length).toBe(1);
+    expect(screen.getByText("{{customerName}}")).toBeTruthy();
+    // Duplicado → erro, lista não cresce.
+    await userEvent.type(screen.getByRole("textbox", { name: /variable name/i }), "customerName");
+    await userEvent.click(screen.getByRole("button", { name: /add variable/i }));
+    expect(screen.getByRole("alert").textContent).toContain("already defined");
+    expect(screen.getAllByTestId("prompt-variable").length).toBe(1);
+    // Remover limpa o chip.
+    await userEvent.click(screen.getByRole("button", { name: /remove variable customername/i }));
+    expect(screen.queryAllByTestId("prompt-variable").length).toBe(0);
+  });
+
+  it("create_view_back_returns_to_prompt_list", async () => {
+    renderPrompts();
+    await screen.findAllByTestId("prompt-row");
+    await userEvent.click(screen.getByRole("button", { name: /^create prompt$/i }));
+    await screen.findByTestId("prompt-create");
+    await userEvent.click(screen.getByRole("button", { name: /all prompts/i }));
+    expect((await screen.findAllByTestId("prompt-row")).length).toBe(3);
   });
 
   it("row_click_opens_readonly_detail_with_published_content", async () => {

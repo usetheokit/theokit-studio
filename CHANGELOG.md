@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Prompts create view (dogfood): "Create Prompt" abre a tela de criação em duas
+  colunas — Configuration (Name obrigatório, Description) e Content (editor mono com
+  hint de template variables), seção Variables funcional com sintaxe {{variableName}},
+  validação na fronteira (nome vazio/duplicado vira erro visível) e chips removíveis;
+  form 100% preenchível com fake door honesto apenas no "Create prompt block"
+  (M5 dogfood)
 - Studio Prompts (dogfood, tela que faltava da paridade Mastra): lista de prompt blocks
   reutilizáveis/versionados (Name | Description | Version | Used by, com filtro),
   detail read-only com o conteúdo publicado e nota honesta (edição/versionamento chegam
