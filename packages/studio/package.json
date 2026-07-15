@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "TheoKit Studio \u2014 local dev UI (M5: UX shell on fixtures)",
+  "description": "TheoKit Studio — local dev UI (M5: UX shell on fixtures)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -20,7 +20,7 @@
     "react-router": "^7.18.1"
   },
   "_comments": {
-    "@theokit/sdk": "types-only: fixtures importam `import type` \u2014 nunca entra no bundle; por isso devDependencies (SEPA brief 2026-07-14)"
+    "@theokit/sdk": "types-only: fixtures importam `import type` — nunca entra no bundle; por isso devDependencies (SEPA brief 2026-07-14)"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.2",
