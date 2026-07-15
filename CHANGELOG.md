@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 discovery: blueprint `m1-studio-table-stakes` (verdict SHIPPABLE 100.0) mapeando
+  reflection endpoint + SPA `/_studio` — prior art Genkit/Mastra + superfície real do
+  `theokit dev` (vite-plugin middlewares) e `@theokit/sdk` 3.8.0 (`Agent.list()`,
+  `run.stream()`, 9 RunEvents tipados); gaps de enumeração de tools/workflows
+  reportados em theokit-sdk#123 (#m1)
 - Studio Agent Builder — model picker refinado no composer (dogfood): o badge mono cru
   "claude-fable-5" + select solto de esforço viram um só controle elegante (tile
   Sparkles + nome amigável "Fable 5 · Medium" + chevron) sobre o DropdownMenu do
