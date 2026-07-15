@@ -133,6 +133,32 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(filtered[0]?.textContent).toContain("triage");
   });
 
+  it("composer_has_reference_anatomy_actions_row_and_project_row", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
+    // Linha de ações dentro do composer: + (fake door), approval mode, esforço, mic, seta.
+    const attach = screen.getByRole("button", { name: /add attachment/i }) as HTMLButtonElement;
+    expect(attach.disabled).toBe(true);
+    const mic = screen.getByRole("button", { name: /voice input/i }) as HTMLButtonElement;
+    expect(mic.disabled).toBe(true);
+    // Approval mode é config local REAL.
+    await userEvent.click(screen.getByRole("combobox", { name: /approval mode/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "Auto-approve edits" }));
+    expect(screen.getByRole("combobox", { name: /approval mode/i }).textContent).toContain(
+      "Auto-approve edits",
+    );
+    // Esforço ao lado do modelo.
+    await userEvent.click(screen.getByRole("combobox", { name: /reasoning effort/i }));
+    await userEvent.click(await screen.findByRole("option", { name: "High" }));
+    expect(screen.getByRole("combobox", { name: /reasoning effort/i }).textContent).toContain(
+      "High",
+    );
+    // Linha do projeto ABAIXO do composer.
+    await userEvent.click(screen.getByRole("combobox", { name: /^project$/i }));
+    const options = await screen.findAllByRole("option");
+    expect(options.map((o) => o.textContent)).toContain("New project");
+  });
+
   it("intent_card_click_fills_the_composer_starter", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");

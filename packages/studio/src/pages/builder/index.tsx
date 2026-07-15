@@ -9,7 +9,9 @@ import {
   Clock,
   FolderKanban,
   GitCommitHorizontal,
+  Hand,
   LayoutTemplate,
+  Mic,
   Pin,
   Plus,
   Search,
@@ -488,6 +490,10 @@ export function AgentBuilderPage() {
   const { items: agents } = useListing((d) => d.listAgents());
   const [target, setTarget] = useState("new");
   const [prompt, setPrompt] = useState("");
+  // Config local da sessão (real — nada executa em fixtures, mas a escolha é do usuário).
+  const [approval, setApproval] = useState("ask");
+  const [effort, setEffort] = useState("medium");
+  const [project, setProject] = useState("demo-workspace");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<BuilderView>({ kind: "home" });
   const [openError, setOpenError] = useState<string | null>(null);
@@ -743,8 +749,100 @@ export function AgentBuilderPage() {
                 })}
               </div>
               <form onSubmit={startSession} className="mt-6">
-                <div className="mx-3 flex items-center justify-between gap-3 rounded-t-xl border border-border/40 border-b-0 bg-card/60 px-4 pt-1.5 pb-3 text-muted-foreground text-xs">
-                  <span className="flex items-center gap-2">
+                {/* Anatomia do composer (referência): texto → linha de ações → linha do projeto */}
+                <div className="relative rounded-2xl border border-border/60 bg-card p-3 shadow-black/20 shadow-lg transition-colors focus-within:border-primary/50">
+                  <Textarea
+                    aria-label="Build instructions"
+                    className="min-h-[56px] w-full resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                    rows={2}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Do anything — @ to reference skills"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Add attachment"
+                      disabled
+                      title="Attachments land with the real registry"
+                      className="flex size-7 items-center justify-center rounded-full border border-border/60 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Plus className="size-4" aria-hidden />
+                    </button>
+                    <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                      <Hand className="size-3.5" aria-hidden />
+                      <Select value={approval} onValueChange={setApproval}>
+                        <Select.Trigger
+                          aria-label="Approval mode"
+                          size="sm"
+                          className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
+                        >
+                          <Select.Value />
+                        </Select.Trigger>
+                        <Select.Content>
+                          <Select.Item value="ask">Ask for approval</Select.Item>
+                          <Select.Item value="auto-edits">Auto-approve edits</Select.Item>
+                          <Select.Item value="readonly">Read-only</Select.Item>
+                        </Select.Content>
+                      </Select>
+                    </span>
+                    <span className="ml-auto flex items-center gap-1.5">
+                      <span className="flex items-center gap-1 text-muted-foreground text-xs">
+                        <span className="font-mono">claude-fable-5</span>
+                        <Select value={effort} onValueChange={setEffort}>
+                          <Select.Trigger
+                            aria-label="Reasoning effort"
+                            size="sm"
+                            className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
+                          >
+                            <Select.Value />
+                          </Select.Trigger>
+                          <Select.Content>
+                            <Select.Item value="low">Low</Select.Item>
+                            <Select.Item value="medium">Medium</Select.Item>
+                            <Select.Item value="high">High</Select.Item>
+                          </Select.Content>
+                        </Select>
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Voice input"
+                        disabled
+                        title="Voice input lands with the real registry"
+                        className="flex size-7 items-center justify-center rounded-full text-muted-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Mic className="size-4" aria-hidden />
+                      </button>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        aria-label="Start build session"
+                        className="size-8 rounded-full p-0"
+                      >
+                        <ArrowUp className="size-4" aria-hidden />
+                      </Button>
+                    </span>
+                  </div>
+                </div>
+                {/* Linha do projeto/alvo abaixo do composer (referência) */}
+                <div className="mt-2 flex items-center gap-4 px-3 text-muted-foreground text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <FolderKanban className="size-3.5" aria-hidden />
+                    <Select value={project} onValueChange={setProject}>
+                      <Select.Trigger
+                        aria-label="Project"
+                        size="sm"
+                        className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
+                      >
+                        <Select.Value />
+                      </Select.Trigger>
+                      <Select.Content>
+                        <Select.Item value="demo-workspace">Demo Workspace</Select.Item>
+                        <Select.Item value="new-project">New project</Select.Item>
+                      </Select.Content>
+                    </Select>
+                  </span>
+                  <span className="flex items-center gap-1.5">
                     <Bot className="size-3.5" aria-hidden />
                     <Select value={target} onValueChange={setTarget}>
                       <Select.Trigger
@@ -764,33 +862,6 @@ export function AgentBuilderPage() {
                       </Select.Content>
                     </Select>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <FolderKanban className="size-3.5" aria-hidden />
-                    Demo Workspace
-                  </span>
-                </div>
-                <div className="-mt-1.5 relative rounded-2xl border border-border/60 bg-card p-3 shadow-black/20 shadow-lg transition-colors focus-within:border-primary/50">
-                  <Textarea
-                    aria-label="Build instructions"
-                    className="min-h-[56px] w-full resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-                    rows={2}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Do anything — @ to reference skills"
-                  />
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="rounded-md border border-border/60 bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
-                      claude-fable-5
-                    </span>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      aria-label="Start build session"
-                      className="size-8 rounded-full p-0"
-                    >
-                      <ArrowUp className="size-4" aria-hidden />
-                    </Button>
-                  </div>
                 </div>
                 <p className="mt-3 text-center text-muted-foreground text-xs">
                   Build sessions are scripted fixtures in this milestone — the live assistant

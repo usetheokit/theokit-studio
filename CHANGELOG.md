@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — composer da home com a anatomia da referência (dogfood):
+  linha de ações dentro do composer com "+" (fake door honesto), select de modo de
+  aprovação real (Ask for approval / Auto-approve edits / Read-only), modelo + select
+  de esforço (Low/Medium/High), mic (fake door honesto) e seta redonda; linha do
+  projeto ABAIXO do composer (select de projeto com "New project" + select de agente
+  alvo) (M5 dogfood)
 - Studio Agent Builder — estrutura de app de code assistant completa (dogfood, passo a
   passo sobre as referências visuais): sidebar reordenada (título com switcher →
   New session ⌘N → Search ⌘K → navegação Skills/Scheduled/Templates → Pinned →
