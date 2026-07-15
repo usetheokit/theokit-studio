@@ -24,7 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
   honesta em fixtures mode), consistente com o Test Message do Processors
 
+### Changed
+- M1 — peer de `vite` do plugin relaxado de `>=7 <9` para `>=6 <9`: o consumidor
+  pretendido (`theokit dev`) está em Vite 6 e o middleware connect do plugin
+  (`configureServer`/`server.middlewares.use`/`ssrLoadModule`) é idêntico em Vite 5/6/7 —
+  o range anterior embutia uma incompatibilidade conhecida com o único host real (#m1)
+
 ### Added
+- M1 T4.1 (parcial) — guia de integração `docs/theokit-dev-integration.md` com o diff exato
+  (dependência + `plugins.push(theokitStudio())` + smoke test) para montar o plugin no
+  `theokit dev`; o commit cross-repo no `theokit` fica pendente de coordenação (feature em
+  voo lá) e da publicação do pacote — rastreado em theokit#133 (#m1)
 - M1 T3.2 — e2e `studio_e2e_reflection_and_run` (oráculo do Goal): sobe o `theokit dev`
   real na fixture demo-project e valida a cadeia inteira — health, reflection dos agents
   com tools, SPA em `/_studio` com config injetado, e run streamando NDJSON (toda linha
