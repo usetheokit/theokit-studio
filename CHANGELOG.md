@@ -18,7 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (a11y); nome de pasta com "/" rejeitado na fronteira; aria-label do model picker
   anuncia a seleção; testes novos: negativos de getBuilderSession/startBuilderSession,
   loadError visível em Prompts/Builder/Workspaces, cenário empty do builder e
-  validação de "/" (M5 dogfood)
+  validação de "/"; formatação canônica do biome aplicada também aos arquivos do
+  delta M7 (events/playground) para manter o gate da raiz verde (M5 dogfood)
 - Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
   digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
   honesta em fixtures mode), consistente com o Test Message do Processors

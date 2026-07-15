@@ -104,7 +104,9 @@ export function EventsPage() {
                           </DescriptionList.Item>
                           <DescriptionList.Item>
                             <DescriptionList.Term>category</DescriptionList.Term>
-                            <DescriptionList.Detail>{categorize(event.type)}</DescriptionList.Detail>
+                            <DescriptionList.Detail>
+                              {categorize(event.type)}
+                            </DescriptionList.Detail>
                           </DescriptionList.Item>
                         </DescriptionList>
                         <div className="mt-2">

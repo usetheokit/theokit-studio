@@ -2,11 +2,11 @@ import { ChatMessageContent, ChatMessageRoot, ToolCallCard } from "@theokit/ui";
 import { Badge, Button, Combobox, Slider, Textarea } from "@usetheo/ui";
 import { ArrowLeft, Bot, SendHorizonal } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import type { RunAgentParams } from "../../data/datasource";
 import { EntityTable } from "../../app/entity-table";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
+import type { RunAgentParams } from "../../data/datasource";
 import type { AgentSummary } from "../../data/types";
 import type { ChatPart } from "./event-to-part";
 import { useRunPlayback } from "./use-run-playback";
@@ -174,7 +174,10 @@ function ChatView({ agent, onBack }: { agent: AgentSummary; onBack: () => void }
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 flex-col border-border/40 border-r px-4 py-6 md:flex">
           {/* M7 T3.2: painel de params REAL — flui para ds.runAgent via send() */}
-          <div className="mb-4 rounded-xl border border-border/40 bg-card/60 p-4" data-testid="chat-params-panel">
+          <div
+            className="mb-4 rounded-xl border border-border/40 bg-card/60 p-4"
+            data-testid="chat-params-panel"
+          >
             <p className="font-medium text-foreground text-sm">Parameters</p>
             <p className="mt-3 text-muted-foreground text-xs">Model</p>
             <Combobox
