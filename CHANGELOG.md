@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — model picker refinado no composer (dogfood): o badge mono cru
+  "claude-fable-5" + select solto de esforço viram um só controle elegante (tile
+  Sparkles + nome amigável "Fable 5 · Medium" + chevron) sobre o DropdownMenu do
+  design system, com seção Model (4 opções com nome amigável, descrição e id mono,
+  radio no ativo) e seção Reasoning effort (Low/Medium/High) (M5 dogfood)
 - Studio Agent Builder — minimizar chat ou painel lateral na sessão (dogfood): toggles
   de ícone no header da sessão (Minimize/Restore chat e Minimize/Restore side panel,
   com aria-pressed); no máximo UM lado minimizado por vez (nunca tela vazia — minimizar

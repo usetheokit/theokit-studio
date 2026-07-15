@@ -1,4 +1,4 @@
-import { Badge, Button, EmptyState, Select, Textarea } from "@usetheo/ui";
+import { Badge, Button, DropdownMenu, EmptyState, Select, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
   Bot,
@@ -22,6 +22,7 @@ import {
   Plus,
   Search,
   ShieldCheck,
+  Sparkles,
   SquarePen,
   Undo2,
   Wrench,
@@ -85,6 +86,83 @@ const FOLLOW_UP_REPLY: BuilderMessage = {
   role: "assistant",
   text: "Applied — the review panel on the right reflects the change. Anything else to adjust?",
 };
+
+// ---------------------------------------------------------------------------
+// Model picker do composer — nome amigável + esforço num só controle refinado.
+// ---------------------------------------------------------------------------
+
+const MODEL_OPTIONS = [
+  { id: "claude-fable-5", name: "Fable 5", blurb: "Deepest reasoning for complex builds" },
+  { id: "claude-opus-4-8", name: "Opus 4.8", blurb: "Strong all-round builder" },
+  { id: "claude-sonnet-4-6", name: "Sonnet 4.6", blurb: "Fast and balanced" },
+  { id: "claude-haiku-4-5", name: "Haiku 4.5", blurb: "Snappy for quick edits" },
+] as const;
+
+const EFFORT_OPTIONS = ["Low", "Medium", "High"] as const;
+
+function ModelPicker({
+  model,
+  effort,
+  onModelChange,
+  onEffortChange,
+}: {
+  model: string;
+  effort: string;
+  onModelChange: (id: string) => void;
+  onEffortChange: (effort: string) => void;
+}) {
+  const active = MODEL_OPTIONS.find((m) => m.id === model) ?? MODEL_OPTIONS[0];
+  return (
+    <DropdownMenu>
+      <DropdownMenu.Trigger
+        aria-label="Model picker"
+        className="group flex items-center gap-1.5 rounded-lg border border-border/60 bg-background px-2 py-1 text-xs transition-colors hover:border-primary/40"
+      >
+        <span className="flex size-4 items-center justify-center rounded bg-primary/15 text-primary">
+          <Sparkles className="size-3" aria-hidden />
+        </span>
+        <span className="font-medium text-foreground">{active.name}</span>
+        <span className="text-muted-foreground/60" aria-hidden>
+          ·
+        </span>
+        <span className="text-muted-foreground">{effort}</span>
+        <ChevronDown
+          className="size-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180"
+          aria-hidden
+        />
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Content align="end" sideOffset={6} className="w-72">
+        <DropdownMenu.Label className="text-muted-foreground text-xs uppercase tracking-wide">
+          Model
+        </DropdownMenu.Label>
+        <DropdownMenu.RadioGroup value={model} onValueChange={onModelChange}>
+          {MODEL_OPTIONS.map((option) => (
+            <DropdownMenu.RadioItem key={option.id} value={option.id} className="items-start py-2">
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-medium text-foreground text-sm leading-none">
+                  {option.name}
+                </span>
+                <span className="text-muted-foreground text-xs">{option.blurb}</span>
+                <span className="font-mono text-[10px] text-muted-foreground/60">{option.id}</span>
+              </span>
+            </DropdownMenu.RadioItem>
+          ))}
+        </DropdownMenu.RadioGroup>
+        <DropdownMenu.Separator />
+        <DropdownMenu.Label className="text-muted-foreground text-xs uppercase tracking-wide">
+          Reasoning effort
+        </DropdownMenu.Label>
+        <DropdownMenu.RadioGroup value={effort} onValueChange={onEffortChange}>
+          {EFFORT_OPTIONS.map((option) => (
+            <DropdownMenu.RadioItem key={option} value={option}>
+              {option}
+            </DropdownMenu.RadioItem>
+          ))}
+        </DropdownMenu.RadioGroup>
+      </DropdownMenu.Content>
+    </DropdownMenu>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Diff rendering (painel Review) — parser próprio, linhas numeradas old/new.
@@ -692,7 +770,8 @@ export function AgentBuilderPage() {
   const [prompt, setPrompt] = useState("");
   // Config local da sessão (real — nada executa em fixtures, mas a escolha é do usuário).
   const [approval, setApproval] = useState("ask");
-  const [effort, setEffort] = useState("medium");
+  const [model, setModel] = useState("claude-fable-5");
+  const [effort, setEffort] = useState("Medium");
   const [project, setProject] = useState("demo-workspace");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<BuilderView>({ kind: "home" });
@@ -987,23 +1066,12 @@ export function AgentBuilderPage() {
                       </Select>
                     </span>
                     <span className="ml-auto flex items-center gap-1.5">
-                      <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                        <span className="font-mono">claude-fable-5</span>
-                        <Select value={effort} onValueChange={setEffort}>
-                          <Select.Trigger
-                            aria-label="Reasoning effort"
-                            size="sm"
-                            className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
-                          >
-                            <Select.Value />
-                          </Select.Trigger>
-                          <Select.Content>
-                            <Select.Item value="low">Low</Select.Item>
-                            <Select.Item value="medium">Medium</Select.Item>
-                            <Select.Item value="high">High</Select.Item>
-                          </Select.Content>
-                        </Select>
-                      </span>
+                      <ModelPicker
+                        model={model}
+                        effort={effort}
+                        onModelChange={setModel}
+                        onEffortChange={setEffort}
+                      />
                       <button
                         type="button"
                         aria-label="Voice input"

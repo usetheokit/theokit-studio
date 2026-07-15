@@ -221,12 +221,22 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(screen.getByRole("combobox", { name: /approval mode/i }).textContent).toContain(
       "Auto-approve edits",
     );
-    // Esforço ao lado do modelo.
-    await userEvent.click(screen.getByRole("combobox", { name: /reasoning effort/i }));
-    await userEvent.click(await screen.findByRole("option", { name: "High" }));
-    expect(screen.getByRole("combobox", { name: /reasoning effort/i }).textContent).toContain(
-      "High",
+    // Model picker refinado: nome amigável + esforço num só controle.
+    const picker = screen.getByRole("button", { name: /model picker/i });
+    expect(picker.textContent).toContain("Fable 5");
+    expect(picker.textContent).toContain("Medium");
+    await userEvent.click(picker);
+    // Painel com modelos (nome + descrição + id mono) e esforço.
+    const sonnet = await screen.findByRole("menuitemradio", { name: /sonnet 4\.6/i });
+    expect(sonnet.textContent).toContain("Fast and balanced");
+    expect(sonnet.textContent).toContain("claude-sonnet-4-6");
+    await userEvent.click(sonnet);
+    expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain(
+      "Sonnet 4.6",
     );
+    await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
+    await userEvent.click(await screen.findByRole("menuitemradio", { name: "High" }));
+    expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain("High");
     // Linha do projeto ABAIXO do composer.
     await userEvent.click(screen.getByRole("combobox", { name: /^project$/i }));
     const options = await screen.findAllByRole("option");
