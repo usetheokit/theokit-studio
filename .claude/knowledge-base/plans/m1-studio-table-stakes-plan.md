@@ -255,11 +255,11 @@ export function theokitStudio(options?: StudioPluginOptions): Plugin
 
 #### TDD
 ```
-RED:     health_endpoint_returns_ok_and_version() — GET /_studio/api/health → 200 {ok:true, studio:string}
-RED:     unknown_api_route_returns_typed_404_envelope() — GET /_studio/api/nope → 404 {error:{code:"NOT_FOUND"}}
-RED:     non_studio_request_passes_through_untouched() — GET /app chama next() sem tocar res
-RED:     studio_prefix_requires_boundary() — GET /_studioX/api/health chama next()
-RED:     dispatch_decides_on_pathname_ignoring_query() — GET /_studio/api/health?x=1 → 200 (EC-1)
+RED:     test_health_endpoint_returns_ok_and_version() — GET /_studio/api/health → 200 {ok:true, studio:string}
+RED:     test_unknown_api_route_returns_typed_404_envelope() — GET /_studio/api/nope → 404 {error:{code:"NOT_FOUND"}}
+RED:     test_non_studio_request_passes_through_untouched() — GET /app chama next() sem tocar res
+RED:     test_studio_prefix_requires_boundary() — GET /_studioX/api/health chama next()
+RED:     test_dispatch_decides_on_pathname_ignoring_query() — GET /_studio/api/health?x=1 → 200 (EC-1)
 GREEN:   plugin mínimo
 REFACTOR: extrair router table se o dispatch passar de ~30 linhas
 VERIFY:  pnpm --filter @theokit/studio test plugin/index.test.ts
@@ -338,13 +338,13 @@ async function listAgents(deps: {root, agentsDir, load: (file)=>Promise<unknown>
 
 #### TDD
 ```
-RED:     scan_discovers_top_level_agents_and_collapses_index() — support + nested/index → ["nested","support"]
-RED:     scan_excludes_composition_subfolders_and_tests() — tools/ignored.ts e *.test.ts fora
-RED:     scan_returns_empty_when_agents_dir_missing() — [] sem throw
-RED:     agents_endpoint_compiles_metadata_per_agent() — tools name+description presentes
-RED:     agents_endpoint_degrades_per_item_on_broken_module() — 1 quebrado → error naquele item, outros ok
-RED:     agents_endpoint_hints_when_no_agents_dir() — {items:[], hint}
-RED:     agent_load_timeout_degrades_that_item() — load que nunca resolve + Promise.race (timeout injetável; 50ms no teste) → {name, error:"load timeout..."}, demais itens ok (EC-6)
+RED:     test_scan_discovers_top_level_agents_and_collapses_index() — support + nested/index → ["nested","support"]
+RED:     test_scan_excludes_composition_subfolders_and_tests() — tools/ignored.ts e *.test.ts fora
+RED:     test_scan_returns_empty_when_agents_dir_missing() — [] sem throw
+RED:     test_agents_endpoint_compiles_metadata_per_agent() — tools name+description presentes
+RED:     test_agents_endpoint_degrades_per_item_on_broken_module() — 1 quebrado → error naquele item, outros ok
+RED:     test_agents_endpoint_hints_when_no_agents_dir() — {items:[], hint}
+RED:     test_agent_load_timeout_degrades_that_item() — load que nunca resolve + Promise.race (timeout injetável; 50ms no teste) → {name, error:"load timeout..."}, demais itens ok (EC-6)
 GREEN:   scan + handler
 REFACTOR: extrair mapeamento CompiledAgentOptions→ReflectionAgent puro (testável sem IO)
 VERIFY:  pnpm --filter @theokit/studio test plugin/
@@ -407,8 +407,8 @@ function aggregateReflection(agents: ReflectionAgent[]): { tools: AggTool[]; wor
 #### TDD
 ```
 RED:     tools_endpoint_dedups_by_name_and_counts_usedBy() — lookupOrder usedBy=2
-RED:     workflows_endpoint_lists_subagents_with_honest_source() — source=="subagent"
-RED:     skills_endpoint_degrades_honestly_when_discover_fails() — campo degraded presente, sem throw
+RED:     test_workflows_endpoint_lists_subagents_with_honest_source() — source=="subagent"
+RED:     test_skills_endpoint_degrades_honestly_when_discover_fails() — campo degraded presente, sem throw
 GREEN:   aggregateReflection + handlers
 REFACTOR: none expected
 VERIFY:  pnpm --filter @theokit/studio test plugin/reflection-api.test.ts
@@ -484,16 +484,16 @@ async function handleRun(req, res, deps):
 
 #### TDD
 ```
-RED:     run_streams_ndjson_message_chunks_then_done() — 2 chunks fake → 3 linhas parseáveis
-RED:     run_multiplexes_run_events_inline() — onRunEvent fake → linha kind=run-event
-RED:     cross_origin_request_rejected_before_any_work() — Origin externo → 403, loadAgent NÃO chamado
-RED:     missing_api_key_returns_424_with_expected_var() — env vazio → 424 + nome da var
-RED:     blank_message_rejected_400() — fail-fast na fronteira
-RED:     unknown_agent_404() — envelope tipado
-RED:     mid_stream_error_emits_error_line_and_ends() — generator lança após 1 chunk → linha kind=error, res ended
-RED:     nested_agent_name_with_slash_resolves() — POST /_studio/api/agents/team%2Fsupport/run e /team/support/run → agent aninhado encontrado (EC-2)
-RED:     opaque_origin_null_rejected_403() — header literal "null" → 403 (EC-8)
-RED:     run_event_after_end_is_dropped_by_guard() — onRunEvent após done → nenhuma escrita, sem throw (EC-7)
+RED:     test_run_streams_ndjson_message_chunks_then_done() — 2 chunks fake → 3 linhas parseáveis
+RED:     test_run_multiplexes_run_events_inline() — onRunEvent fake → linha kind=run-event
+RED:     test_cross_origin_request_rejected_before_any_work() — Origin externo → 403, loadAgent NÃO chamado
+RED:     test_missing_api_key_returns_424_with_expected_var() — env vazio → 424 + nome da var
+RED:     test_blank_message_rejected_400() — fail-fast na fronteira
+RED:     test_unknown_agent_404() — envelope tipado
+RED:     test_mid_stream_error_emits_error_line_and_ends() — generator lança após 1 chunk → linha kind=error, res ended
+RED:     test_nested_agent_name_with_slash_resolves() — POST /_studio/api/agents/team%2Fsupport/run e /team/support/run → agent aninhado encontrado (EC-2)
+RED:     test_opaque_origin_null_rejected_403() — header literal "null" → 403 (EC-8)
+RED:     test_run_event_after_end_is_dropped_by_guard() — onRunEvent após done → nenhuma escrita, sem throw (EC-7)
 GREEN:   handler
 REFACTOR: extrair writeLine/readJson utilitários
 VERIFY:  pnpm --filter @theokit/studio test plugin/run-endpoint.test.ts
@@ -556,10 +556,10 @@ packages/studio/package.json — files inclui dist
 
 #### TDD
 ```
-RED:     parse_accepts_live_mode_and_base_path() — {mode:"live", basePath:"/_studio"} → preservado
-RED:     parse_defaults_mode_fixtures_for_m5_shape() — {scenario:"empty"} → mode fixtures, scenario empty
-RED:     parse_normalizes_malformed_base_path_with_warn() — 42 → basePath undefined + warn 1×
-RED:     mount_wires_router_basename_from_config() — basename chega ao createBrowserRouter (spy/route resolve)
+RED:     test_parse_accepts_live_mode_and_base_path() — {mode:"live", basePath:"/_studio"} → preservado
+RED:     test_parse_defaults_mode_fixtures_for_m5_shape() — {scenario:"empty"} → mode fixtures, scenario empty
+RED:     test_parse_normalizes_malformed_base_path_with_warn() — 42 → basePath undefined + warn 1×
+RED:     test_mount_wires_router_basename_from_config() — basename chega ao createBrowserRouter (spy/route resolve)
 GREEN:   parse + mount
 REFACTOR: none expected
 VERIFY:  pnpm --filter @theokit/studio test src/bootstrap
@@ -621,14 +621,14 @@ async function serveStudio(req,res,{spaDir,config}): asset | indexWithConfig | 4
 
 #### TDD
 ```
-RED:     serves_existing_asset_with_content_type() — /_studio/assets/app.js → 200 text/javascript
-RED:     spa_fallback_serves_index_with_injected_config() — /_studio/agents → HTML com __STUDIO_CONFIG__ mode live
-RED:     path_traversal_attempts_rejected() — /_studio/../secret e %2e%2e → 403, arquivo NÃO lido
-RED:     missing_dist_returns_actionable_503() — spaDir inexistente → 503 STUDIO_ASSETS_MISSING
-RED:     env_override_wins_for_spa_dir() — THEOKIT_STUDIO_DIST aponta dir alternativo
-RED:     malformed_percent_encoding_returns_400_not_500() — GET /_studio/% → 400 envelope (EC-5)
-RED:     resolve_spa_dir_works_from_built_layout() — layout dist/plugin + dist/spa simulado (EC-10)
-RED:     asset_with_query_string_still_resolves() — /_studio/assets/app.js?v=1 → 200 (EC-1)
+RED:     test_serves_existing_asset_with_content_type() — /_studio/assets/app.js → 200 text/javascript
+RED:     test_spa_fallback_serves_index_with_injected_config() — /_studio/agents → HTML com __STUDIO_CONFIG__ mode live
+RED:     test_path_traversal_attempts_rejected() — /_studio/../secret e %2e%2e → 403, arquivo NÃO lido
+RED:     test_missing_dist_returns_actionable_503() — spaDir inexistente → 503 STUDIO_ASSETS_MISSING
+RED:     test_env_override_wins_for_spa_dir() — THEOKIT_STUDIO_DIST aponta dir alternativo
+RED:     test_malformed_percent_encoding_returns_400_not_500() — GET /_studio/% → 400 envelope (EC-5)
+RED:     test_resolve_spa_dir_works_from_built_layout() — layout dist/plugin + dist/spa simulado (EC-10)
+RED:     test_asset_with_query_string_still_resolves() — /_studio/assets/app.js?v=1 → 200 (EC-1)
 GREEN:   static-serve + dispatch
 REFACTOR: none expected
 VERIFY:  pnpm --filter @theokit/studio test plugin/static-serve.test.ts
@@ -705,18 +705,18 @@ async function* parseNdjson(body: ReadableStream, signal?): AsyncGenerator<RunLi
 
 #### TDD
 ```
-RED:     ndjson_parser_handles_split_lines_across_chunks() — chunk corta no meio do JSON
-RED:     ndjson_malformed_line_raises_typed_error_with_context() — MalformedStreamLineError
-RED:     list_agents_maps_reflection_payload_to_agent_summary() — id/name/model
-RED:     run_agent_yields_message_and_run_event_lines_and_stops_on_done()
-RED:     run_agent_error_line_raises_after_prior_events()
-RED:     non_reflection_surfaces_delegate_to_fixture_fallback() — listPrompts → fixture + métrica
-RED:     health_offline_when_fetch_rejects() — estado offline, sem throw na UI
-RED:     composition_root_selects_hybrid_in_live_mode() — mount com mode live
-RED:     every_reflection_call_counts_datasource_metric() — datasource_calls_total incrementa
-RED:     ndjson_parser_flushes_trailing_line_without_newline() — última linha sem \n ainda é yielded (EC-11)
-RED:     broken_agent_maps_with_visible_error_marker() — description "⚠ failed to load: ..." (EC-9)
-RED:     health_studio_online_theo_data_offline_in_live_mode() — studio online + memory/lens/rag offline com hint (EC-3)
+RED:     test_ndjson_parser_handles_split_lines_across_chunks() — chunk corta no meio do JSON
+RED:     test_ndjson_malformed_line_raises_typed_error_with_context() — MalformedStreamLineError
+RED:     test_list_agents_maps_reflection_payload_to_agent_summary() — id/name/model
+RED:     test_run_agent_yields_message_and_run_event_lines_and_stops_on_done()
+RED:     test_run_agent_error_line_raises_after_prior_events()
+RED:     test_non_reflection_surfaces_delegate_to_fixture_fallback() — listPrompts → fixture + métrica
+RED:     test_health_offline_when_fetch_rejects() — estado offline, sem throw na UI
+RED:     test_composition_root_selects_hybrid_in_live_mode() — mount com mode live
+RED:     test_every_reflection_call_counts_datasource_metric() — datasource_calls_total incrementa
+RED:     test_ndjson_parser_flushes_trailing_line_without_newline() — última linha sem \n ainda é yielded (EC-11)
+RED:     test_broken_agent_maps_with_visible_error_marker() — description "⚠ failed to load: ..." (EC-9)
+RED:     test_health_studio_online_theo_data_offline_in_live_mode() — studio online + memory/lens/rag offline com hint (EC-3)
 GREEN:   adapter + root
 REFACTOR: extrair mapeadores puros payload→Summary
 VERIFY:  pnpm --filter @theokit/studio test src/data/reflection-datasource.test.ts
@@ -770,7 +770,7 @@ packages/studio/vitest.config.ts — include tests/e2e
 
 #### TDD
 ```
-RED:     studio_e2e_reflection_and_run() — health 200; agents contém "support" com tools;
+RED:     test_studio_e2e_reflection_and_run() — health 200; agents contém "support" com tools;
          GET /_studio/agents devolve HTML com __STUDIO_CONFIG__ live; POST run → ≥1 linha kind=message e linha done
 GREEN:   wiring restante
 REFACTOR: none expected
@@ -831,7 +831,7 @@ Adicionar `@theokit/studio` como dependência do `theokit` e registrar `theokitS
 
 #### TDD
 ```
-RED:     theokit_dev_serves_studio_health() — startDevServer(fixture onda1-hello-theo) → GET /_studio/api/health 200
+RED:     test_theokit_dev_serves_studio_health() — startDevServer(fixture onda1-hello-theo) → GET /_studio/api/health 200
 GREEN:   dep + registro
 REFACTOR: none expected
 VERIFY:  (no repo theokit) pnpm test tests/unit/cli-dev-studio.test.ts
