@@ -7,28 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- Review builder (batch): gate canônico `pnpm run check` restaurado (suppressions
-  reposicionados no builder/use-listing, key composta nas linhas de diff, label do
-  Phase ligado ao select do Processors); síntese da sessão roteirizada movida para o
-  datasource (`startBuilderSession` no contrato DIP com erro tipado de prompt vazio,
-  métrica contada e ids únicos de draft); builder/index.tsx (1145 LoC) extraído em
-  módulos (model-picker, review, session-view); `key` por sessão zera estado do
-  painel ao trocar de sessão; foco devolvido ao fechar Review/viewer/cancelar pasta
-  (a11y); nome de pasta com "/" rejeitado na fronteira; aria-label do model picker
-  anuncia a seleção; testes novos: negativos de getBuilderSession/startBuilderSession,
-  loadError visível em Prompts/Builder/Workspaces, cenário empty do builder e
-  validação de "/"; formatação canônica do biome aplicada também aos arquivos do
-  delta M7 (events/playground) para manter o gate da raiz verde (M5 dogfood)
-- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
-  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
-  honesta em fixtures mode), consistente com o Test Message do Processors
+### Added
 
 ### Changed
-- M1 — peer de `vite` do plugin relaxado de `>=7 <9` para `>=6 <9`: o consumidor
-  pretendido (`theokit dev`) está em Vite 6 e o middleware connect do plugin
-  (`configureServer`/`server.middlewares.use`/`ssrLoadModule`) é idêntico em Vite 5/6/7 —
-  o range anterior embutia uma incompatibilidade conhecida com o único host real (#m1)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.3.0] - 2026-07-15
 
 ### Added
 - M1 T4.1 (parcial) — guia de integração `docs/theokit-dev-integration.md` com o diff exato
@@ -176,15 +167,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   da fixture (labels + required), Submit desabilitado com nota honesta (fixtures) e
   painel de Output; botão de voltar retorna ao detail do server (M5 dogfood)
 
+
 ### Changed
+- M1 — peer de `vite` do plugin relaxado de `>=7 <9` para `>=6 <9`: o consumidor
+  pretendido (`theokit dev`) está em Vite 6 e o middleware connect do plugin
+  (`configureServer`/`server.middlewares.use`/`ssrLoadModule`) é idêntico em Vite 5/6/7 —
+  o range anterior embutia uma incompatibilidade conhecida com o único host real (#m1)
 
-### Deprecated
 
-### Removed
 
 ### Fixed
-
-### Security
+- Review builder (batch): gate canônico `pnpm run check` restaurado (suppressions
+  reposicionados no builder/use-listing, key composta nas linhas de diff, label do
+  Phase ligado ao select do Processors); síntese da sessão roteirizada movida para o
+  datasource (`startBuilderSession` no contrato DIP com erro tipado de prompt vazio,
+  métrica contada e ids únicos de draft); builder/index.tsx (1145 LoC) extraído em
+  módulos (model-picker, review, session-view); `key` por sessão zera estado do
+  painel ao trocar de sessão; foco devolvido ao fechar Review/viewer/cancelar pasta
+  (a11y); nome de pasta com "/" rejeitado na fronteira; aria-label do model picker
+  anuncia a seleção; testes novos: negativos de getBuilderSession/startBuilderSession,
+  loadError visível em Prompts/Builder/Workspaces, cenário empty do builder e
+  validação de "/"; formatação canônica do biome aplicada também aos arquivos do
+  delta M7 (events/playground) para manter o gate da raiz verde (M5 dogfood)
+- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
+  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
+  honesta em fixtures mode), consistente com o Test Message do Processors
 
 ## [0.2.0] - 2026-07-15
 
