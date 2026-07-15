@@ -7,6 +7,9 @@ import {
 } from "./fixtures/knowledge";
 import { fixtureMemories } from "./fixtures/memory";
 import {
+  BUILDER_SCRIPTED_FILES,
+  BUILDER_SCRIPTED_REPLY,
+  BUILDER_SCRIPTED_WORK_LOG,
   fixtureAgents,
   fixtureBuilderSessionDetails,
   fixtureBuilderSessions,
@@ -23,6 +26,7 @@ import { metrics } from "./metrics";
 import { play } from "./stream-player";
 import {
   type AgentSummary,
+  BlankBuildPromptError,
   BlankFolderNameError,
   type BuilderSessionDetail,
   DuplicateWorkspacePathError,
@@ -81,6 +85,8 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
   // Estado de SESSÃO dos workspaces (por instância do datasource): operações de
   // pasta/arquivo agem sobre esta cópia — reset no reload, como o Request Context.
   const workspaceState: WorkspaceSummary[] = isEmpty ? [] : structuredClone([...fixtureWorkspaces]);
+  // Ids únicos para sessões de build efêmeras (F-dom-2 do review).
+  let draftSessionCounter = 0;
 
   const counted = <T>(method: string, value: T): Promise<T> => {
     metrics.increment("datasource_calls_total", method);
@@ -96,6 +102,27 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listPrompts: () => counted("listPrompts", isEmpty ? [] : [...fixturePrompts]),
     listBuilderSessions: () =>
       counted("listBuilderSessions", isEmpty ? [] : [...fixtureBuilderSessions]),
+
+    startBuilderSession: (prompt: string, targetAgentId?: string): Promise<BuilderSessionDetail> => {
+      metrics.increment("datasource_calls_total", "startBuilderSession");
+      // Validação na fronteira (error-handling.md § 2): prompt vazio rejeita tipado.
+      const text = prompt.trim();
+      if (text.length === 0) {
+        return Promise.reject(new BlankBuildPromptError());
+      }
+      draftSessionCounter += 1;
+      return Promise.resolve({
+        id: `draft-session-${draftSessionCounter}`,
+        title: text.length > 48 ? `${text.slice(0, 48)}…` : text,
+        agentId: targetAgentId,
+        lastActivity: "now",
+        pinned: false,
+        workedFor: BUILDER_SCRIPTED_WORK_LOG.workedFor,
+        workLog: [...BUILDER_SCRIPTED_WORK_LOG.steps],
+        messages: [{ role: "user", text }, { ...BUILDER_SCRIPTED_REPLY }],
+        files: structuredClone([...BUILDER_SCRIPTED_FILES]),
+      });
+    },
 
     getBuilderSession: (sessionId: string): Promise<BuilderSessionDetail> => {
       metrics.increment("datasource_calls_total", "getBuilderSession");
@@ -145,7 +172,7 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
       return Promise.resolve();
     },
 
-    async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal) {
+    async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal, _params?: import("./datasource").RunAgentParams) {
       metrics.increment("datasource_calls_total", "runAgent");
       for await (const event of play(runScript, { delayMs: streamDelayMs, signal })) {
         metrics.increment("stream_events_played_total");

@@ -1,7 +1,8 @@
 import { ChatMessageContent, ChatMessageRoot, ToolCallCard } from "@theokit/ui";
-import { Badge, Button, Textarea } from "@usetheo/ui";
+import { Badge, Button, Combobox, Slider, Textarea } from "@usetheo/ui";
 import { ArrowLeft, Bot, SendHorizonal } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import type { RunAgentParams } from "../../data/datasource";
 import { EntityTable } from "../../app/entity-table";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
@@ -118,11 +119,16 @@ const AGENT_TABS = ["Chat", "Editor", "Evaluate", "Review", "Traces"] as const;
 
 function ChatView({ agent, onBack }: { agent: AgentSummary; onBack: () => void }) {
   const [prompt, setPrompt] = useState("");
+  const [params, setParams] = useState<RunAgentParams>({
+    model: agent.model ?? "claude-sonnet-4-6",
+    temperature: 0.7,
+    topP: 1,
+  });
   const { state, send } = useRunPlayback();
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    send(agent.id, prompt);
+    send(agent.id, prompt, params);
     if (prompt.trim()) {
       setPrompt("");
     }
@@ -167,6 +173,51 @@ function ChatView({ agent, onBack }: { agent: AgentSummary; onBack: () => void }
       </div>
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 flex-col border-border/40 border-r px-4 py-6 md:flex">
+          {/* M7 T3.2: painel de params REAL — flui para ds.runAgent via send() */}
+          <div className="mb-4 rounded-xl border border-border/40 bg-card/60 p-4" data-testid="chat-params-panel">
+            <p className="font-medium text-foreground text-sm">Parameters</p>
+            <p className="mt-3 text-muted-foreground text-xs">Model</p>
+            <Combobox
+              aria-label="Model"
+              value={params.model ?? ""}
+              onValueChange={(model) => setParams((prev) => ({ ...prev, model }))}
+            >
+              <Combobox.Input placeholder="Model" />
+              <Combobox.Content>
+                {[agent.model ?? "claude-sonnet-4-6", "claude-opus-4-8", "claude-haiku-4-5"]
+                  .filter((m, i, arr) => arr.indexOf(m) === i)
+                  .map((m) => (
+                    <Combobox.Item key={m} value={m}>
+                      {m}
+                    </Combobox.Item>
+                  ))}
+              </Combobox.Content>
+            </Combobox>
+            <p className="mt-3 flex justify-between text-muted-foreground text-xs">
+              <span>Temperature</span>
+              <span className="font-mono">{params.temperature?.toFixed(2)}</span>
+            </p>
+            <Slider
+              aria-label="Temperature"
+              min={0}
+              max={1}
+              step={0.01}
+              value={[params.temperature ?? 0.7]}
+              onValueChange={([temperature]) => setParams((prev) => ({ ...prev, temperature }))}
+            />
+            <p className="mt-3 flex justify-between text-muted-foreground text-xs">
+              <span>Top-p</span>
+              <span className="font-mono">{params.topP?.toFixed(2)}</span>
+            </p>
+            <Slider
+              aria-label="Top-p"
+              min={0}
+              max={1}
+              step={0.01}
+              value={[params.topP ?? 1]}
+              onValueChange={([topP]) => setParams((prev) => ({ ...prev, topP }))}
+            />
+          </div>
           <div
             className="rounded-xl border border-border/40 bg-card/60 p-4 text-center"
             data-testid="chat-memory-notice"

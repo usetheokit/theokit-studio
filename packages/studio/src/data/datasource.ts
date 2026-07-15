@@ -32,6 +32,8 @@ export interface StudioDataSource {
   listBuilderSessions(): Promise<BuilderSessionSummary[]>;
   /** transcript + artefato de uma sessão; rejeita erro tipado se não existir. */
   getBuilderSession(sessionId: string): Promise<BuilderSessionDetail>;
+  /** inicia sessão de build roteirizada (fixtures); rejeita prompt em branco. */
+  startBuilderSession(prompt: string, targetAgentId?: string): Promise<BuilderSessionDetail>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   listProcessors(): Promise<ProcessorSummary[]>;
   listMcpServers(): Promise<McpServerSummary[]>;
@@ -47,12 +49,20 @@ export interface StudioDataSource {
     agentId: string,
     prompt: string,
     signal?: AbortSignal,
+    params?: RunAgentParams,
   ): AsyncIterable<StudioRunEvent["event"]>;
   getMemories(scope?: MemoryScope): Promise<MemoryRecord[]>;
   listCollections(): Promise<KnowledgeCollection[]>;
   listDocuments(collectionId: string): Promise<KnowledgeDocument[]>;
   query(collectionId: string, text: string): Promise<RetrievalResult[]>;
   health(): Promise<ServiceHealthMap>;
+}
+
+/** Parâmetros de geração do run (painel do playground — M7 T3.2). */
+export interface RunAgentParams {
+  model?: string;
+  temperature?: number;
+  topP?: number;
 }
 
 const DataSourceContext = createContext<StudioDataSource | null>(null);

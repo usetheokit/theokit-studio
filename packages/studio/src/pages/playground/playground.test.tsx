@@ -171,3 +171,32 @@ describe("Playground (T3.1)", () => {
     expect(sendButton.disabled).toBe(false);
   });
 });
+
+describe("Playground — painel de params (M7 T3.2)", () => {
+  beforeEach(() => {
+    metrics.reset();
+  });
+
+  it("test_params_panel_renders_sliders_and_model_combobox", async () => {
+    renderPlayground();
+    await pickAgent();
+    expect(document.body.querySelectorAll('[data-slot="slider"]').length).toBe(2);
+    expect(screen.getByRole("combobox", { name: /model/i })).toBeTruthy();
+    expect(screen.getByText(/temperature/i)).toBeTruthy();
+    expect(screen.getByText(/top.p/i)).toBeTruthy();
+  });
+
+  it("test_params_flow_into_run_request", async () => {
+    const ds = renderPlayground();
+    const spy = vi.spyOn(ds, "runAgent");
+    await pickAgent();
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    expect(spy).toHaveBeenCalledWith(
+      expect.any(String),
+      "hi",
+      expect.anything(),
+      expect.objectContaining({ temperature: expect.any(Number), topP: expect.any(Number) }),
+    );
+  });
+});

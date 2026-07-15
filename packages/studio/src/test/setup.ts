@@ -34,3 +34,14 @@ if (typeof Element !== "undefined") {
   Element.prototype.releasePointerCapture ??= () => {};
   Element.prototype.scrollIntoView ??= () => {};
 }
+
+// jsdom não tem ResizeObserver; o Radix Slider (painel de params do playground,
+// M7 T3.2) observa o track para posicionar thumbs. Stub no-op determinístico
+// (mesmo padrão do setup da @usetheo/ui).
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof globalThis.ResizeObserver;
+}
