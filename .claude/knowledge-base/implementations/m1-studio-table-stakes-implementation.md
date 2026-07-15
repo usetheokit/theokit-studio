@@ -25,15 +25,21 @@ Outra sessão trabalha no MESMO working tree (M7 usetheo-ui adoption). Regra: st
 
 | # | Plan ref | Status | Wiring (a) | Wiring (b) | Wiring (c) | Commit SHA |
 |---|---|---|---|---|---|---|
-| T1.1 | Phase 1 / T1.1 skeleton+health | pending | — | — | — | — |
-| T1.2 | Phase 1 / T1.2 scan+agents | pending | — | — | — | — |
-| T1.3 | Phase 1 / T1.3 agregados | pending | — | — | — | — |
-| T1.4 | Phase 1 / T1.4 run NDJSON | pending | — | — | — | — |
-| T2.1 | Phase 2 / T2.1 SPA embarcável | pending | — | — | — | — |
-| T2.2 | Phase 2 / T2.2 static serve | pending | — | — | — | — |
-| T3.1 | Phase 3 / T3.1 ReflectionDataSource | pending | — | — | — | — |
-| T3.2 | Phase 3 / T3.2 e2e (métrica do Goal) | pending | — | — | — | — |
-| T4.1 | Phase 4 / T4.1 wiring theokit (CROSS-REPO) | pending | — | — | — | — |
+| T1.1 | Phase 1 / T1.1 skeleton+health | committed | ✓ | ✓ | — | 0ef0186 |
+| T1.2 | Phase 1 / T1.2 scan+agents | committed | ✓ | ✓ | — | 3b9664e |
+| T1.3 | Phase 1 / T1.3 agregados | committed | ✓ | ✓ | — | e50866a |
+| T1.4 | Phase 1 / T1.4 run NDJSON | committed | ✓ | ✓ | — | 697e59f |
+| T2.1 | Phase 2 / T2.1 SPA embarcável | committed | ✓ | ✓ | — | 645b245 |
+| T2.2 | Phase 2 / T2.2 static serve | committed | ✓ | ✓ | — | 77efb89 |
+| T3.1 | Phase 3 / T3.1 ReflectionDataSource | committed | ✓ | ✓ | ✓ | b14acb1 |
+| T3.2 | Phase 3 / T3.2 e2e (métrica do Goal) | committed | — | ✓ | — | ffbcbde |
+| T4.1 | Phase 4 / T4.1 wiring theokit (CROSS-REPO) | **BLOCKED** | AUSENTE (coord.) | — | — | 89156b7 (parcial: peer+docs) |
+
+**Verdict do /implement:** BLOCKED (coordenação cross-repo) — M1 core COMPLETO e validado
+(8/9 tasks, 257/257 testes, coverage 97%, e2e do Goal verde); T4.1 pende de coordenação
+(feature em voo no theokit + publicação do pacote). `IMPLEMENTATION_COMPLETE` NÃO emitido
+(DoD #7 não atendido). Report: `knowledge-base/reviews/m1-studio-table-stakes-implement-validate-2026-07-15.md`.
+Issues do ecossistema: theokit-sdk#123, theokit#132, theokit#133.
 
 Status legend: `pending` / `red` / `green` / `refactor` / `wired` / `committed` / `blocked` / `done`
 
