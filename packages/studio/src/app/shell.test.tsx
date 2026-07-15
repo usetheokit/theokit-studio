@@ -178,4 +178,31 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     expect(() => render(<Probe />)).toThrow(/DataSourceProvider.*composition root/);
     spy.mockRestore();
   });
+
+  // Banner de honestidade (M1 T3.1 — review F-dom-frontend-1): a superfície cuja função
+  // É a honestidade precisa de teste direto (live vs fixtures), não só cobertura indireta.
+  it("banner_shows_fixtures_mode_by_default", async () => {
+    renderShell(["/agents"]);
+    expect(await screen.findByText("Fixtures mode")).toBeTruthy();
+    expect(screen.getByText(/M5 · simulated data/i)).toBeTruthy();
+    expect(screen.queryByText("Live reflection")).toBeNull();
+  });
+
+  it("banner_shows_live_reflection_when_live_prop_set", async () => {
+    // buildRoutes({}, {live:true}) propaga a prop live ao Shell (o composition root
+    // decide o mode UMA vez — aqui exercitamos o ramo live do banner).
+    const router = createMemoryRouter(buildRoutes([], { live: true }), {
+      initialEntries: ["/agents"],
+    });
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "default" })}>
+        <RunLogProvider>
+          <RouterProvider router={router} />
+        </RunLogProvider>
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText("Live reflection")).toBeTruthy();
+    expect(screen.getByText(/dev server · fixtures where noted/i)).toBeTruthy();
+    expect(screen.queryByText("Fixtures mode")).toBeNull();
+  });
 });

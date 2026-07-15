@@ -97,6 +97,7 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 | # | Observed during | Description | Recommended owner |
 |---|---|---|---|
+| F5 | review | Resolver a env var de API key pelo provider inferido de `compiled.model` (hoje: lista fixa desacoplada — parity theokit; 401 opaco em provider errado) | quando o mapa provider→var existir |
 | F4 | T3.1 | Params de geração (model/temperature/topP) no run live quando o bridge expor knobs (hoje: warn + ignorados) | bump bridge |
 | F3 | T1.4 | Threadar `cwd` no streamAgentUIMessages quando @theokit/agents 0.40 for publicado (settingSources resolve contra process.cwd() até lá) | bump 0.40 |
 | F2 | T1.3 | Fixture decorator-based (@SubAgents) para exercitar workflows de ponta a ponta na integração | próximo plano |

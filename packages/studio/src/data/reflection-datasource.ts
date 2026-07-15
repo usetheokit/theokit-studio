@@ -156,6 +156,10 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
     return (await res.json()) as T;
   }
 
+  // INVARIANTE (review F-arch-9): a delegação por spread `...opts.fallback` só é correta
+  // porque o fallback é um objeto de closures stateless (o FixtureDataSource). Um adapter
+  // futuro baseado em classe com métodos `this`-bound quebraria silenciosamente sob o
+  // spread — nesse caso, trocar por delegação explícita (this.fallback.método(...)).
   return {
     ...opts.fallback,
 

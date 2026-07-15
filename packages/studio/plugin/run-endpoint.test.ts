@@ -302,39 +302,50 @@ describe("handleAgentRun (T1.4)", () => {
   it("test_late_write_after_end_is_dropped_by_guard", async () => {
     // Generator tenta yield após o response encerrar (erro no meio) — guard descarta
     // sem throw (EC-7: write-after-end nunca derruba o processo).
+    // Barreira determinística (review F-dom-test): o generator espera um gate que o
+    // teste resolve DEPOIS do close — sem race de wall-clock (testing.md § 6).
     let lateYieldReached = false;
+    let openGate = () => {};
+    const gate = new Promise<void>((resolve) => {
+      openGate = resolve;
+    });
+    const firstChunk = createDeferred();
     const { deps } = makeDeps({
       streamFactory: async function* (_c, _k, input: RunStreamInput) {
         yield { type: "text-delta", delta: "one" };
-        // simula o cliente sumindo: o teste aborta externamente via signal
-        await new Promise((r) => setTimeout(r, 20));
-        if (!input.signal.aborted) {
-          lateYieldReached = true;
-        }
+        firstChunk.resolve();
+        await gate; // só prossegue quando o teste liberar (após o close)
+        if (!input.signal.aborted) lateYieldReached = true;
         yield { type: "text-delta", delta: "late" };
       },
     });
     const req = makeReq({ body: JSON.stringify({ message: "hi" }) });
     const state = makeRes();
     const done = handleAgentRun("/_studio/api/agents/support/run", req, state.res, deps);
-    // dispara o close do cliente logo após o primeiro chunk
-    await new Promise((r) => setTimeout(r, 5));
+    await firstChunk.promise; // 1º chunk garantidamente escrito
     (req as unknown as Readable).emit("close");
+    openGate(); // libera o generator já com o signal abortado
     await done;
     expect(lateYieldReached).toBe(false);
-    // nenhuma exceção de write-after-end; o body contém só o que saiu antes do abort
     const kinds = parseLines(state.body).map((l) => l.kind);
-    expect(kinds.filter((k) => k === "message").length).toBeLessThanOrEqual(1);
+    expect(kinds.filter((k) => k === "message").length).toBe(1);
   });
 
   it("test_client_disconnect_aborts_the_stream", async () => {
+    // Barreira determinística (review F-dom-test): ordering imposta, não torcida.
     let finallyRan = false;
     let observedAborted = false;
+    let openGate = () => {};
+    const gate = new Promise<void>((resolve) => {
+      openGate = resolve;
+    });
+    const firstChunk = createDeferred();
     const { deps } = makeDeps({
       streamFactory: async function* (_c, _k, input: RunStreamInput) {
         try {
           yield { type: "text-delta", delta: "chunk-1" };
-          await new Promise((r) => setTimeout(r, 30));
+          firstChunk.resolve();
+          await gate; // aguarda o teste emitir close + liberar
           observedAborted = input.signal.aborted;
           yield { type: "text-delta", delta: "chunk-2" };
         } finally {
@@ -345,11 +356,20 @@ describe("handleAgentRun (T1.4)", () => {
     const req = makeReq({ body: JSON.stringify({ message: "hi" }) });
     const state = makeRes();
     const done = handleAgentRun("/_studio/api/agents/support/run", req, state.res, deps);
-    await new Promise((r) => setTimeout(r, 10));
+    await firstChunk.promise;
     (req as unknown as Readable).emit("close");
+    openGate();
     await done;
-    // Cancellation propagation: signal abortado, generator finalizado, sem write pós-close.
+    // Cancellation propagation: signal abortado (determinístico), generator finalizado.
     expect(observedAborted).toBe(true);
     expect(finallyRan).toBe(true);
   });
 });
+
+function createDeferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve = () => {};
+  const promise = new Promise<void>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}

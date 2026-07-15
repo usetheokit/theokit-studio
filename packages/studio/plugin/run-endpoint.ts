@@ -19,6 +19,13 @@ const RUN_SUFFIX = "/run";
 // Espelho da convenção INTERNA do theokit (provider-resolver.ts:58-75 — first-match por
 // prioridade; agent-middleware.ts:231 usa resolveProvider().apiKey e DESCARTA baseUrl,
 // então "apiKey only" é bug-compatível com o caminho dev do ecossistema).
+//
+// LIMITAÇÃO CONSCIENTE (review F-arch-5 / F-dom-api-1): a key é resolvida por esta lista
+// fixa, DESACOPLADA do `compiled.model` do agent. Com qualquer key setada, um provider
+// errado só aparece como 401 opaco upstream mid-stream, não como 424 tipado na fronteira.
+// É a mesma semântica process-global do theokit dev (parity deliberado). Followup F5:
+// selecionar a env var pelo provider inferido de `compiled.model` quando o mapeamento
+// provider→var estiver disponível.
 const PROVIDER_ENV_PRIORITY = [
   "OPENROUTER_API_KEY",
   "OPENAI_API_KEY",
