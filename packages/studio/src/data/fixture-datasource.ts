@@ -8,6 +8,7 @@ import {
 import { fixtureMemories } from "./fixtures/memory";
 import {
   fixtureAgents,
+  fixtureBuilderSessionDetails,
   fixtureBuilderSessions,
   fixtureMcpServers,
   fixtureProcessors,
@@ -23,6 +24,7 @@ import { play } from "./stream-player";
 import {
   type AgentSummary,
   BlankFolderNameError,
+  type BuilderSessionDetail,
   DuplicateWorkspacePathError,
   EmptyQueryError,
   type FixtureScenario,
@@ -35,6 +37,7 @@ import {
   type SkillSummary,
   type StudioRunEvent,
   type ToolSummary,
+  UnknownBuilderSessionError,
   UnknownCollectionError,
   UnknownWorkspaceError,
   UnknownWorkspacePathError,
@@ -93,6 +96,15 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listPrompts: () => counted("listPrompts", isEmpty ? [] : [...fixturePrompts]),
     listBuilderSessions: () =>
       counted("listBuilderSessions", isEmpty ? [] : [...fixtureBuilderSessions]),
+
+    getBuilderSession: (sessionId: string): Promise<BuilderSessionDetail> => {
+      metrics.increment("datasource_calls_total", "getBuilderSession");
+      const detail = fixtureBuilderSessionDetails[sessionId];
+      if (!detail || isEmpty) {
+        return Promise.reject(new UnknownBuilderSessionError(sessionId));
+      }
+      return Promise.resolve(structuredClone(detail));
+    },
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
     listProcessors: () => counted("listProcessors", isEmpty ? [] : [...fixtureProcessors]),

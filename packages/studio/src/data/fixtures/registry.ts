@@ -1,5 +1,7 @@
 import type {
   AgentSummary,
+  BuilderMessage,
+  BuilderSessionDetail,
   BuilderSessionSummary,
   McpServerSummary,
   ProcessorSummary,
@@ -72,6 +74,133 @@ export const fixtureBuilderSessions: readonly BuilderSessionSummary[] = Object.f
     pinned: false,
   },
 ]);
+
+// Detalhes das sessões do builder (transcript + artefato). Simulação claramente
+// rotulada (fixtures mode) — mesma premissa dos runs roteirizados do playground.
+export const fixtureBuilderSessionDetails: Readonly<Record<string, BuilderSessionDetail>> =
+  Object.freeze({
+    "refine-support-tone": {
+      id: "refine-support-tone",
+      title: "Refine Support Agent tone",
+      agentId: "support-agent",
+      lastActivity: "2m",
+      pinned: true,
+      messages: [
+        {
+          role: "user",
+          text: "The Support Agent sounds robotic. Make the tone warmer and more concise, and keep the refund guardrail.",
+        },
+        {
+          role: "assistant",
+          text: "Updated the instructions: warmer greeting, shorter sentences, documentation citations kept, and the $500 refund approval guardrail preserved. Review the diff on the right.",
+        },
+      ],
+      artifact: {
+        name: "agents/support-agent.ts",
+        diff: `--- agents/support-agent.ts
++++ agents/support-agent.ts
+ export const supportAgent = defineAgent({
+   id: "support-agent",
+   model: "claude-sonnet-4-6",
+-  instructions: "Answer support tickets.",
++  instructions:
++    "Answer support tickets with a warm, concise tone. " +
++    "Cite documentation when it exists. Never promise refunds " +
++    "above $500 without human approval.",
+   tools: [lookupOrder, refundOrder, searchDocs],
+ });`,
+      },
+    },
+    "refund-approvals": {
+      id: "refund-approvals",
+      title: "Add refundOrder approvals to Support Agent",
+      agentId: "support-agent",
+      lastActivity: "1h",
+      pinned: false,
+      messages: [
+        { role: "user", text: "Require human approval on refundOrder above $500." },
+        {
+          role: "assistant",
+          text: "Added an approval hook to refundOrder: amounts above $500 now pause the run and wait for a human decision.",
+        },
+      ],
+      artifact: {
+        name: "tools/refund-order.ts",
+        diff: `--- tools/refund-order.ts
++++ tools/refund-order.ts
+ export const refundOrder = defineTool({
+   id: "refundOrder",
++  approval: { required: (input) => input.amount > 500 },
+   run: async (input) => processRefund(input),
+ });`,
+      },
+    },
+    "scaffold-triage": {
+      id: "scaffold-triage",
+      title: "Scaffold a billing triage agent",
+      lastActivity: "3h",
+      pinned: false,
+      messages: [
+        { role: "user", text: "Scaffold an agent that triages billing tickets by severity." },
+        {
+          role: "assistant",
+          text: "Scaffolded triage-agent with a severity classifier and a handoff to the human queue for critical tickets.",
+        },
+      ],
+      artifact: {
+        name: "agents/triage-agent.ts",
+        diff: `+++ agents/triage-agent.ts
++export const triageAgent = defineAgent({
++  id: "triage-agent",
++  model: "claude-haiku-4-5",
++  instructions: "Classify billing tickets by severity and route critical ones to a human.",
++  tools: [classifySeverity, handoffToHuman],
++});`,
+      },
+    },
+    "wire-websearch": {
+      id: "wire-websearch",
+      title: "Wire webSearch into Research Agent",
+      agentId: "research-agent",
+      lastActivity: "1d",
+      pinned: false,
+      messages: [
+        { role: "user", text: "Give the Research Agent access to webSearch with the allowlist." },
+        {
+          role: "assistant",
+          text: "Wired webSearch into research-agent with the domain allowlist enforced at the tool boundary.",
+        },
+      ],
+      artifact: {
+        name: "agents/research-agent.ts",
+        diff: `--- agents/research-agent.ts
++++ agents/research-agent.ts
+ export const researchAgent = defineAgent({
+   id: "research-agent",
+   model: "claude-opus-4-8",
+-  tools: [readFile],
++  tools: [readFile, webSearch],
+ });`,
+      },
+    },
+  });
+
+// Resposta roteirizada para sessões novas iniciadas na home do builder.
+export const BUILDER_SCRIPTED_REPLY: Readonly<BuilderMessage> = Object.freeze({
+  role: "assistant",
+  text: "Here is a first pass — I scaffolded the agent definition on the right. Tell me what to adjust (tools, guardrails, model) and I will iterate.",
+});
+
+export const BUILDER_SCRIPTED_ARTIFACT = Object.freeze({
+  name: "agents/new-agent.ts",
+  diff: `+++ agents/new-agent.ts
++export const newAgent = defineAgent({
++  id: "new-agent",
++  model: "claude-fable-5",
++  instructions: "Describe the agent behavior here.",
++  tools: [],
++});`,
+});
 
 export const fixturePrompts: readonly PromptSummary[] = Object.freeze([
   {

@@ -32,6 +32,23 @@ export interface BuilderSessionSummary {
   pinned: boolean;
 }
 
+export interface BuilderMessage {
+  role: "user" | "assistant";
+  text: string;
+}
+
+export interface BuilderArtifact {
+  /** arquivo alvo do artefato (ex.: "agents/support-agent.ts"). */
+  name: string;
+  /** diff unificado exibido no viewer (+/- coloridos). */
+  diff: string;
+}
+
+export interface BuilderSessionDetail extends BuilderSessionSummary {
+  messages: BuilderMessage[];
+  artifact?: BuilderArtifact;
+}
+
 export interface PromptSummary {
   id: string;
   name: string;
@@ -247,6 +264,13 @@ export class DuplicateWorkspacePathError extends Error {
   constructor(path: string) {
     super(`Workspace path '${path}' already exists`);
     this.name = "DuplicateWorkspacePathError";
+  }
+}
+
+export class UnknownBuilderSessionError extends Error {
+  constructor(sessionId: string) {
+    super(`Builder session '${sessionId}' does not exist`);
+    this.name = "UnknownBuilderSessionError";
   }
 }
 

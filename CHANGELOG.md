@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder em três painéis (dogfood): sidebar de app com Search (⌘K real,
+  filtra sessões), New session (⌘N) e seções Pinned/Projects/Tasks clicáveis; clicar
+  numa sessão abre o chat com transcript (bolhas user/assistant, badge "Simulated
+  session") e o viewer de artefato à direita (arquivo + diff unificado com linhas
+  +/- coloridas); enviar da home inicia sessão roteirizada com scaffold do agente e
+  follow-ups anexam ao transcript (mesma premissa dos runs roteirizados do playground);
+  StudioDataSource ganha getBuilderSession() com erro tipado (M5 dogfood)
 - Studio Agent Builder (dogfood): nova superfície de construção de agentes no estilo
   code-assistant — sidebar de sessões (Pinned + Recent, fixtures com atividade
   relativa), home centrada "What should we build?" com 4 cards de intenção que

@@ -1,6 +1,7 @@
 import { createContext, useContext } from "react";
 import type {
   AgentSummary,
+  BuilderSessionDetail,
   BuilderSessionSummary,
   DatasetSummary,
   ExperimentSummary,
@@ -29,6 +30,8 @@ export interface StudioDataSource {
   listSkills(): Promise<SkillSummary[]>;
   listPrompts(): Promise<PromptSummary[]>;
   listBuilderSessions(): Promise<BuilderSessionSummary[]>;
+  /** transcript + artefato de uma sessão; rejeita erro tipado se não existir. */
+  getBuilderSession(sessionId: string): Promise<BuilderSessionDetail>;
   listWorkflows(): Promise<WorkflowSummary[]>;
   listProcessors(): Promise<ProcessorSummary[]>;
   listMcpServers(): Promise<McpServerSummary[]>;
