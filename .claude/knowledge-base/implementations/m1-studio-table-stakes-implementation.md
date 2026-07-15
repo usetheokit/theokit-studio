@@ -73,6 +73,8 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 **Registro T1.4:** ramo D4 degradado ativo (bridge 0.39.0 sem seam de RunEvent — issue theokit#132 aberta com dedup-check; `run-event` reservado no vocabulário, lockado por teste). Paridade de provider com evidência (`provider-resolver.ts:58-75`, `agent-middleware.ts:231` — apiKey only). Decisões registradas: body sem cap de tamanho (dev-only, aceito); 405 antes do check de origem (intencional); `readBody` deixa erro de stream subir ao catch-all (família EC-12, risco aceito no plano); guard `res.destroyed` adicionado aos helpers. Bug pego pelo SEPA pré-commit: sentinel "malformed" colidia com nome válido de agent → retorno discriminado + teste de regressão.
 
+**Registro T2.1:** desvio T1.1 (dist/spa) FECHADO — `pnpm run build` exit 0 com dist/spa/index.html (assets relativos, grep ✓) + dist/plugin/index.js preservado (outDir aninhado). Desvio aceito pelo SEPA: `mode` OPCIONAL no shape (toEqual estrito dos testes M5 + AC "sem edição") com OBRIGAÇÃO T3.1: ponto ÚNICO de resolução do default "fixtures" no composition root — nenhum outro arquivo aplica `?? "fixtures"`. Mudança semântica consciente: `{}` agora defaulta SEM warn (validação por campo; vazio ≡ ausente). main.test.tsx novo (pairing testing.md § 5; teste pedido pelo SEPA no pre-RED).
+
 ## Followups (scope-creep avoided)
 
 | # | Observed during | Description | Recommended owner |

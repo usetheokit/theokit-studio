@@ -19,7 +19,8 @@ export function mount(rootEl: HTMLElement, config: StudioConfig): void {
   (window as Window & { __STUDIO_METRICS__?: unknown }).__STUDIO_METRICS__ = {
     snapshot: () => metrics.snapshot(),
   };
-  const router = createBrowserRouter(routes);
+  // SPA servida sob prefixo (M1): rotas resolvem relativo ao basename injetado pelo host.
+  const router = createBrowserRouter(routes, { basename: config.basePath ?? "/" });
   createRoot(rootEl).render(
     <DataSourceProvider value={dataSource}>
       <App router={router} />
