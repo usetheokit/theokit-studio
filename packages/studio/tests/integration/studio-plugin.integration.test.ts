@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
 import { theokitStudio } from "../../plugin";
@@ -8,6 +10,7 @@ import {
   listReflectionAgents,
   listReflectionSkills,
 } from "../../plugin/reflection-api";
+import { resolveSpaDir } from "../../plugin/static-serve";
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -15,8 +18,18 @@ import {
 
 let server: ViteDevServer;
 let baseUrl: string;
+let spaTmp: string;
 
 beforeAll(async () => {
+  // SPA fake para o static serving (o build real é validado na Integration Validation).
+  spaTmp = mkdtempSync(join(tmpdir(), "studio-it-spa-"));
+  mkdirSync(join(spaTmp, "assets"), { recursive: true });
+  writeFileSync(
+    join(spaTmp, "index.html"),
+    "<!doctype html><html><head></head><body>studio-it</body></html>",
+  );
+  writeFileSync(join(spaTmp, "assets/app.js"), "console.log('it')");
+  process.env.THEOKIT_STUDIO_DIST = spaTmp;
   // streamFactory determinístico injetado via options (DIP) — LLM real fica fora de
   // teste (testing.md § 6); env do teste garante a key para o run endpoint.
   process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "integration-test-key";
@@ -26,7 +39,6 @@ beforeAll(async () => {
     logLevel: "silent",
     plugins: [
       theokitStudio({
-        // biome-ignore lint/correctness/useYield: fake determinístico
         streamFactory: async function* (_compiled, _apiKey, input) {
           yield { type: "text-delta", delta: `echo: ${input.message}` };
         },
@@ -45,6 +57,8 @@ beforeAll(async () => {
 afterAll(async () => {
   // Teardown com race de timeout (padrão safe-close do theokit) — nunca pendurar o vitest.
   await Promise.race([server.close(), new Promise((r) => setTimeout(r, 5_000))]);
+  delete process.env.THEOKIT_STUDIO_DIST;
+  rmSync(spaTmp, { recursive: true, force: true });
 });
 
 describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
@@ -126,6 +140,22 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
       body: JSON.stringify({ message: "nested ping" }),
     });
     expect(nested.status).toBe(200);
+  });
+
+  it("test_spa_served_with_injected_config_over_real_http", async () => {
+    // T2.2: fallback SPA + asset sobre HTTP real, com o config injetado no HTML.
+    const page = await fetch(`${baseUrl}/_studio/agents`);
+    expect(page.status).toBe(200);
+    const html = await page.text();
+    expect(html).toContain("window.__STUDIO_CONFIG__");
+    expect(html).toContain('"basePath":"/_studio"');
+    const asset = await fetch(`${baseUrl}/_studio/assets/app.js?v=cache-bust`);
+    expect(asset.status).toBe(200);
+    const traversal = await fetch(`${baseUrl}/_studio/%2e%2e/secret.txt`);
+    expect([400, 403, 404]).toContain(traversal.status);
+    // Paridade: o dir que o server serviu é exatamente o que resolveSpaDir resolve
+    // do MESMO env (o override do teste) — o serving não tem 2ª lógica de resolução.
+    expect(resolveSpaDir({ env: process.env })).toBe(spaTmp);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

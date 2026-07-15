@@ -95,7 +95,6 @@ function makeDeps(overrides: Partial<Parameters<typeof handleAgentRun>[3]> = {})
       return realLoad(file);
     },
     env: { ANTHROPIC_API_KEY: "test-key" } as Record<string, string | undefined>,
-    // biome-ignore lint/correctness/useYield: default fake é substituído por teste
     streamFactory: async function* (_c: unknown, _k: string, input: RunStreamInput) {
       calls.push({ input });
       yield { type: "text-delta", delta: "hello" };

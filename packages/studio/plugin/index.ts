@@ -6,6 +6,7 @@ import type { Connect, Plugin, ViteDevServer } from "vite";
 import { sendErrorEnvelope, sendJson } from "./http";
 import { aggregateReflection, listReflectionAgents, listReflectionSkills } from "./reflection-api";
 import { handleAgentRun, matchRunPath, type RunStreamFactory } from "./run-endpoint";
+import { resolveSpaDir, serveStudio } from "./static-serve";
 
 /**
  * `@theokit/studio/plugin` — monta a reflection API (`/_studio/api/*`) e (T2.2) a SPA
@@ -49,6 +50,7 @@ function isStudioPath(pathname: string): boolean {
 interface StudioContext {
   server: ViteDevServer;
   options: StudioPluginOptions;
+  spaDir: string;
 }
 
 function loadAgents(ctx: StudioContext) {
@@ -97,13 +99,11 @@ async function handleStudioRequest(
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio api route matches ${pathname}`);
     return;
   }
-  // Namespace da SPA — o static serving chega em T2.2; até lá, 404 honesto com hint.
-  sendErrorEnvelope(
-    res,
-    404,
-    "NOT_FOUND",
-    `studio SPA serving not mounted yet for ${pathname} (arrives with the embedded dist)`,
-  );
+  // Namespace da SPA (T2.2): asset conhecido, senão fallback index.html com o config.
+  await serveStudio(pathname, res, {
+    spaDir: ctx.spaDir,
+    config: { mode: "live", basePath: STUDIO_PREFIX },
+  });
 }
 
 /** Plugin Vite: registra o middleware do Studio no dev server do host. */
@@ -111,7 +111,11 @@ export function theokitStudio(options: StudioPluginOptions = {}): Plugin {
   return {
     name: "theokit-studio",
     configureServer(server) {
-      const ctx: StudioContext = { server, options };
+      const ctx: StudioContext = {
+        server,
+        options,
+        spaDir: resolveSpaDir({ env: process.env }),
+      };
       const middleware: Connect.NextHandleFunction = (req, res, next) => {
         // EC-1 (MUST FIX): decisão de rota SEMPRE sobre o pathname — nunca req.url cru.
         const pathname = new URL(req.url ?? "/", "http://local").pathname;

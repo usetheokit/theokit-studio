@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T2.2 — SPA servida pelo plugin em `/_studio`: assets do dist embarcado (content-type
+  correto; query de cache-busting ignorada) + fallback SPA para deep-links (index.html com
+  `window.__STUDIO_CONFIG__` injetado — mode/basePath — escapado contra script-breakout e
+  nunca cacheado); path traversal bloqueado (decode único, null byte e `..` rejeitados —
+  nada fora do root é lido); dist ausente → 503 com instrução de build; dir da SPA
+  resolvido do pacote com override `THEOKIT_STUDIO_DIST` sempre honrado (#m1)
 - M1 T2.1 — SPA embarcável: build da SPA com assets relativos (`base './'`) em `dist/spa`
   (o rebuild da SPA preserva `dist/plugin` — pacote publica os dois artefatos); router
   aceita `basePath` (SPA funciona servida sob `/_studio`); `window.__STUDIO_CONFIG__`
