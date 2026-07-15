@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — minimizar chat ou painel lateral na sessão (dogfood): toggles
+  de ícone no header da sessão (Minimize/Restore chat e Minimize/Restore side panel,
+  com aria-pressed); no máximo UM lado minimizado por vez (nunca tela vazia — minimizar
+  um lado com o outro escondido troca automaticamente); o lado restante ocupa 100% e o
+  splitter some enquanto minimizado (M5 dogfood)
 - Studio Agent Builder — largura do chat redimensionável na sessão (dogfood): splitter
   arrastável entre o chat e o painel lateral (pointer drag + setas do teclado no
   separator focável, com aria-valuenow e clamp 25–75%); implementação própria sem

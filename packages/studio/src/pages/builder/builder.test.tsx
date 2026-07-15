@@ -143,6 +143,35 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(separator.getAttribute("aria-valuenow")).toBe("25");
   });
 
+  it("minimize_panel_gives_chat_full_width_and_restore_brings_it_back", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    expect(screen.getByTestId("builder-details")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: /minimize side panel/i }));
+    // Painel some, chat ocupa 100%, splitter some.
+    expect(screen.queryByTestId("builder-details")).toBeNull();
+    expect((screen.getByTestId("builder-chat-pane") as HTMLElement).style.width).toBe("100%");
+    expect(screen.queryByRole("separator", { name: /resize chat/i })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: /restore side panel/i }));
+    expect(screen.getByTestId("builder-details")).toBeTruthy();
+    expect(screen.getByRole("separator", { name: /resize chat/i })).toBeTruthy();
+  });
+
+  it("minimize_chat_leaves_panel_fullscreen_and_only_one_side_hides", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    await userEvent.click(screen.getByRole("button", { name: /minimize chat/i }));
+    expect(screen.queryByTestId("builder-chat-pane")).toBeNull();
+    expect(screen.getByTestId("builder-details")).toBeTruthy();
+    // Minimizar o painel com o chat escondido troca o lado minimizado — nunca tela vazia.
+    await userEvent.click(screen.getByRole("button", { name: /minimize side panel/i }));
+    expect(screen.getByTestId("builder-chat-pane")).toBeTruthy();
+    expect(screen.queryByTestId("builder-details")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: /restore side panel/i }));
+    expect(screen.getByTestId("builder-details")).toBeTruthy();
+    expect(screen.getByTestId("builder-chat-pane")).toBeTruthy();
+  });
+
   it("home_submit_starts_scripted_session_with_scaffold_files", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");

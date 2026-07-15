@@ -14,6 +14,10 @@ import {
   Hand,
   LayoutTemplate,
   Mic,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightClose,
+  PanelRightOpen,
   Pin,
   Plus,
   Search,
@@ -428,6 +432,11 @@ function SessionView({
   const [rightPane, setRightPane] = useState<"details" | "review">("details");
   // Largura do chat em % (splitter arrastável entre chat e painel; clamp 25–75).
   const [chatPct, setChatPct] = useState(54);
+  // Minimização: no máximo UM lado escondido por vez (nunca tela vazia).
+  const [minimized, setMinimized] = useState<"none" | "chat" | "panel">("none");
+  const hasPanel = session.files.length > 0;
+  const showChat = minimized !== "chat";
+  const showPanel = hasPanel && minimized !== "panel";
   const paneContainerRef = useRef<HTMLDivElement>(null);
 
   const clampPct = (pct: number) => Math.min(75, Math.max(25, pct));
@@ -469,66 +478,100 @@ function SessionView({
         <span className="ml-auto shrink-0 font-mono text-muted-foreground text-xs">
           {session.agentId ?? "new agent"}
         </span>
+        {hasPanel && (
+          <span className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              aria-label={minimized === "chat" ? "Restore chat" : "Minimize chat"}
+              aria-pressed={minimized === "chat"}
+              title={minimized === "chat" ? "Restore chat" : "Minimize chat"}
+              onClick={() => setMinimized((m) => (m === "chat" ? "none" : "chat"))}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            >
+              {minimized === "chat" ? (
+                <PanelLeftOpen className="size-4" aria-hidden />
+              ) : (
+                <PanelLeftClose className="size-4" aria-hidden />
+              )}
+            </button>
+            <button
+              type="button"
+              aria-label={minimized === "panel" ? "Restore side panel" : "Minimize side panel"}
+              aria-pressed={minimized === "panel"}
+              title={minimized === "panel" ? "Restore side panel" : "Minimize side panel"}
+              onClick={() => setMinimized((m) => (m === "panel" ? "none" : "panel"))}
+              className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            >
+              {minimized === "panel" ? (
+                <PanelRightOpen className="size-4" aria-hidden />
+              ) : (
+                <PanelRightClose className="size-4" aria-hidden />
+              )}
+            </button>
+          </span>
+        )}
       </div>
       <div ref={paneContainerRef} className="flex min-h-0 flex-1">
-        <div
-          className="flex min-w-0 flex-col"
-          style={session.files.length > 0 ? { width: `${chatPct}%` } : { width: "100%" }}
-          data-testid="builder-chat-pane"
-        >
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto pr-1">
-            {session.messages.map((m, i) =>
-              m.role === "user" ? (
-                <div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
-                  key={i}
-                  data-testid="builder-message"
-                  className="max-w-[85%] self-end rounded-2xl bg-primary/15 px-4 py-2.5 text-foreground text-sm"
-                >
-                  {m.text}
-                </div>
-              ) : (
-                // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
-                <div key={i} className="flex flex-col gap-2.5">
-                  {i === 1 && <WorkLog workedFor={session.workedFor} steps={session.workLog} />}
+        {showChat && (
+          <div
+            className="flex min-w-0 flex-col"
+            style={showPanel ? { width: `${chatPct}%` } : { width: "100%" }}
+            data-testid="builder-chat-pane"
+          >
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto pr-1">
+              {session.messages.map((m, i) =>
+                m.role === "user" ? (
                   <div
+                    // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                    key={i}
                     data-testid="builder-message"
-                    className="text-foreground text-sm leading-relaxed"
+                    className="max-w-[85%] self-end rounded-2xl bg-primary/15 px-4 py-2.5 text-foreground text-sm"
                   >
                     {m.text}
                   </div>
-                  {i === session.messages.length - 1 && session.files.length > 0 && (
-                    <EditedFilesCard
-                      files={session.files}
-                      onReview={() => setRightPane("review")}
-                    />
-                  )}
-                </div>
-              ),
-            )}
-          </div>
-          <form onSubmit={handleSubmit} className="mt-3">
-            <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-card p-2 transition-colors focus-within:border-primary/50">
-              <Textarea
-                aria-label="Session message"
-                className="min-h-[40px] flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-                rows={1}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                placeholder="Do anything — @ to reference skills"
-              />
-              <Button
-                type="submit"
-                size="sm"
-                aria-label="Send message"
-                className="size-8 rounded-full p-0"
-              >
-                <ArrowUp className="size-4" aria-hidden />
-              </Button>
+                ) : (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                  <div key={i} className="flex flex-col gap-2.5">
+                    {i === 1 && <WorkLog workedFor={session.workedFor} steps={session.workLog} />}
+                    <div
+                      data-testid="builder-message"
+                      className="text-foreground text-sm leading-relaxed"
+                    >
+                      {m.text}
+                    </div>
+                    {i === session.messages.length - 1 && session.files.length > 0 && (
+                      <EditedFilesCard
+                        files={session.files}
+                        onReview={() => setRightPane("review")}
+                      />
+                    )}
+                  </div>
+                ),
+              )}
             </div>
-          </form>
-        </div>
-        {session.files.length > 0 && (
+            <form onSubmit={handleSubmit} className="mt-3">
+              <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-card p-2 transition-colors focus-within:border-primary/50">
+                <Textarea
+                  aria-label="Session message"
+                  className="min-h-[40px] flex-1 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
+                  rows={1}
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Do anything — @ to reference skills"
+                />
+                <Button
+                  type="submit"
+                  size="sm"
+                  aria-label="Send message"
+                  className="size-8 rounded-full p-0"
+                >
+                  <ArrowUp className="size-4" aria-hidden />
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+        {showChat && showPanel && (
           // biome-ignore lint/a11y/useFocusableInteractive: separator É focável (tabIndex 0)
           <div
             role="separator"
@@ -553,7 +596,7 @@ function SessionView({
             className="mx-1.5 w-1.5 shrink-0 cursor-col-resize rounded-full bg-border/40 transition-colors hover:bg-primary/50 focus-visible:bg-primary/60 focus-visible:outline-none"
           />
         )}
-        {session.files.length > 0 && (
+        {showPanel && (
           <div className="flex min-h-0 min-w-0 flex-1">
             {rightPane === "review" ? (
               <ReviewPanel
