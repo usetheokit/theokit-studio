@@ -13,8 +13,9 @@ export default defineConfig({
     css: false,
     coverage: {
       provider: "v8",
-      include: ["src/**"],
-      exclude: ["src/test/**", "src/main.tsx", "src/vite-env.d.ts"],
+      // plugin/** incluído (M1 T1.1 — config-honesty: DoD de coverage cobre o node-side).
+      include: ["src/**", "plugin/**"],
+      exclude: ["src/test/**", "src/main.tsx", "src/vite-env.d.ts", "plugin/**/*.test.ts"],
     },
   },
 });

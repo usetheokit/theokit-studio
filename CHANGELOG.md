@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T1.1 — plugin Vite `@theokit/studio/plugin` (skeleton): `theokitStudio()` registra o
+  middleware do Studio no dev server (connect via `configureServer`); `GET /_studio/api/health`
+  responde `{ok, studio: versão}`; envelope de erro tipado `{error:{code,message}}` para rotas
+  desconhecidas; requests fora de `/_studio` passam intocados (boundary estrita, pathname-only
+  — query strings não afetam o match); build node via tsup (`dist/plugin`, export `./plugin`);
+  montado no dev do próprio Studio (dogfood); teste de integração com Vite server real (#m1)
 - M1 plan: `m1-studio-table-stakes` v1.2 (plan-confidence SHIPPABLE 97.6) — plugin Vite
   `@theokit/studio/plugin` (reflection API + run NDJSON + static `/_studio`), SPA
   embarcável com `base './'`, `ReflectionDataSource` híbrido honesto e wiring
