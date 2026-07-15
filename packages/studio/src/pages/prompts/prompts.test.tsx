@@ -98,6 +98,20 @@ describe("Prompts (Mastra-parity clone)", () => {
     expect((await screen.findAllByTestId("prompt-row")).length).toBe(3);
   });
 
+  it("datasource_rejection_surfaces_as_visible_alert", async () => {
+    // Review F-dt-2: caminho de erro do useListing renderiza role=alert.
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      listPrompts: () => Promise.reject(new Error("registry unreachable")),
+    };
+    render(
+      <DataSourceProvider value={broken}>
+        <PromptsPage />
+      </DataSourceProvider>,
+    );
+    expect((await screen.findByRole("alert")).textContent).toContain("registry unreachable");
+  });
+
   it("empty_scenario_shows_no_prompts_state_not_filter_message", async () => {
     renderPrompts("empty");
     expect(await screen.findByText(/no prompts yet/i)).toBeTruthy();

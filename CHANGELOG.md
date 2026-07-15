@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Review builder (batch): gate canônico `pnpm run check` restaurado (suppressions
+  reposicionados no builder/use-listing, key composta nas linhas de diff, label do
+  Phase ligado ao select do Processors); síntese da sessão roteirizada movida para o
+  datasource (`startBuilderSession` no contrato DIP com erro tipado de prompt vazio,
+  métrica contada e ids únicos de draft); builder/index.tsx (1145 LoC) extraído em
+  módulos (model-picker, review, session-view); `key` por sessão zera estado do
+  painel ao trocar de sessão; foco devolvido ao fechar Review/viewer/cancelar pasta
+  (a11y); nome de pasta com "/" rejeitado na fronteira; aria-label do model picker
+  anuncia a seleção; testes novos: negativos de getBuilderSession/startBuilderSession,
+  loadError visível em Prompts/Builder/Workspaces, cenário empty do builder e
+  validação de "/" (M5 dogfood)
+- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
+  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
+  honesta em fixtures mode), consistente com o Test Message do Processors
+
 ### Added
 - Studio Agent Builder — model picker refinado no composer (dogfood): o badge mono cru
   "claude-fable-5" + select solto de esforço viram um só controle elegante (tile
@@ -93,9 +109,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
-- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
-  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
-  honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Security
 

@@ -103,7 +103,10 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listBuilderSessions: () =>
       counted("listBuilderSessions", isEmpty ? [] : [...fixtureBuilderSessions]),
 
-    startBuilderSession: (prompt: string, targetAgentId?: string): Promise<BuilderSessionDetail> => {
+    startBuilderSession: (
+      prompt: string,
+      targetAgentId?: string,
+    ): Promise<BuilderSessionDetail> => {
       metrics.increment("datasource_calls_total", "startBuilderSession");
       // Validação na fronteira (error-handling.md § 2): prompt vazio rejeita tipado.
       const text = prompt.trim();
@@ -172,7 +175,12 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
       return Promise.resolve();
     },
 
-    async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal, _params?: import("./datasource").RunAgentParams) {
+    async *runAgent(
+      _agentId: string,
+      _prompt: string,
+      signal?: AbortSignal,
+      _params?: import("./datasource").RunAgentParams,
+    ) {
       metrics.increment("datasource_calls_total", "runAgent");
       for await (const event of play(runScript, { delayMs: streamDelayMs, signal })) {
         metrics.increment("stream_events_played_total");

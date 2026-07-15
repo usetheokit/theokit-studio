@@ -243,6 +243,30 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(options.map((o) => o.textContent)).toContain("New project");
   });
 
+  it("datasource_rejection_surfaces_as_visible_alert", async () => {
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      listBuilderSessions: () => Promise.reject(new Error("builder backend down")),
+    };
+    render(
+      <DataSourceProvider value={broken}>
+        <AgentBuilderPage />
+      </DataSourceProvider>,
+    );
+    expect((await screen.findByRole("alert")).textContent).toContain("builder backend down");
+  });
+
+  it("empty_scenario_shows_no_sessions_in_sidebar", async () => {
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "empty" })}>
+        <AgentBuilderPage />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText("What should we build?")).toBeTruthy();
+    expect(screen.queryAllByTestId("builder-session").length).toBe(0);
+    expect(screen.getByText(/no matching sessions/i)).toBeTruthy();
+  });
+
   it("intent_card_click_fills_the_composer_starter", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");

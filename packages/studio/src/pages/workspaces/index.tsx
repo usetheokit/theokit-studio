@@ -1,6 +1,6 @@
 import { Button, EmptyState } from "@usetheo/ui";
 import { FileText, Folder, FolderOpen, FolderPlus, RefreshCw, Server, X } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
@@ -51,6 +51,8 @@ function WorkspaceBrowser({
   const [newFolderMode, setNewFolderMode] = useState(false);
   const [folderDraft, setFolderDraft] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const newFolderButtonRef = useRef<HTMLButtonElement>(null);
+  const refreshButtonRef = useRef<HTMLButtonElement>(null);
 
   const entries = childrenOf(workspace.files, dir);
   const crumbs = dir === "" ? [] : dir.split("/");
@@ -70,6 +72,11 @@ function WorkspaceBrowser({
 
   const createFolder = () => {
     const name = folderDraft.trim();
+    // "/" no nome criaria uma pasta órfã fora do diretório atual (review F-dom-10).
+    if (name.includes("/")) {
+      setActionError("Folder name must not contain '/'");
+      return;
+    }
     const path = dir === "" ? name : `${dir}/${name}`;
     ds.createWorkspaceFolder(workspace.id, path)
       .then(() => {
@@ -118,6 +125,7 @@ function WorkspaceBrowser({
             <span className="ml-auto flex items-center gap-1">
               <button
                 type="button"
+                ref={refreshButtonRef}
                 aria-label="Refresh files"
                 onClick={onRefresh}
                 className="rounded-md p-1 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
@@ -126,6 +134,7 @@ function WorkspaceBrowser({
               </button>
               <button
                 type="button"
+                ref={newFolderButtonRef}
                 aria-label="New folder"
                 onClick={() => {
                   setNewFolderMode(true);
@@ -162,6 +171,8 @@ function WorkspaceBrowser({
                   setNewFolderMode(false);
                   setFolderDraft("");
                   setActionError(null);
+                  // devolve o foco ao gatilho (F-dom-3 — a11y)
+                  newFolderButtonRef.current?.focus();
                 }}
               >
                 Cancel
@@ -211,7 +222,11 @@ function WorkspaceBrowser({
                 size="sm"
                 variant="ghost"
                 className="ml-auto gap-1"
-                onClick={() => setOpenFile(null)}
+                onClick={() => {
+                  setOpenFile(null);
+                  // devolve o foco à toolbar estável (F-dom-3 — a11y)
+                  refreshButtonRef.current?.focus();
+                }}
               >
                 <X className="size-3.5" aria-hidden />
                 Close

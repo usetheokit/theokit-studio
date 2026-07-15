@@ -17,6 +17,7 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
   const loadRef = useRef(load);
   loadRef.current = load;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `version` é o trigger explícito do reload() — removê-lo quebraria o refresh (coberto por teste)
   useEffect(() => {
     let ignore = false;
     loadRef

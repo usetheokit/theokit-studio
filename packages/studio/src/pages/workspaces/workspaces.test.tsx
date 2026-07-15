@@ -87,6 +87,28 @@ describe("Workspaces (Mastra-parity clone)", () => {
     expect(metrics.snapshot().datasource_calls_total.listWorkspaces).toBe(before + 1);
   });
 
+  it("datasource_rejection_surfaces_as_visible_alert", async () => {
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      listWorkspaces: () => Promise.reject(new Error("workspace service down")),
+    };
+    render(
+      <DataSourceProvider value={broken}>
+        <WorkspacesPage />
+      </DataSourceProvider>,
+    );
+    expect((await screen.findByRole("alert")).textContent).toContain("workspace service down");
+  });
+
+  it("folder_name_with_slash_is_rejected_at_the_boundary", async () => {
+    renderWorkspaces();
+    await screen.findAllByTestId("workspace-file");
+    await userEvent.click(screen.getByRole("button", { name: /new folder/i }));
+    await userEvent.type(screen.getByRole("textbox", { name: /folder name/i }), "a/b");
+    await userEvent.click(screen.getByRole("button", { name: /create folder/i }));
+    expect((await screen.findByRole("alert")).textContent).toContain("must not contain '/'");
+  });
+
   it("empty_scenario_shows_honest_empty_state", async () => {
     renderWorkspaces("empty");
     expect(await screen.findByTestId("workspaces-empty")).toBeTruthy();

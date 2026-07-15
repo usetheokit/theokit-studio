@@ -65,12 +65,15 @@ function ProcessorDetail({
           </p>
         </div>
         <div className="rounded-xl border border-border/40 bg-card/60 p-4">
-          <label className="block text-muted-foreground text-xs uppercase tracking-wide">
+          <label
+            className="block text-muted-foreground text-xs uppercase tracking-wide"
+            htmlFor="processor-phase"
+          >
             Phase
           </label>
           <div className="mt-1.5">
             <Select value={phase} onValueChange={(v) => setPhase(v as HookName)}>
-              <Select.Trigger aria-label="Phase" size="sm" className="w-full">
+              <Select.Trigger id="processor-phase" aria-label="Phase" size="sm" className="w-full">
                 <Select.Value />
               </Select.Trigger>
               <Select.Content>

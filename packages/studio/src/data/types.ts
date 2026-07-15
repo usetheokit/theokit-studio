@@ -274,6 +274,13 @@ export class DuplicateWorkspacePathError extends Error {
   }
 }
 
+export class BlankBuildPromptError extends Error {
+  constructor() {
+    super("Build prompt must not be blank — describe what to build");
+    this.name = "BlankBuildPromptError";
+  }
+}
+
 export class UnknownBuilderSessionError extends Error {
   constructor(sessionId: string) {
     super(`Builder session '${sessionId}' does not exist`);
