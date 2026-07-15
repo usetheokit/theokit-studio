@@ -47,6 +47,12 @@ SEVERITY_ALIASES = {
 }
 
 
+def _discover_findings_files(findings_dir: Path) -> list[Path]:
+    """Both .yml and .yaml — agents write either; missing one silently drops findings
+    (regression: 2026-07-14, report saiu READY_TO_MERGE com 0 de 39 findings)."""
+    return sorted([*findings_dir.glob("*.yml"), *findings_dir.glob("*.yaml")])
+
+
 def _read_findings_file(path: Path) -> dict[str, Any]:
     """Read a single YAML findings file; return parsed dict OR empty on error."""
     try:
@@ -244,7 +250,7 @@ def main() -> int:
     # Collect all findings
     all_findings: list[dict[str, Any]] = []
     agents_run: list[str] = []
-    for yml_path in sorted(args.findings_dir.glob("*.yml")):
+    for yml_path in _discover_findings_files(args.findings_dir):
         data = _read_findings_file(yml_path)
         agent_role = data.get("agent", yml_path.stem)
         if isinstance(agent_role, str):

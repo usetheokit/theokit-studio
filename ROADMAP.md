@@ -134,6 +134,37 @@ SDK 3.x adoption ahead of the rest of the cluster.
 **Dependencies:** M2, M3.
 **Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.
 
+### M5 — [ ] Studio UX shell (all screens on fixtures, no integration)
+
+> Added 2026-07-14 by `/roadmap-feature studio-ux-shell` (grill:
+> `knowledge-base/grills/studio-ux-shell-feature-grill.md`). UX-first: validate the full
+> Studio experience (Mastra Studio / Genkit Dev UI category) before investing in integration.
+> Nothing is throwaway — offline/empty states are already a product requirement (graceful
+> degradation invariant) and `@theokit/ui` dogfooding starts here.
+
+**Objective:** The real Studio SPA with every surface navigable on mocked data (fixtures),
+runnable standalone — so the experience can be seen, iterated, and locked before M0–M3 wire
+real services in.
+
+**Definition of done:**
+- [ ] SPA at `packages/studio` built with `@theokit/ui` (current major), running standalone
+      via Vite dev server — no `theokit dev`, no Docker required.
+- [ ] 5 surfaces navigable: Playground (mocked chat), Event Inspector (typed `Run.stream()`
+      fixtures: text deltas, tool calls, permissions, rate-limit, completion), Memory
+      browser, Knowledge/RAG inspector (fake retrieval playground with scores), Traces
+      **placeholder only** (offline state / future lens-web embed — never a mocked trace tree;
+      trace UI stays out of scope, theo-lens owns it).
+- [ ] Data layer behind an interface (DIP): fixtures today; M1/M2/M3 swap in real
+      implementations without touching the screens. Fixtures derived from published
+      `@theokit/sdk` 3.x types — never hand-invented shapes.
+- [ ] Empty/loading/offline states present on every service-backed tab.
+- [ ] Build + tests + typecheck green in the monorepo.
+
+**Dependencies:** none (parallel to M0/M1; external: `@theokit/ui` 1.x available).
+**Top risks:** fixture drift vs real `@theokit/sdk` 3.x types (mitigate: import SDK types);
+`@theokit/ui` 1.x gaps for Studio-grade components (event-stream viewer, graph view) —
+treat as upstream contributions, not local forks.
+
 ---
 
 ## Decisions log
@@ -150,3 +181,15 @@ SDK 3.x adoption ahead of the rest of the cluster.
 - theo-rag zero-key boot (stub embedder via env?) — affects M0 DoD.
 - Whether service images are published to a registry or built from sibling checkouts in M0.
 - Exact `theokit` integration surface (Vite plugin vs dev-server route) — decide in M1 planning.
+
+---
+
+## State-of-the-art references
+
+Cloned under `.claude/knowledge-base/references/` (gitignored and read-only by project
+convention — this table IS the catalog). Consumed by `/discover-plan` during downstream cycles.
+
+| Peer | Repo | License | Supports milestone(s) | Added by |
+|---|---|---|---|---|
+| mastra | `mastra-ai/mastra` | Apache-2.0 (⚠ `ee/` dirs under separate commercial license — never port code from `ee/`) | M5, M1 | roadmap-feature (2026-07-14) |
+| genkit | `genkit-ai/genkit` | Apache-2.0 | M5, M1 | roadmap-feature (2026-07-14) |

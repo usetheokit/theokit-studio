@@ -81,17 +81,27 @@ def _resolve_thresholds(arg: Path | None, plan_path: Path) -> Path:
 
 
 def _parse_thresholds(path: Path) -> dict[str, int]:
+    """Parse verdict bands. Canonical format (per rules/discover-plan-thresholds.txt):
+    `band.<name> = <int>`. Legacy `NAME | <int>` is still accepted. Non-band keys
+    (soft_cap.*, hard_cap.*) are cap tuning, not verdict bands — skipped here."""
     bands: dict[str, int] = {}
     for line in path.read_text(encoding="utf-8-sig").splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith("#"):
+        stripped = line.split("#", 1)[0].strip()
+        if not stripped:
             continue
-        parts = [p.strip() for p in line.split("|")]
-        if len(parts) >= 2:
-            try:
-                bands[parts[0]] = int(parts[1])
-            except ValueError:
-                continue
+        sep = "|" if "|" in stripped else "="
+        parts = [p.strip() for p in stripped.split(sep, 1)]
+        if len(parts) < 2:
+            continue
+        name = parts[0]
+        if name.startswith(("soft_cap.", "hard_cap.")):
+            continue
+        if name.startswith("band."):
+            name = name[len("band.") :]
+        try:
+            bands[name.upper()] = int(parts[1])
+        except ValueError:
+            continue
     return bands
 
 

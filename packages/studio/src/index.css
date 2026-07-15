@@ -1,0 +1,44 @@
+/* Setup de estilos do Studio — UM único pipeline Tailwind v4 (dogfood 2026-07-14):
+   - fonts.css/tokens.css: fontes + CSS vars de runtime por tema (violet-forge etc.)
+   - tokens-v4.css: bloco @theme que o Tailwind v4 lê (cores/text/radius do design system)
+   - tailwindcss + @config: gera as utilities do APP e dos DISTs das libs (o preset mapeia
+     as cores shadcn-style; o content do config usa realpath porque o scanner não segue
+     os symlinks do pnpm)
+   NÃO importar @theokit/ui/styles.css aqui: ele embute um SEGUNDO pipeline Tailwind
+   (preflight + layers duplicados) e o cascade quebra de formas não-óbvias. */
+/* PRIMEIRA declaração do arquivo — fixa a ordem global dos cascade layers ANTES de
+   qualquer import: tokens-v4.css abre um @layer utilities próprio e, sem esta linha,
+   a primeira OCORRÊNCIA definiria utilities < base → o preflight (* { padding: 0 })
+   passaria por cima de TODAS as utilities de padding/border (root-cause da UI "pelada"
+   no dogfood 2026-07-14). */
+@layer properties, theme, base, components, utilities;
+
+@import "@theokit/ui/fonts.css";
+@import "@theokit/ui/tokens.css";
+@import "@theokit/ui/tokens-v4.css";
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+/* Base mínima que viria do styles.css do design system */
+@layer base {
+  * {
+    border-color: oklch(from var(--border) l c h / 40%);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans, "Geist", system-ui, sans-serif);
+  }
+  /* O preflight do Tailwind v4 não põe pointer em controles (o styles.css do design
+     system fazia isso — regra herdada aqui após a troca para pipeline único). */
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
+}
