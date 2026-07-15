@@ -83,7 +83,11 @@ describe("categorize (T3.2 — pura)", () => {
 describe("event inspector — JsonViewer + DescriptionList (M7 T3.1)", () => {
   it("test_payload_rendered_via_jsonviewer_not_pre", () => {
     renderEvents();
-    expect(document.body.querySelector('[data-slot="json-viewer"]')).not.toBeNull();
+    const viewer = document.body.querySelector('[data-slot="json-viewer"]');
+    expect(viewer).not.toBeNull();
+    // review F-tests-1: pina conteúdo DO payload dentro do viewer (stepId não aparece
+    // no resumo da DescriptionList — só no JSON real)
+    expect(viewer?.textContent).toContain("stepId");
     expect(document.body.querySelector("pre")).toBeNull();
   });
 

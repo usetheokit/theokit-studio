@@ -147,8 +147,10 @@ function ChatView({ agent, onBack }: { agent: AgentSummary; onBack: () => void }
         </span>
         <div className="leading-tight">
           <span className="block font-medium text-foreground text-sm">{agent.name}</span>
-          {agent.model && (
-            <span className="block font-mono text-muted-foreground text-xs">{agent.model}</span>
+          {(params.model ?? agent.model) && (
+            <span className="block font-mono text-muted-foreground text-xs">
+              {params.model ?? agent.model}
+            </span>
           )}
         </div>
         <div role="tablist" aria-label="Agent views" className="ml-6 flex items-center gap-1">

@@ -187,16 +187,24 @@ describe("Playground — painel de params (M7 T3.2)", () => {
   });
 
   it("test_params_flow_into_run_request", async () => {
+    // review F-tests-2: interage ANTES do send e asserta os valores efetivos + model
     const ds = renderPlayground();
     const spy = vi.spyOn(ds, "runAgent");
     await pickAgent();
+    const tempSlider = screen.getByRole("slider", { name: /temperature/i });
+    tempSlider.focus();
+    await userEvent.keyboard("{Home}"); // temperature → 0 (min)
     await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
     await userEvent.click(screen.getByRole("button", { name: /send/i }));
     expect(spy).toHaveBeenCalledWith(
       expect.any(String),
       "hi",
       expect.anything(),
-      expect.objectContaining({ temperature: expect.any(Number), topP: expect.any(Number) }),
+      expect.objectContaining({
+        temperature: 0,
+        topP: 1,
+        model: expect.any(String),
+      }),
     );
   });
 });
