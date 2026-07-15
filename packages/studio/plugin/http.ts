@@ -10,14 +10,14 @@ export function sendErrorEnvelope(
   code: string,
   message: string,
 ): void {
-  if (res.writableEnded) return;
+  if (res.writableEnded || res.destroyed) return;
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: { code, message } }));
 }
 
 /** Resposta JSON simples com guard de response já encerrado. */
 export function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  if (res.writableEnded) return;
+  if (res.writableEnded || res.destroyed) return;
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(body));
 }

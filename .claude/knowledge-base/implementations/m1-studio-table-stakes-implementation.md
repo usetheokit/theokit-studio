@@ -71,10 +71,13 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 |---|---|---|---|---|
 | (preenchido pelo halt-loop) | | | | |
 
+**Registro T1.4:** ramo D4 degradado ativo (bridge 0.39.0 sem seam de RunEvent — issue theokit#132 aberta com dedup-check; `run-event` reservado no vocabulário, lockado por teste). Paridade de provider com evidência (`provider-resolver.ts:58-75`, `agent-middleware.ts:231` — apiKey only). Decisões registradas: body sem cap de tamanho (dev-only, aceito); 405 antes do check de origem (intencional); `readBody` deixa erro de stream subir ao catch-all (família EC-12, risco aceito no plano); guard `res.destroyed` adicionado aos helpers. Bug pego pelo SEPA pré-commit: sentinel "malformed" colidia com nome válido de agent → retorno discriminado + teste de regressão.
+
 ## Followups (scope-creep avoided)
 
 | # | Observed during | Description | Recommended owner |
 |---|---|---|---|
+| F3 | T1.4 | Threadar `cwd` no streamAgentUIMessages quando @theokit/agents 0.40 for publicado (settingSources resolve contra process.cwd() até lá) | bump 0.40 |
 | F2 | T1.3 | Fixture decorator-based (@SubAgents) para exercitar workflows de ponta a ponta na integração | próximo plano |
 | F1 | plan D3 | Deduplicar `scanStudioAgents` quando o theokit exportar `scanAgents` publicamente em `theokit/server/scan` | próximo plano |
 

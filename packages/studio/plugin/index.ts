@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import type { Connect, Plugin, ViteDevServer } from "vite";
 import { sendErrorEnvelope, sendJson } from "./http";
 import { aggregateReflection, listReflectionAgents, listReflectionSkills } from "./reflection-api";
+import { handleAgentRun, matchRunPath, type RunStreamFactory } from "./run-endpoint";
 
 /**
  * `@theokit/studio/plugin` — monta a reflection API (`/_studio/api/*`) e (T2.2) a SPA
@@ -14,6 +15,8 @@ import { aggregateReflection, listReflectionAgents, listReflectionSkills } from 
 export interface StudioPluginOptions {
   /** diretório dos agents relativo ao project root (convenção theokit: "agents"). */
   agentsDir?: string;
+  /** seam de e2e/teste (DIP): substitui streamAgentUIMessages no run endpoint. */
+  streamFactory?: RunStreamFactory;
 }
 
 const STUDIO_PREFIX = "/_studio";
@@ -59,7 +62,7 @@ function loadAgents(ctx: StudioContext) {
 
 async function handleStudioRequest(
   pathname: string,
-  _req: IncomingMessage,
+  req: IncomingMessage,
   res: ServerResponse,
   ctx: StudioContext,
 ): Promise<void> {
@@ -79,6 +82,15 @@ async function handleStudioRequest(
   }
   if (pathname === "/_studio/api/skills") {
     sendJson(res, 200, await listReflectionSkills({ projectRoot: ctx.server.config.root }));
+    return;
+  }
+  if (matchRunPath(pathname) !== null) {
+    await handleAgentRun(pathname, req, res, {
+      projectRoot: ctx.server.config.root,
+      agentsDir: ctx.options.agentsDir,
+      load: (filePath) => ctx.server.ssrLoadModule(filePath),
+      streamFactory: ctx.options.streamFactory,
+    });
     return;
   }
   if (pathname.startsWith(API_PREFIX)) {

@@ -17,11 +17,21 @@ let server: ViteDevServer;
 let baseUrl: string;
 
 beforeAll(async () => {
+  // streamFactory determinístico injetado via options (DIP) — LLM real fica fora de
+  // teste (testing.md § 6); env do teste garante a key para o run endpoint.
+  process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "integration-test-key";
   server = await createServer({
     root: join(import.meta.dirname, "../fixtures/demo-project"),
     configFile: false,
     logLevel: "silent",
-    plugins: [theokitStudio()],
+    plugins: [
+      theokitStudio({
+        // biome-ignore lint/correctness/useYield: fake determinístico
+        streamFactory: async function* (_compiled, _apiKey, input) {
+          yield { type: "text-delta", delta: `echo: ${input.message}` };
+        },
+      }),
+    ],
     server: { port: 0 },
   });
   await server.listen();
@@ -92,6 +102,30 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(aggregateReflection(direct.items).tools).toEqual(tools.items);
     const directSkills = await listReflectionSkills({ projectRoot: fixtureRoot });
     expect(directSkills.items).toEqual(skills.items);
+  });
+
+  it("test_run_endpoint_streams_ndjson_over_real_http", async () => {
+    // T1.4: POST run com sessionId + parse NDJSON incremental sobre HTTP real.
+    const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "ping", sessionId: "it-session" }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/x-ndjson");
+    const lines = (await res.text())
+      .split("\n")
+      .filter((l) => l.trim())
+      .map((l) => JSON.parse(l) as { kind: string; chunk?: { delta?: string } });
+    expect(lines.map((l) => l.kind)).toEqual(["message", "done"]);
+    expect(lines[0]?.chunk?.delta).toBe("echo: ping");
+    // handleAgentRun exercitado na fronteira real via matchRunPath do dispatcher.
+    const nested = await fetch(`${baseUrl}/_studio/api/agents/team/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "nested ping" }),
+    });
+    expect(nested.status).toBe(200);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

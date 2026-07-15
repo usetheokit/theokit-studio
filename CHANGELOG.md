@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T1.4 — run endpoint do playground: `POST /_studio/api/agents/{name}/run` streama a
+  resposta do agent como NDJSON (`{kind: message|done|error}` — uma linha JSON por evento;
+  `run-event` reservado até o bridge expor o seam, theokit#132); mesma origem obrigatória
+  ANTES de qualquer trabalho (um run gasta tokens reais; `Origin: null`/malformado → 403);
+  `sessionId` do body preservado para conversa multi-turn (ausente → UUID por request);
+  sem API key de provider → 424 nomeando `OPENROUTER_/OPENAI_/ANTHROPIC_API_KEY` (mesma
+  prioridade do theokit dev); agent inexistente → 404; módulo inválido → 422; erro
+  mid-stream vira linha `error` tipada (nunca `done` depois de erro); disconnect do
+  cliente aborta o run (AbortSignal propagado, zero writes pós-close) (#m1)
 - M1 T1.3 — endpoints agregados da reflection: `GET /_studio/api/tools` (dedup por nome com
   `usedBy` contando agents; primeira descrição vence; ordenado), `GET /_studio/api/workflows`
   (subagents declarados com `source: "subagent"` e nota honesta citando o gap theokit-sdk#123)
