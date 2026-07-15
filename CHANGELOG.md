@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 plan: `m1-studio-table-stakes` v1.2 (plan-confidence SHIPPABLE 97.6) — plugin Vite
+  `@theokit/studio/plugin` (reflection API + run NDJSON + static `/_studio`), SPA
+  embarcável com `base './'`, `ReflectionDataSource` híbrido honesto e wiring
+  cross-repo no theokit dev; edge-cases (4 MUST FIX absorvidos) e deps-audit
+  PASS_WITH_CAVEATS (0 CVEs) (#m1)
 - M1 discovery: blueprint `m1-studio-table-stakes` (verdict SHIPPABLE 100.0) mapeando
   reflection endpoint + SPA `/_studio` — prior art Genkit/Mastra + superfície real do
   `theokit dev` (vite-plugin middlewares) e `@theokit/sdk` 3.8.0 (`Agent.list()`,
