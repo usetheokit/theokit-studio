@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.2.0] - 2026-07-15
+
+### Added
 - Docs: blueprint técnico hands-on do Mastra Studio (engenharia reversa com instância
   local, cada aba exercitada via REST + UI real) em
   docs/mastra-studio-blueprint-clonagem-2026-07-14.md, linkado no README (M5 dogfood)
@@ -63,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SOTA references cloned for study: `mastra-ai/mastra` (Apache-2.0, `ee/` carve-out noted)
   and `genkit-ai/genkit` (Apache-2.0) — catalog in ROADMAP § State-of-the-art references
 
+
 ### Changed
 - Shell breadcrumb agora usa o primitive `Breadcrumb` do `@usetheo/ui@0.17.0` (bump de ^0.15.0):
   função hand-rolled deletada, `aria-current` apenas no item corrente e separadores
@@ -89,6 +104,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Studio: selects nativos substituídos pelo `Select` (Radix) do design system no seletor
   de agente, filtro de categoria (Events) e filtro de escopo (Memory)
 - `code-quality`: linguagem `typescript` habilitada (primeiro pacote TS do monorepo — M5)
+
 
 ### Fixed
 - Review dogfood (batch): export morto `getSavedRequestContext` removido e copy do save
