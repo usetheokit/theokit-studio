@@ -69,11 +69,17 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(card.textContent).toContain("+6");
     expect(card.textContent).toContain("-3");
     expect(card.textContent).toContain("prompts/support-tone.md");
-    // Undo é fake door honesto; Review é real (foca o painel).
+    // Undo é fake door honesto; Review é real (abre o painel de diffs).
     const undo = within(card).getByRole("button", { name: /undo/i }) as HTMLButtonElement;
     expect(undo.disabled).toBe(true);
-    // Painel Review: toolbar agregada + Commit fake door + diffs por arquivo.
-    const review = screen.getByTestId("builder-review");
+    // Default à direita: painel de DETALHES (Branch details + Artifacts).
+    const details = screen.getByTestId("builder-details");
+    expect(details.textContent).toContain("Branch details");
+    expect(details.textContent).toContain("Pull request status unavailable");
+    expect(screen.getAllByTestId("builder-artifact-item").length).toBe(2);
+    // Abrir o Review pelo botão do card.
+    await userEvent.click(within(card).getByRole("button", { name: /^review$/i }));
+    const review = await screen.findByTestId("builder-review");
     expect(review.textContent).toContain("Unstaged");
     const commit = within(review).getByRole("button", { name: /commit/i }) as HTMLButtonElement;
     expect(commit.disabled).toBe(true);
@@ -85,6 +91,9 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("review_file_tree_filters_the_diffs", async () => {
     renderBuilder();
     await openPinnedSession();
+    // Abre o Review a partir de "Changes" no painel de detalhes.
+    await userEvent.click(screen.getByRole("button", { name: /changes/i }));
+    await screen.findByTestId("builder-review");
     const treeFiles = screen.getAllByTestId("review-tree-file");
     expect(treeFiles.length).toBe(2);
     const tone = treeFiles.find((f) => f.textContent?.includes("support-tone.md"));
@@ -96,6 +105,23 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     // "All files" restaura os dois diffs.
     await userEvent.click(screen.getByRole("button", { name: /all files/i }));
     expect(screen.getAllByTestId("review-file-diff").length).toBe(2);
+  });
+
+  it("artifact_click_opens_review_filtered_and_close_returns_to_details", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const artifacts = screen.getAllByTestId("builder-artifact-item");
+    const tone = artifacts.find((a) => a.textContent?.includes("support-tone.md"));
+    if (!tone) throw new Error("artifact not found");
+    await userEvent.click(tone);
+    // Review abre já filtrado no artefato clicado.
+    await screen.findByTestId("builder-review");
+    const diffs = screen.getAllByTestId("review-file-diff");
+    expect(diffs.length).toBe(1);
+    expect(diffs[0]?.getAttribute("data-path")).toBe("prompts/support-tone.md");
+    // Fechar o Review volta ao painel de detalhes.
+    await userEvent.click(screen.getByRole("button", { name: /close review/i }));
+    expect(await screen.findByTestId("builder-details")).toBeTruthy();
   });
 
   it("home_submit_starts_scripted_session_with_scaffold_files", async () => {

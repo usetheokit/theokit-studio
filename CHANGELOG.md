@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio Agent Builder — painel lateral de detalhes da sessão (dogfood): default à
+  direita com seções "Branch details" (Changes com contadores +A −R que abre o Review,
+  Git actions como fake door honesto, "Pull request status unavailable") e "Artifacts"
+  (arquivos da sessão; clicar abre o Review já filtrado no artefato); a tab Review
+  ganha × para voltar aos detalhes (M5 dogfood)
 - Studio Agent Builder — composer da home com a anatomia da referência (dogfood):
   linha de ações dentro do composer com "+" (fake door honesto), select de modo de
   aprovação real (Ask for approval / Auto-approve edits / Read-only), modelo + select

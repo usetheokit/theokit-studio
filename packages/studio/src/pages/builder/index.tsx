@@ -7,8 +7,10 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
+  FileCode,
   FolderKanban,
   GitCommitHorizontal,
+  GitPullRequest,
   Hand,
   LayoutTemplate,
   Mic,
@@ -19,6 +21,7 @@ import {
   SquarePen,
   Undo2,
   Wrench,
+  X,
 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { getSurface } from "../../app/nav-items";
@@ -156,10 +159,12 @@ function ReviewPanel({
   files,
   selectedPath,
   onSelect,
+  onClose,
 }: {
   files: BuilderArtifactFile[];
   selectedPath: string | null;
   onSelect: (path: string) => void;
+  onClose: () => void;
 }) {
   const additions = files.reduce((a, f) => a + f.additions, 0);
   const deletions = files.reduce((a, f) => a + f.deletions, 0);
@@ -171,8 +176,16 @@ function ReviewPanel({
       data-testid="builder-review"
     >
       <div className="flex items-center gap-1 border-border/40 border-b bg-card/80 px-3 py-2">
-        <span className="rounded-full bg-muted/50 px-3 py-0.5 font-medium text-foreground text-xs">
+        <span className="flex items-center gap-1 rounded-full bg-muted/50 px-3 py-0.5 font-medium text-foreground text-xs">
           Review
+          <button
+            type="button"
+            aria-label="Close review"
+            onClick={onClose}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <X className="size-3" aria-hidden />
+          </button>
         </span>
         <span className="ml-auto flex items-center gap-2 text-xs">
           <span className="text-muted-foreground">
@@ -238,6 +251,88 @@ function ReviewPanel({
 // ---------------------------------------------------------------------------
 // Thread da sessão: pill do usuário, work log expansível, card de arquivos.
 // ---------------------------------------------------------------------------
+
+// Painel lateral de detalhes da sessão (default à direita): mudanças agregadas,
+// ações de git (fake door honesto) e artefatos produzidos — cada um abre o Review.
+function DetailsPanel({
+  files,
+  onOpenReview,
+}: {
+  files: BuilderArtifactFile[];
+  onOpenReview: (path: string | null) => void;
+}) {
+  const additions = files.reduce((a, f) => a + f.additions, 0);
+  const deletions = files.reduce((a, f) => a + f.deletions, 0);
+  return (
+    <div
+      className="flex min-h-0 w-full flex-col gap-4 overflow-auto rounded-xl border border-border/40 bg-card/40 p-4"
+      data-testid="builder-details"
+    >
+      <section>
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+          Branch details
+        </h3>
+        <ul className="mt-2 space-y-1">
+          <li>
+            <button
+              type="button"
+              onClick={() => onOpenReview(null)}
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
+            >
+              <SquarePen className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="flex-1 text-foreground">Changes</span>
+              <span className="font-mono text-emerald-400 text-xs">+{additions}</span>
+              <span className="font-mono text-red-400 text-xs">-{deletions}</span>
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              disabled
+              title="Git actions land when Studio attaches to a real registry"
+              className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <GitCommitHorizontal className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="flex-1 text-foreground">Git actions</span>
+            </button>
+          </li>
+          <li className="flex items-center gap-2 px-2 py-1.5 text-muted-foreground text-sm">
+            <GitPullRequest className="size-4 shrink-0" aria-hidden />
+            Pull request status unavailable
+          </li>
+        </ul>
+      </section>
+      <section>
+        <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+          Artifacts
+        </h3>
+        <ul className="mt-2 space-y-1">
+          {files.map((file) => {
+            const name = file.path.split("/").at(-1) ?? file.path;
+            return (
+              <li key={file.path}>
+                <button
+                  type="button"
+                  data-testid="builder-artifact-item"
+                  onClick={() => onOpenReview(file.path)}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
+                >
+                  <FileCode className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate font-mono text-foreground text-xs">
+                    {name}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+          {files.length === 0 && (
+            <li className="px-2 py-1.5 text-muted-foreground text-xs">No artifacts yet.</li>
+          )}
+        </ul>
+      </section>
+    </div>
+  );
+}
 
 function WorkLog({ workedFor, steps }: { workedFor: string; steps: string[] }) {
   const [open, setOpen] = useState(false);
@@ -329,7 +424,8 @@ function SessionView({
 }) {
   const [draft, setDraft] = useState("");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  const reviewRef = useRef<HTMLDivElement>(null);
+  // Painel direito: detalhes (default, padrão da referência) ou o Review com diffs.
+  const [rightPane, setRightPane] = useState<"details" | "review">("details");
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -377,9 +473,7 @@ function SessionView({
                   {i === session.messages.length - 1 && session.files.length > 0 && (
                     <EditedFilesCard
                       files={session.files}
-                      onReview={() =>
-                        reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-                      }
+                      onReview={() => setRightPane("review")}
                     />
                   )}
                 </div>
@@ -408,12 +502,23 @@ function SessionView({
           </form>
         </div>
         {session.files.length > 0 && (
-          <div ref={reviewRef} className="flex min-h-0 w-[46%] shrink-0">
-            <ReviewPanel
-              files={session.files}
-              selectedPath={selectedPath}
-              onSelect={(path) => setSelectedPath(path === "" ? null : path)}
-            />
+          <div className="flex min-h-0 w-[46%] shrink-0">
+            {rightPane === "review" ? (
+              <ReviewPanel
+                files={session.files}
+                selectedPath={selectedPath}
+                onSelect={(path) => setSelectedPath(path === "" ? null : path)}
+                onClose={() => setRightPane("details")}
+              />
+            ) : (
+              <DetailsPanel
+                files={session.files}
+                onOpenReview={(path) => {
+                  setSelectedPath(path);
+                  setRightPane("review");
+                }}
+              />
+            )}
           </div>
         )}
       </div>
