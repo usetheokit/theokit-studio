@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio MCP tool detail (dogfood): cada tool exposta no detail do server agora é
+  clicável e abre o detail com descrição, form "Input Data" derivado do input schema
+  da fixture (labels + required), Submit desabilitado com nota honesta (fixtures) e
+  painel de Output; botão de voltar retorna ao detail do server (M5 dogfood)
 
 ### Changed
 

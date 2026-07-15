@@ -58,11 +58,19 @@ export interface ProcessorSummary {
   usedBy: number;
 }
 
+export interface McpToolInputField {
+  name: string;
+  label: string;
+  required: boolean;
+}
+
 export interface McpExposedTool {
   name: string;
   description: string;
   /** origem do item exposto: tool direta, wrapper de agente ou de workflow. */
   kind: "tool" | "agent" | "workflow";
+  /** campos do input schema (form "Input Data" no detail da tool). */
+  inputFields: McpToolInputField[];
 }
 
 export interface McpServerSummary {

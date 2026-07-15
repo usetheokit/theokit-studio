@@ -116,24 +116,40 @@ export const fixtureMcpServers: readonly McpServerSummary[] = Object.freeze([
     tools: 5,
     workflows: 1,
     availableTools: [
-      { name: "lookupOrder", description: "Look up an order by its ID", kind: "tool" },
+      {
+        name: "lookupOrder",
+        description: "Look up an order by its ID",
+        kind: "tool",
+        inputFields: [{ name: "orderId", label: "Order ID", required: true }],
+      },
       {
         name: "refundOrder",
         description: "Refund an order (requires human approval above $500)",
         kind: "tool",
+        inputFields: [
+          { name: "orderId", label: "Order ID", required: true },
+          { name: "amount", label: "Amount (USD)", required: true },
+        ],
       },
-      { name: "searchDocs", description: "Search the product documentation", kind: "tool" },
+      {
+        name: "searchDocs",
+        description: "Search the product documentation",
+        kind: "tool",
+        inputFields: [{ name: "query", label: "Query", required: true }],
+      },
       {
         name: "ask_supportAgent",
         description:
           "Ask agent 'Support Agent' a question. Agent description: Answers support tickets with access to the knowledge base",
         kind: "agent",
+        inputFields: [{ name: "question", label: "Question", required: true }],
       },
       {
         name: "run_customerOnboarding",
         description:
           "Run workflow 'customer-onboarding'. Workflow description: Customer onboarding flow from signup to first value",
         kind: "workflow",
+        inputFields: [{ name: "customerEmail", label: "Customer email", required: true }],
       },
     ],
   },
