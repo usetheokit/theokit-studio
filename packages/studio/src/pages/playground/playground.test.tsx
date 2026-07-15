@@ -70,6 +70,35 @@ describe("Playground (T3.1)", () => {
     expect(screen.getByText(/no agents match/i)).toBeTruthy();
   });
 
+  it("chat_shows_agent_tabs_with_only_chat_enabled", async () => {
+    renderPlayground();
+    await pickAgent();
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "Chat",
+      "Editor",
+      "Evaluate",
+      "Review",
+      "Traces",
+    ]);
+    const chat = tabs[0] as HTMLButtonElement;
+    expect(chat.getAttribute("aria-selected")).toBe("true");
+    expect(chat.disabled).toBe(false);
+    // Fake doors honestos: as demais abas chegam em milestones futuros.
+    for (const tab of tabs.slice(1)) {
+      expect((tab as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+
+  it("chat_empty_state_greets_and_memory_notice_is_honest", async () => {
+    renderPlayground();
+    await pickAgent();
+    expect(screen.getByText("How can I help you today?")).toBeTruthy();
+    const notice = screen.getByTestId("chat-memory-notice");
+    expect(notice.textContent).toContain("Memory not enabled");
+    expect(notice.textContent).toContain("theo-memory");
+  });
+
   it("back_button_returns_to_agents_list", async () => {
     renderPlayground();
     await pickAgent();

@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Studio agent chat revisado (dogfood, paridade com o chat de agente do Mastra): abas
+  por agente no header (Chat ativa; Editor/Evaluate/Review/Traces como fake doors
+  honestos até seus milestones), painel lateral "Memory not enabled" explicando que
+  threads chegam com o theo-memory (M1), empty state centrado com avatar do agente +
+  "How can I help you today?", e badge mono do modelo no composer (M5 dogfood)
 - Studio Workspaces interativo (dogfood): navegar em pastas com breadcrumb clicável,
   abrir arquivo em viewer lateral (nome + Close + conteúdo mono com tamanho real),
   criar pasta (validação na fronteira: nome vazio/duplicado vira erro tipado visível)
