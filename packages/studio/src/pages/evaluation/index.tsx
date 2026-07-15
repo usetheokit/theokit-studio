@@ -130,6 +130,7 @@ export function ScorersPage() {
         rowKey={(s) => s.id}
         rowTestId="scorer-row"
         emptyText="No scorers match your filter."
+        noItemsText="No scorers registered yet."
         columns={[
           {
             header: "Name",
@@ -182,6 +183,7 @@ export function DatasetsPage() {
         rowKey={(d) => d.id}
         rowTestId="dataset-row"
         emptyText="No datasets match your filter."
+        noItemsText="No datasets registered yet."
         columns={[
           {
             header: "Name",
@@ -260,6 +262,7 @@ export function ExperimentsPage() {
         rowKey={(e) => e.id}
         rowTestId="experiment-row"
         emptyText="No experiments match your filter."
+        noItemsText="No experiments registered yet."
         columns={[
           {
             header: "Experiment",

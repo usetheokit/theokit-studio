@@ -26,6 +26,7 @@ export function ToolsPage() {
         rowKey={(t) => t.id}
         rowTestId="tool-row"
         emptyText="No tools match your filter."
+        noItemsText="No tools registered yet."
         columns={[
           {
             header: "Name",

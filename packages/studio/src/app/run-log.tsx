@@ -38,9 +38,7 @@ export function useRunLogOptional(): RunLog | null {
 export function useRunLog(): RunLog {
   const log = useRunLogOptional();
   if (!log) {
-    throw new Error(
-      "useRunLog: nenhum RunLogProvider montado — envolva a árvore no composition root",
-    );
+    throw new Error("useRunLog: no RunLogProvider mounted — wrap the tree at the composition root");
   }
   return log;
 }

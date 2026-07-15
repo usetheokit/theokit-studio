@@ -1,10 +1,11 @@
 import { ChatMessageContent, ChatMessageRoot, ToolCallCard } from "@theokit/ui";
-import { Badge, Button, Input, Textarea } from "@usetheo/ui";
-import { ArrowLeft, Bot, Search, SendHorizonal } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { Badge, Button, Textarea } from "@usetheo/ui";
+import { ArrowLeft, Bot, SendHorizonal } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { EntityTable } from "../../app/entity-table";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
-import { useDataSource } from "../../data/datasource";
+import { useListing } from "../../app/use-listing";
 import type { AgentSummary } from "../../data/types";
 import type { ChatPart } from "./event-to-part";
 import { useRunPlayback } from "./use-run-playback";
@@ -57,6 +58,7 @@ function PartView({ part }: { part: ChatPart }) {
 
 // Padrão agents-first (Mastra real, dogfood 2026-07-14): a entrada do Playground é a
 // LISTA de agentes (Name | Description | Model + filtro); o chat abre ao escolher um.
+// Review F-arch-4: fork manual da tabela substituído pelo EntityTable compartilhado.
 function AgentsTable({
   agents,
   onPick,
@@ -64,66 +66,48 @@ function AgentsTable({
   agents: AgentSummary[];
   onPick: (a: AgentSummary) => void;
 }) {
-  const [filter, setFilter] = useState("");
-  const term = filter.trim().toLowerCase();
-  const visible = agents.filter(
-    (a) =>
-      term.length === 0 ||
-      a.name.toLowerCase().includes(term) ||
-      a.description.toLowerCase().includes(term),
-  );
   return (
-    <div className="px-8 py-6">
-      <div className="relative max-w-md">
-        <Search
-          className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground"
-          aria-hidden
-        />
-        <Input
-          type="search"
-          aria-label="Filter agents"
-          className="pl-9"
-          placeholder="Filter by name or description…"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-      </div>
-      <div className="mt-4 overflow-hidden rounded-xl border border-border/40">
-        <div className="grid grid-cols-[200px_1fr_180px] gap-4 border-border/40 border-b bg-card/80 px-4 py-2.5 font-medium text-muted-foreground text-xs uppercase tracking-wide">
-          <span>Name</span>
-          <span>Description</span>
-          <span>Model</span>
-        </div>
-        <ul>
-          {visible.map((a) => (
-            <li key={a.id} className="border-border/30 border-b last:border-b-0">
-              <button
-                type="button"
-                data-testid="agent-row"
-                className="grid w-full grid-cols-[200px_1fr_180px] items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-card"
-                onClick={() => onPick(a)}
-              >
-                <span className="flex items-center gap-2 font-medium text-foreground text-sm">
-                  <span className="flex size-6 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
-                    <Bot className="size-3.5" aria-hidden />
-                  </span>
-                  {a.name}
-                </span>
-                <span className="truncate text-muted-foreground text-sm">{a.description}</span>
-                <span className="truncate font-mono text-muted-foreground text-xs">
-                  {a.model ?? "—"}
-                </span>
-              </button>
-            </li>
-          ))}
-          {visible.length === 0 && (
-            <li className="px-4 py-8 text-center text-muted-foreground text-sm">
-              No agents match your filter.
-            </li>
-          )}
-        </ul>
-      </div>
-    </div>
+    <EntityTable
+      items={agents}
+      gridClassName="grid-cols-[200px_1fr_180px]"
+      filterPlaceholder="Filter by name or description…"
+      filterLabel="Filter agents"
+      matches={(a, term) =>
+        a.name.toLowerCase().includes(term) || a.description.toLowerCase().includes(term)
+      }
+      rowKey={(a) => a.id}
+      rowTestId="agent-row"
+      onRowClick={onPick}
+      emptyText="No agents match your filter."
+      noItemsText="No agents registered yet."
+      columns={[
+        {
+          header: "Name",
+          render: (a) => (
+            <span className="flex items-center gap-2 font-medium text-foreground text-sm">
+              <span className="flex size-6 items-center justify-center rounded-md border border-primary/20 bg-primary/10 text-primary">
+                <Bot className="size-3.5" aria-hidden />
+              </span>
+              {a.name}
+            </span>
+          ),
+        },
+        {
+          header: "Description",
+          render: (a) => (
+            <span className="block truncate text-muted-foreground text-sm">{a.description}</span>
+          ),
+        },
+        {
+          header: "Model",
+          render: (a) => (
+            <span className="block truncate font-mono text-muted-foreground text-xs">
+              {a.model ?? "—"}
+            </span>
+          ),
+        },
+      ]}
+    />
   );
 }
 
@@ -195,29 +179,9 @@ function ChatView({ agent, onBack }: { agent: AgentSummary; onBack: () => void }
 }
 
 export function PlaygroundPage() {
-  const ds = useDataSource();
-  const [agents, setAgents] = useState<AgentSummary[]>([]);
+  // Review F-arch-3: boilerplate de carga migrado para o useListing compartilhado.
+  const { items: agents, loadError } = useListing((ds) => ds.listAgents());
   const [agent, setAgent] = useState<AgentSummary | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let ignore = false;
-    ds.listAgents()
-      .then((list) => {
-        if (!ignore) {
-          setAgents(list);
-        }
-      })
-      .catch((error: unknown) => {
-        // Fronteira de página (F-dom-2): erro tipado vira estado visível, nunca unhandled.
-        if (!ignore) {
-          setLoadError(error instanceof Error ? error.message : String(error));
-        }
-      });
-    return () => {
-      ignore = true;
-    };
-  }, [ds]);
 
   return (
     <section className="flex h-full flex-col">

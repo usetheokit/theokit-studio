@@ -23,7 +23,7 @@ export function parseStudioConfig(raw: unknown): StudioConfig {
     return { scenario: (raw as { scenario: StudioConfig["scenario"] }).scenario };
   }
   console.warn(
-    "TheoKit Studio: window.__STUDIO_CONFIG__ malformado — usando fixtures default",
+    "TheoKit Studio: malformed window.__STUDIO_CONFIG__ — falling back to default fixtures",
     raw,
   );
   return { scenario: "default" };
@@ -37,7 +37,7 @@ export async function bootstrap(): Promise<void> {
     );
     const rootEl = document.getElementById("root");
     if (!rootEl) {
-      throw new Error("TheoKit Studio: elemento #root não encontrado no documento host");
+      throw new Error("TheoKit Studio: #root element not found in the host document");
     }
     mount(rootEl, config);
   } catch (error) {

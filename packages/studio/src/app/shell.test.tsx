@@ -113,6 +113,11 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     expect(await screen.findByRole("heading", { name: "Events", level: 1 })).toBeTruthy();
   });
 
+  it("legacy_traces_path_redirects", async () => {
+    renderShell(["/traces"]);
+    expect(await screen.findByRole("heading", { name: "Traces", level: 1 })).toBeTruthy();
+  });
+
   it("breadcrumb_reflects_active_route", async () => {
     renderShell(["/knowledge/collections"]);
     const breadcrumb = await screen.findByRole("navigation", { name: /breadcrumb/i });

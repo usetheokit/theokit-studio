@@ -7,12 +7,11 @@ import { PageHeader } from "../../app/page-header";
 const surface = getSurface("/request-context");
 
 // Store em memória da sessão (fixtures) — o valor salvo sobrevive à navegação entre
-// superfícies, mas não a um reload. Persistência real chega com o dev server.
+// superfícies, mas não a um reload. NADA consome este valor no M5 (fixtures não usam
+// request context); o copy da página diz isso honestamente. O consumo real chega
+// quando o Studio conectar num registry (review F-arch-1/F-wire-1: export morto
+// removido em vez de fingir aplicação).
 let savedRequestContext = "{}";
-
-export function getSavedRequestContext(): string {
-  return savedRequestContext;
-}
 
 export function RequestContextPage() {
   const [draft, setDraft] = useState(savedRequestContext);
@@ -69,7 +68,8 @@ export function RequestContextPage() {
         )}
         {savedAt && !parseError && (
           <p role="status" className="mt-2 text-emerald-400 text-sm">
-            Saved at {savedAt} — applied to fixture runs in this session.
+            Saved at {savedAt} for this session — runs consume it once Studio attaches to a real
+            registry.
           </p>
         )}
         <div className="mt-4 flex justify-end">

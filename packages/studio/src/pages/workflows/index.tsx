@@ -82,6 +82,7 @@ function WorkflowDetail({ workflow, onBack }: { workflow: WorkflowSummary; onBac
                 ) : (
                   <X className="size-3.5 text-red-400" aria-hidden />
                 )}
+                <span className="sr-only">{run.status}</span>
                 <span className="truncate font-mono text-muted-foreground text-xs">{run.id}</span>
                 <span className="ml-auto shrink-0 text-muted-foreground text-xs">
                   {new Date(run.finishedAt).toLocaleString("en-US", {
@@ -143,6 +144,7 @@ export function WorkflowsPage() {
           rowTestId="workflow-row"
           onRowClick={setSelected}
           emptyText="No workflows match your filter."
+          noItemsText="No workflows registered yet."
           columns={[
             {
               header: "Name",

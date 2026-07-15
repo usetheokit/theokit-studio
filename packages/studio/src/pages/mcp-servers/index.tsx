@@ -46,23 +46,28 @@ function transportsOf(server: McpServerSummary): TransportCard[] {
 }
 
 function CopyField({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
+  // Progressive enhancement: clipboard pode não existir (http não-seguro/jsdom);
+  // a falha vira feedback VISÍVEL (review F-front-3/F-domtest-4), nunca no-op.
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const handleCopy = async () => {
-    // Progressive enhancement: clipboard pode não existir (http não-seguro/jsdom);
-    // a falha vira feedback visível, nunca exceção engolida sem sinal.
     try {
       await navigator.clipboard.writeText(value);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setCopyState("copied");
     } catch {
-      setCopied(false);
+      setCopyState("failed");
     }
+    setTimeout(() => setCopyState("idle"), 1500);
   };
   return (
     <div className="mt-3 flex items-center gap-2">
       <code className="block flex-1 truncate rounded-lg border border-border/50 bg-background px-3 py-2 font-mono text-foreground text-xs">
         {value}
       </code>
+      {copyState === "failed" && (
+        <span role="status" className="shrink-0 text-red-400 text-xs">
+          Copy failed
+        </span>
+      )}
       <Button
         variant="ghost"
         size="sm"
@@ -70,7 +75,7 @@ function CopyField({ value }: { value: string }) {
         aria-label={`Copy: ${value}`}
         className="shrink-0"
       >
-        {copied ? (
+        {copyState === "copied" ? (
           <Check className="size-4 text-emerald-400" aria-hidden />
         ) : (
           <Copy className="size-4" aria-hidden />
@@ -166,6 +171,7 @@ export function McpServersPage() {
           rowTestId="mcp-server-row"
           onRowClick={setSelected}
           emptyText="No MCP servers match your filter."
+          noItemsText="No MCP servers registered yet."
           columns={[
             {
               header: "Name",

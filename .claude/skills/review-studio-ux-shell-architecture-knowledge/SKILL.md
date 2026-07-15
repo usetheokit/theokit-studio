@@ -8,7 +8,7 @@ The architecture-reviewer agent (auto-generated at `.claude/agents/review-{slug}
 
 After writing the architecture-reviewer agent file, the script reads this template, substitutes placeholders, and writes the result to `.claude/skills/review-{slug}-architecture-knowledge/SKILL.md`. Placeholders include:
 
-- `studio-ux-shell`, `2026-07-14` — identity
+- `studio-ux-shell`, `2026-07-15` — identity
 - `{PLAN_GOAL_VERBATIM}` — Goal sentence from plan
 - `{PLAN_ADRS_ARCHITECTURE}` — ADRs from plan that touch DIP/SOLID/boundaries
 - `{PROJECT_ARCHITECTURE_RULES}` — verbatim `.claude/rules/architecture.md § 3` (DIP) + § 6 (naming) + § 7 (module hygiene)
@@ -90,7 +90,7 @@ When citing any of these, ALWAYS WebSearch first for current community framing �
 # Knowledge skill response — architecture-review — Mode {A|B|C}
 
 ## Sources consulted
-- [verbatim] Plan ADRs + architecture.md rules (frozen at generation 2026-07-14)
+- [verbatim] Plan ADRs + architecture.md rules (frozen at generation 2026-07-15)
 - [if Mode B] WebSearch + WebFetch URLs (allowlisted)
 
 ## Finding for agent

@@ -40,8 +40,6 @@ export interface SurfaceMeta {
   label: string;
   icon: LucideIcon;
   description: string;
-  /** true = página real neste M5; false = placeholder honesto (surface planejada). */
-  implemented: boolean;
 }
 
 export function getSurface(path: string): SurfaceMeta {
@@ -58,105 +56,90 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     label: "Agents",
     icon: Bot,
     description: "Chat with any registered agent and watch the typed event stream live.",
-    implemented: true,
   },
   {
     path: "/workflows",
     label: "Workflows",
     icon: Workflow,
     description: "Inspect registered workflows and step through their runs.",
-    implemented: true,
   },
   {
     path: "/processors",
     label: "Processors",
     icon: Cpu,
     description: "Input and output processors that shape every agent turn.",
-    implemented: true,
   },
   {
     path: "/mcp-servers",
     label: "MCP Servers",
     icon: Server,
     description: "MCP servers exposed to your agents and the tools they provide.",
-    implemented: true,
   },
   {
     path: "/tools",
     label: "Tools",
     icon: Wrench,
     description: "Registered tools with their schemas and a direct invocation playground.",
-    implemented: true,
   },
   {
     path: "/workspaces",
     label: "Workspaces",
     icon: FolderKanban,
     description: "Workspaces group agents, tools and data per project.",
-    implemented: true,
   },
   {
     path: "/request-context",
     label: "Request Context",
     icon: Braces,
     description: "Inspect the request context propagated through every run.",
-    implemented: true,
   },
   {
     path: "/evaluation",
     label: "Overview",
     icon: LayoutGrid,
     description: "Evaluation at a glance: scorers, datasets and experiments.",
-    implemented: true,
   },
   {
     path: "/evaluation/scorers",
     label: "Scorers",
     icon: Gauge,
     description: "Scorers grade agent outputs against your quality criteria.",
-    implemented: true,
   },
   {
     path: "/evaluation/datasets",
     label: "Datasets",
     icon: Database,
     description: "Datasets of prompts and expected outputs used by experiments.",
-    implemented: true,
   },
   {
     path: "/evaluation/experiments",
     label: "Experiments",
     icon: FlaskConical,
     description: "Experiments run scorers over datasets across agent versions.",
-    implemented: true,
   },
   {
     path: "/observability/events",
     label: "Events",
     icon: Activity,
     description: "Raw timeline of the typed Run.stream() events from the last run.",
-    implemented: true,
   },
   {
     path: "/observability/metrics",
     label: "Metrics",
     icon: BarChart3,
     description: "Runtime metrics from the dev loop: runs, tokens and latency.",
-    implemented: true,
   },
   {
     path: "/observability/traces",
     label: "Traces",
     icon: Waypoints,
     description: "Durable traces via theo-lens — the embed lands in M2.",
-    implemented: true,
   },
   {
     path: "/observability/logs",
     label: "Logs",
     icon: ScrollText,
     description: "Structured logs emitted by agents and services.",
-    implemented: true,
   },
   // Memory — submenu espelhando o theo-cloud dashboard (menu `memory`).
   {
@@ -164,63 +147,54 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     label: "Overview",
     icon: LayoutGrid,
     description: "Memory at a glance: scopes, entities and recent activity.",
-    implemented: false,
   },
   {
     path: "/memory/memories",
     label: "Memories",
     icon: ListChecks,
     description: "Scoped memories from theo-memory: what the agent remembers.",
-    implemented: true,
   },
   {
     path: "/memory/episodes",
     label: "Episodes",
     icon: History,
     description: "Bi-temporal event timeline over the subject's memories.",
-    implemented: false,
   },
   {
     path: "/memory/playground",
     label: "Playground",
     icon: FlaskConical,
     description: "Live remember / recall / reflect surface against theo-memory.",
-    implemented: false,
   },
   {
     path: "/memory/entities",
     label: "Entities",
     icon: Users,
     description: "Entities extracted from memories and their attributes.",
-    implemented: false,
   },
   {
     path: "/memory/graph",
     label: "Graph",
     icon: Share2,
     description: "Entity relation graph view over the memory store.",
-    implemented: false,
   },
   {
     path: "/memory/skills",
     label: "Skills",
     icon: Boxes,
     description: "Read-only skill library learned from memories.",
-    implemented: false,
   },
   {
     path: "/memory/exports",
     label: "Exports",
     icon: BookOpen,
     description: "Export memory snapshots for backup or analysis.",
-    implemented: false,
   },
   {
     path: "/memory/webhooks",
     label: "Webhooks",
     icon: Webhook,
     description: "Webhooks fired on memory writes and reflections.",
-    implemented: false,
   },
   // Knowledge Base — submenu espelhando o theo-cloud dashboard (menu `rag`).
   {
@@ -228,49 +202,42 @@ export const SURFACES: readonly SurfaceMeta[] = Object.freeze([
     label: "Overview",
     icon: LayoutGrid,
     description: "Knowledge base at a glance: collections, documents and retrieval.",
-    implemented: false,
   },
   {
     path: "/knowledge/collections",
     label: "Collections",
     icon: Boxes,
     description: "Collections, documents and the theo-rag retrieval playground.",
-    implemented: true,
   },
   {
     path: "/knowledge/connectors",
     label: "Connectors",
     icon: Plug,
     description: "Connectors that ingest external sources into collections.",
-    implemented: false,
   },
   {
     path: "/knowledge/documents",
     label: "Documents",
     icon: ScrollText,
     description: "All documents across collections with chunking details.",
-    implemented: false,
   },
   {
     path: "/knowledge/ask",
     label: "Ask",
     icon: Search,
     description: "Ask questions against the knowledge base and inspect answers.",
-    implemented: false,
   },
   {
     path: "/knowledge/analytics",
     label: "Analytics",
     icon: Activity,
     description: "Retrieval quality and usage analytics for the knowledge base.",
-    implemented: false,
   },
   {
     path: "/settings",
     label: "Settings",
     icon: Settings,
     description: "Studio preferences and dev-server configuration.",
-    implemented: true,
   },
 ]);
 

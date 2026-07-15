@@ -6,7 +6,7 @@ The tests-reviewer agent is the orchestrator. This skill is the knowledge layer 
 
 ## Placeholders substituted by spawn_reviewers.py
 
-- `studio-ux-shell`, `2026-07-14`
+- `studio-ux-shell`, `2026-07-15`
 - `{PLAN_GOAL_VERBATIM}`
 - `{PLAN_TDD_SECTIONS}` — TDD RED test names declared in plan's task sections (verbatim)
 - `{PROJECT_TESTING_RULES}` — verbatim `.claude/rules/testing.md § Pyramid` + § "What to test" table
@@ -88,7 +88,7 @@ WebSearch any anchor before citing — TDD practice evolves (recent debates: cla
 # Knowledge skill response — tests-review — Mode {A|B|C}
 
 ## Sources consulted
-- [verbatim] Plan TDD sections + testing.md (frozen at generation 2026-07-14)
+- [verbatim] Plan TDD sections + testing.md (frozen at generation 2026-07-15)
 - [if Mode B] WebSearch + WebFetch URLs
 
 ## Finding for agent

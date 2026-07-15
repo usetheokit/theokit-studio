@@ -148,6 +148,7 @@ export function ProcessorsPage() {
           rowTestId="processor-row"
           onRowClick={setSelected}
           emptyText="No processors match your filter."
+          noItemsText="No processors registered yet."
           columns={[
             {
               header: "Name",

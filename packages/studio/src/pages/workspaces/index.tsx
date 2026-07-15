@@ -1,3 +1,4 @@
+import { EmptyState } from "@usetheo/ui";
 import { FileText, Folder, Server } from "lucide-react";
 import { getSurface } from "../../app/nav-items";
 import { PageHeader } from "../../app/page-header";
@@ -25,6 +26,15 @@ export function WorkspacesPage() {
         </p>
       )}
       <div className="space-y-6 px-8 py-6">
+        {workspaces.length === 0 && (
+          <div className="mx-auto max-w-2xl py-10">
+            <EmptyState
+              title="No workspaces yet"
+              description="Workspaces appear here once the registry declares them."
+              data-testid="workspaces-empty"
+            />
+          </div>
+        )}
         {workspaces.map((ws) => (
           <div key={ws.id}>
             <p className="flex items-center gap-2 font-medium text-foreground text-sm">

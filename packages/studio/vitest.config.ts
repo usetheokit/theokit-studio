@@ -6,6 +6,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    // Margem para cold-cache (review F-tests-1): testes são event-driven; em runs
+    // verdes o timeout maior não custa nada, e elimina o flake da 1ª transformação.
+    testTimeout: 15000,
     setupFiles: ["./src/test/setup.ts"],
     css: false,
     coverage: {

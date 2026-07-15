@@ -141,6 +141,7 @@ export function Shell() {
                 key={navItem.path}
                 icon={Icon}
                 active={isActive(navItem.path)}
+                aria-current={isActive(navItem.path) ? "page" : undefined}
                 onClick={() => navigate(navItem.path)}
                 title={navItem.label}
               >

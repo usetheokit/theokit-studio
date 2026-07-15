@@ -52,7 +52,7 @@ export function useDataSource(): StudioDataSource {
   const ds = useContext(DataSourceContext);
   if (!ds) {
     throw new Error(
-      "useDataSource: nenhum StudioDataSource injetado — envolva a árvore em <DataSourceProvider value={...}> no composition root",
+      "useDataSource: no StudioDataSource injected — wrap the tree in <DataSourceProvider value={...}> at the composition root",
     );
   }
   return ds;

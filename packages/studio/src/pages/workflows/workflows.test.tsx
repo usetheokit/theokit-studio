@@ -56,4 +56,30 @@ describe("Workflows (Mastra-parity clone)", () => {
     await userEvent.click(screen.getByRole("button", { name: /all workflows/i }));
     expect((await screen.findAllByTestId("workflow-row")).length).toBe(2);
   });
+
+  it("empty_scenario_shows_no_registry_state_not_filter_message", async () => {
+    // Review F-domtest-1: registry vazio ≠ "no match for your filter".
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "empty" })}>
+        <WorkflowsPage />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByText(/no workflows registered yet/i)).toBeTruthy();
+    expect(screen.queryByText(/match your filter/i)).toBeNull();
+  });
+
+  it("datasource_rejection_surfaces_as_visible_alert", async () => {
+    // Review F-domtest-2: caminho de erro do useListing renderiza role=alert.
+    const broken = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      listWorkflows: () => Promise.reject(new Error("registry unreachable")),
+    };
+    render(
+      <DataSourceProvider value={broken}>
+        <WorkflowsPage />
+      </DataSourceProvider>,
+    );
+    const alertEl = await screen.findByRole("alert");
+    expect(alertEl.textContent).toContain("registry unreachable");
+  });
 });

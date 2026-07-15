@@ -16,4 +16,13 @@ describe("Workspaces (Mastra-parity clone)", () => {
     const readme = files.find((f) => f.textContent?.includes("README.md"));
     expect(readme?.textContent).toContain("162 B");
   });
+
+  it("empty_scenario_shows_honest_empty_state", async () => {
+    render(
+      <DataSourceProvider value={createFixtureDataSource({ scenario: "empty" })}>
+        <WorkspacesPage />
+      </DataSourceProvider>,
+    );
+    expect(await screen.findByTestId("workspaces-empty")).toBeTruthy();
+  });
 });

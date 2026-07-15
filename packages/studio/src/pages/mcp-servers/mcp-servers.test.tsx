@@ -60,4 +60,34 @@ describe("MCP Servers (Mastra-parity clone)", () => {
     await userEvent.click(screen.getByRole("button", { name: /all mcp servers/i }));
     expect((await screen.findAllByTestId("mcp-server-row")).length).toBe(1);
   });
+
+  it("copy_button_writes_endpoint_to_clipboard_and_confirms", async () => {
+    // Review F-domtest-4: interação de copy nunca era exercitada.
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    renderMcpServers();
+    await openDemoServer();
+    const copyButtons = screen.getAllByRole("button", { name: /^copy:/i });
+    const first = copyButtons[0];
+    if (!first) throw new Error("copy button not found");
+    await userEvent.click(first);
+    expect(writeText).toHaveBeenCalledWith("http://localhost:8787/mcp/demo-mcp-server/mcp");
+  });
+
+  it("copy_failure_shows_visible_feedback_not_silent_noop", async () => {
+    // Review F-front-3: falha de clipboard vira feedback visível.
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },
+      configurable: true,
+    });
+    renderMcpServers();
+    await openDemoServer();
+    const first = screen.getAllByRole("button", { name: /^copy:/i })[0];
+    if (!first) throw new Error("copy button not found");
+    await userEvent.click(first);
+    expect(await screen.findByText(/copy failed/i)).toBeTruthy();
+  });
 });

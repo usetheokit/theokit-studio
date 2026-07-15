@@ -7,11 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Shell breadcrumb agora usa o primitive `Breadcrumb` do `@usetheo/ui@0.17.0` (bump de ^0.15.0):
-  função hand-rolled deletada, `aria-current` apenas no item corrente e separadores
-  `aria-hidden` — fecha a adoção do M0 do roadmap data-ui-expansion da lib. (usetheo-ui#M0)
-
 ### Added
 - Docs: blueprint técnico hands-on do Mastra Studio (engenharia reversa com instância
   local, cada aba exercitada via REST + UI real) em
@@ -22,24 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   server expõe com origem por ícone (tool direta, wrapper de agente, wrapper de
   workflow); botão "All MCP servers" volta para a lista (M5 dogfood)
 
-### Changed
-- Studio Memory e Knowledge Base viram drill-downs com paridade total ao menu do
-  theo-cloud dashboard (dogfood): Memory → Overview, Memories (real), Episodes,
-  Playground, Entities, Graph, Skills, Exports, Webhooks; Knowledge Base → Overview,
-  Collections (real), Connectors, Documents, Ask, Analytics; rotas movem para
-  /memory/memories e /knowledge/collections com labels derivados do submenu (M5 dogfood)
-- Studio IA completa Mastra-parity com sidebar drill-down no padrão theo-cloud dashboard
-  (dogfood): raiz com Agents/Workflows/Processors/MCP Servers/Tools/Workspaces/Request
-  Context + Data (Memory, Knowledge) + Settings; submenus Evaluation (Overview, Scorers,
-  Datasets, Experiments) e Observability (Events, Metrics, Traces, Logs) com back button
-  e slide; superfícies não implementadas ganham placeholder honesto "Planned"; rotas
-  novas /agents e /observability/* com redirects dos paths antigos (/playground, /events,
-  /traces); copy PT restante do empty-state de Events traduzido (M5 dogfood)
-- Studio Playground agora é agents-first (paridade com Mastra Studio, dogfood): a entrada
-  é a lista de agentes (tabela Name | Description | Model com filtro) e o chat abre ao
-  clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)
-
-### Added
 - Studio Processors detail (dogfood): clicar na linha abre o detail com identidade
   (nome, slug, badges das fases implementadas, "Attached to N agents"), select de Phase
   restrito às fases que o processor implementa com descrição contextual, Test Message
@@ -87,17 +64,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `genkit-ai/genkit` (Apache-2.0) — catalog in ROADMAP § State-of-the-art references
 
 ### Changed
+- Shell breadcrumb agora usa o primitive `Breadcrumb` do `@usetheo/ui@0.17.0` (bump de ^0.15.0):
+  função hand-rolled deletada, `aria-current` apenas no item corrente e separadores
+  `aria-hidden` — fecha a adoção do M0 do roadmap data-ui-expansion da lib. (usetheo-ui#M0)
+
+- Studio Memory e Knowledge Base viram drill-downs com paridade total ao menu do
+  theo-cloud dashboard (dogfood): Memory → Overview, Memories (real), Episodes,
+  Playground, Entities, Graph, Skills, Exports, Webhooks; Knowledge Base → Overview,
+  Collections (real), Connectors, Documents, Ask, Analytics; rotas movem para
+  /memory/memories e /knowledge/collections com labels derivados do submenu (M5 dogfood)
+- Studio IA completa Mastra-parity com sidebar drill-down no padrão theo-cloud dashboard
+  (dogfood): raiz com Agents/Workflows/Processors/MCP Servers/Tools/Workspaces/Request
+  Context + Data (Memory, Knowledge) + Settings; submenus Evaluation (Overview, Scorers,
+  Datasets, Experiments) e Observability (Events, Metrics, Traces, Logs) com back button
+  e slide; superfícies não implementadas ganham placeholder honesto "Planned"; rotas
+  novas /agents e /observability/* com redirects dos paths antigos (/playground, /events,
+  /traces); copy PT restante do empty-state de Events traduzido (M5 dogfood)
+- Studio Playground agora é agents-first (paridade com Mastra Studio, dogfood): a entrada
+  é a lista de agentes (tabela Name | Description | Model com filtro) e o chat abre ao
+  clicar na linha, com header do agente e botão "All agents" para voltar (M5 dogfood)
+
 - Studio: todo o copy da UI e das fixtures padronizado em inglês (produto é English-first;
   strings PT destoavam) — testes atualizados junto
 - Studio: selects nativos substituídos pelo `Select` (Radix) do design system no seletor
   de agente, filtro de categoria (Events) e filtro de escopo (Memory)
 - `code-quality`: linguagem `typescript` habilitada (primeiro pacote TS do monorepo — M5)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
+- Review dogfood (batch): export morto `getSavedRequestContext` removido e copy do save
+  do Request Context honesto (nada consome o valor em fixtures); campo `implemented`
+  removido de `SurfaceMeta` (fonte dupla de verdade com o mapa de rotas); Playground
+  migrado para `EntityTable`/`useListing` compartilhados (fork manual eliminado);
+  flake da suíte completa corrigido (`asyncUtilTimeout` 5s + `testTimeout` 15s);
+  `CopyField` mostra "Copy failed" visível em falha de clipboard (antes no-op
+  silencioso); status de run de workflow legível por screen reader (sr-only);
+  `aria-current="page"` no item ativo da sidebar; EntityTable distingue registry vazio
+  de filtro sem match (`noItemsText`) e Workspaces ganha empty state; últimas strings
+  de erro PT traduzidas (datasource/run-log/bootstrap); seções duplicadas do
+  `[Unreleased]` reagrupadas na ordem canônica; testes novos: cenário empty
+  (workflows/workspaces), rejeição de datasource visível (useListing), copy
+  sucesso/falha (MCP) e redirect legado /traces
 - Studio: cursor pointer em componentes clicáveis (regressão da troca p/ pipeline Tailwind
   único — o preflight v4 não estiliza cursor de controles; not-allowed em desabilitados)
 - Studio UI sem estilo (dogfood): root-cause era ordem de cascade layers — o
@@ -124,8 +130,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `band.<name> = <valor>` de `rules/discover-plan-thresholds.txt` (só aceitava `NAME | valor`),
   produzindo verdict INVALID incondicional; regression test adicionado (achado durante o
   discover do M5)
-
-### Security
 
 ## [0.1.0] - 2026-07-14
 

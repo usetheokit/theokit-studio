@@ -20,6 +20,7 @@ export function EntityTable<T>({
   rowTestId = "entity-row",
   onRowClick,
   emptyText,
+  noItemsText,
 }: {
   items: readonly T[];
   columns: EntityColumn<T>[];
@@ -32,6 +33,8 @@ export function EntityTable<T>({
   rowTestId?: string;
   onRowClick?: (item: T) => void;
   emptyText: string;
+  /** Mensagem quando o REGISTRY está vazio (≠ filtro sem match — review F-domtest-1). */
+  noItemsText?: string;
 }) {
   const [filter, setFilter] = useState("");
   const term = filter.trim().toLowerCase();
@@ -91,7 +94,9 @@ export function EntityTable<T>({
             </li>
           ))}
           {visible.length === 0 && (
-            <li className="px-4 py-8 text-center text-muted-foreground text-sm">{emptyText}</li>
+            <li className="px-4 py-8 text-center text-muted-foreground text-sm">
+              {items.length === 0 ? (noItemsText ?? emptyText) : emptyText}
+            </li>
           )}
         </ul>
       </div>

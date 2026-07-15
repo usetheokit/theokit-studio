@@ -1,3 +1,10 @@
+import { configure } from "@testing-library/react";
+
+// Review F-tests-1: sob a suíte completa em paralelo (cold cache), navegações do router
+// podem exceder o waitFor default de 1s — findBy* falhava de forma intermitente.
+// 5s não custa nada em runs verdes (event-driven) e elimina o flake.
+configure({ asyncUtilTimeout: 5000 });
+
 // Cleanup automático do Testing Library é ativado por globals: true (afterEach registrado).
 // CSS.escape não existe no jsdom — loadThemeFonts do @theokit/ui usa em runtime.
 if (typeof window !== "undefined" && !window.CSS) {
