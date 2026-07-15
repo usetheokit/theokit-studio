@@ -11,6 +11,8 @@ export default defineConfig({
     testTimeout: 15000,
     setupFiles: ["./src/test/setup.ts"],
     css: false,
+    // Fixtures nunca são suites (demo-project contém skip.test.ts como CONTRATO do scan).
+    exclude: ["**/node_modules/**", "**/dist/**", "tests/fixtures/**"],
     coverage: {
       provider: "v8",
       // plugin/** incluído (M1 T1.1 — config-honesty: DoD de coverage cobre o node-side).

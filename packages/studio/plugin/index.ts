@@ -2,7 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { Connect, Plugin } from "vite";
+import type { Connect, Plugin, ViteDevServer } from "vite";
+import { sendErrorEnvelope, sendJson } from "./http";
+import { listReflectionAgents } from "./reflection-api";
 
 /**
  * `@theokit/studio/plugin` — monta a reflection API (`/_studio/api/*`) e (T2.2) a SPA
@@ -16,25 +18,6 @@ export interface StudioPluginOptions {
 
 const STUDIO_PREFIX = "/_studio";
 const API_PREFIX = "/_studio/api/";
-
-// Envelope de erro canônico de TODOS os handlers do plugin (contrato nasce aqui —
-// T1.2/T1.4/T2.2 importam quando forem extraídos; exportar só no 2º consumidor, YAGNI).
-function sendErrorEnvelope(
-  res: ServerResponse,
-  status: number,
-  code: string,
-  message: string,
-): void {
-  if (res.writableEnded) return;
-  res.writeHead(status, { "Content-Type": "application/json" });
-  res.end(JSON.stringify({ error: { code, message } }));
-}
-
-function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  if (res.writableEnded) return;
-  res.writeHead(status, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(body));
-}
 
 // Versão lida via fs com busca dual-layout (SEPA pre-RED T1.1; mesma família do EC-10):
 // source  → plugin/index.ts      → ../package.json
@@ -60,12 +43,29 @@ function isStudioPath(pathname: string): boolean {
   return pathname === STUDIO_PREFIX || pathname.startsWith(`${STUDIO_PREFIX}/`);
 }
 
-function handleStudioRequest(req: IncomingMessage, res: ServerResponse): void {
-  // EC-1 (MUST FIX): toda decisão de rota usa o pathname — nunca req.url cru (query).
-  const pathname = new URL(req.url ?? "/", "http://local").pathname;
+interface StudioContext {
+  server: ViteDevServer;
+  options: StudioPluginOptions;
+}
 
+async function handleStudioRequest(
+  pathname: string,
+  _req: IncomingMessage,
+  res: ServerResponse,
+  ctx: StudioContext,
+): Promise<void> {
   if (pathname === "/_studio/api/health") {
     sendJson(res, 200, { ok: true, studio: resolveStudioVersion() });
+    return;
+  }
+  if (pathname === "/_studio/api/agents") {
+    const result = await listReflectionAgents({
+      projectRoot: ctx.server.config.root,
+      agentsDir: ctx.options.agentsDir,
+      // Hot-reload grátis: o Vite invalida o module graph — por isso nunca cacheamos.
+      load: (filePath) => ctx.server.ssrLoadModule(filePath),
+    });
+    sendJson(res, 200, result);
     return;
   }
   if (pathname.startsWith(API_PREFIX)) {
@@ -82,17 +82,27 @@ function handleStudioRequest(req: IncomingMessage, res: ServerResponse): void {
 }
 
 /** Plugin Vite: registra o middleware do Studio no dev server do host. */
-export function theokitStudio(_options: StudioPluginOptions = {}): Plugin {
+export function theokitStudio(options: StudioPluginOptions = {}): Plugin {
   return {
     name: "theokit-studio",
     configureServer(server) {
+      const ctx: StudioContext = { server, options };
       const middleware: Connect.NextHandleFunction = (req, res, next) => {
+        // EC-1 (MUST FIX): decisão de rota SEMPRE sobre o pathname — nunca req.url cru.
         const pathname = new URL(req.url ?? "/", "http://local").pathname;
         if (!isStudioPath(pathname)) {
           next();
           return;
         }
-        handleStudioRequest(req, res);
+        handleStudioRequest(pathname, req, res, ctx).catch((error: unknown) => {
+          // Última linha de defesa: erro não-tratado vira envelope, nunca hang/swallow.
+          sendErrorEnvelope(
+            res,
+            500,
+            "INTERNAL",
+            error instanceof Error ? error.message : String(error),
+          );
+        });
       };
       server.middlewares.use(middleware);
     },

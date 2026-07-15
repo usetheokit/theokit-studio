@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T1.2 — reflection de agents no plugin: `GET /_studio/api/agents` enumera os agents do
+  projeto (scan da convenção theokit `agents/<name>.ts` — espelho testado do fonte — +
+  `compileAgentModule` do `@theokit/agents/bridge` via `ssrLoadModule`, sem manifest e sem
+  cache: hot-reload nativo); metadados por agent (model, tools name+descrição, subagents);
+  módulo quebrado ou travado no import degrada SÓ aquele item com a mensagem real (timeout
+  10s configurável); sem `agents/` → lista vazia com hint honesto (#m1)
 - M1 T1.1 — plugin Vite `@theokit/studio/plugin` (skeleton): `theokitStudio()` registra o
   middleware do Studio no dev server (connect via `configureServer`); `GET /_studio/api/health`
   responde `{ok, studio: versão}`; envelope de erro tipado `{error:{code,message}}` para rotas
