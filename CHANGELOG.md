@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `aria-hidden` — fecha a adoção do M0 do roadmap data-ui-expansion da lib. (usetheo-ui#M0)
 
 ### Added
+- Docs: blueprint técnico hands-on do Mastra Studio (engenharia reversa com instância
+  local, cada aba exercitada via REST + UI real) em
+  docs/mastra-studio-blueprint-clonagem-2026-07-14.md, linkado no README (M5 dogfood)
 - Studio MCP Server detail (dogfood): clicar na linha abre o detail com nome + badge de
   versão, três cards de transporte (HTTP stateless, SSE real-time e CLI via
   npx mcp-remote) com endpoint copiável, e painel "Available Tools" listando o que o
