@@ -545,3 +545,48 @@ Spawned agents (their findings files live alongside this report):
 - `.claude/agents/review-studio-ux-shell-2026-07-2026-07-15/review-studio-ux-shell-domain-testing.md`
 - `.claude/agents/review-studio-ux-shell-2026-07-2026-07-15/review-studio-ux-shell-tests.md`
 - `.claude/agents/review-studio-ux-shell-2026-07-2026-07-15/review-studio-ux-shell-wiring.md`
+
+---
+
+## Resolution log (fix batch — commit 87d7a36, 2026-07-15)
+
+Todos os findings acionáveis foram corrigidos no mesmo batch, em vez de despachar
+READY_TO_MERGE com caveats:
+
+| Finding | Sev | Resolução |
+|---|---|---|
+| F-arch-1 / F-wire-1 (dedup — mesmo defeito raiz) | HIGH | Export morto `getSavedRequestContext` removido; copy do save honesto ("runs consume it once Studio attaches to a real registry") |
+| F-arch-2 | MEDIUM | Campo `SurfaceMeta.implemented` removido (rotas `IMPLEMENTED_PAGES` é a única fonte de verdade) |
+| F-arch-3 / F-arch-4 | MEDIUM | Playground migrado para `useListing` + `EntityTable` compartilhados |
+| F-tests-1 | MEDIUM | Flake corrigido no bound real: `asyncUtilTimeout: 5000` (Testing Library) + `testTimeout: 15000` (vitest); 2 runs completas consecutivas 132/132 |
+| F-front-1 | MEDIUM | Status de run do workflow com `sr-only` text |
+| F-front-3 / F-domtest-4 | MEDIUM | `CopyField` mostra "Copy failed" visível; testes de copy sucesso/falha com clipboard mockado |
+| F-domtest-1 | MEDIUM | `noItemsText` no EntityTable (registry vazio ≠ filtro sem match) em todos os consumidores; empty state no Workspaces; testes de cenário empty |
+| F-domtest-2 | MEDIUM | Teste de rejeição do datasource via `useListing` (role=alert) |
+| F-xval-1, F-xval-2, F-wire-3 (LOWs baratos) | LOW | CHANGELOG reagrupado; strings PT de erro traduzidas; teste do redirect /traces |
+
+### Dismissals com rationale (ADR-style)
+
+- **F-front-2 (MEDIUM — sidebar items como button+navigate em vez de as="a")**:
+  DISMISSED. O padrão `as="button"` + `navigate()` é decisão deliberada herdada do
+  theo-cloud app-sidebar (EC-1: `as="a" href` produz full page reload que destrói o
+  estado da SPA). Mitigação aplicada: `aria-current="page"` no item ativo. Revisitar
+  quando o DS expor um `as` que integre com o router sem reload.
+- **LOWs restantes (advisory por design, logados para o backlog)**: Enter-to-send +
+  live region no chat; semântica de table nas listagens; contraste do HookMark "no";
+  headings h2 em Settings/Workspaces/detalhes; teste de drift resolveActiveMenu×MENUS;
+  ISP do StudioDataSource (split por adapter no M1); `listSkills` sem consumidor
+  (pré-existente ao delta); testes de abort com sleeps probabilísticos.
+
+### Limitações honestas desta run
+
+- `edge_case_coverage.py` reportou 3.6% — artefato do matcher heurístico por keyword:
+  os edge cases do plano estão em PT e os testes foram traduzidos para EN no delta.
+  A cobertura real foi validada pelo agente de testes (negative/edge balance bom nas
+  páginas interativas; thin apenas nas tabelas read-only, coberto por F-domtest-1).
+- `check_wiring.py` pillar-(a) deu falso PASS no export morto (match por definição);
+  o agente de wiring detectou manualmente. Candidato a melhoria do detector.
+
+**Veredito final: READY_TO_MERGE** — 0 BLOCKER, 0 HIGH em aberto, 0 MEDIUM em aberto
+(1 dismissed com rationale), LOWs logados. Gates: 132/132 testes (2 runs completas),
+tsc limpo, biome limpo, build OK.
