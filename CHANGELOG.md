@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Shell breadcrumb agora usa o primitive `Breadcrumb` do `@usetheo/ui@0.17.0` (bump de ^0.15.0):
+  função hand-rolled deletada, `aria-current` apenas no item corrente e separadores
+  `aria-hidden` — fecha a adoção do M0 do roadmap data-ui-expansion da lib. (usetheo-ui#M0)
+
 ### Added
 - Studio MCP Server detail (dogfood): clicar na linha abre o detail com nome + badge de
   versão, três cards de transporte (HTTP stateless, SSE real-time e CLI via

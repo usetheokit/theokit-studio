@@ -1,6 +1,6 @@
-import { Sidebar } from "@usetheo/ui";
+import { Breadcrumb, Sidebar } from "@usetheo/ui";
 import { ArrowLeft, ChevronRight, FlaskConical, Hexagon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
 import { getMenu, MENUS, type MenuDefinition, resolveActiveMenu } from "./nav-items";
 
@@ -8,24 +8,34 @@ interface RouteHandle {
   label?: string;
 }
 
-function Breadcrumb() {
-  // @usetheo/ui não tem Breadcrumb (inventário SEPA) — nav mínimo lendo route handles.
+function ShellBreadcrumb() {
+  // Trilha via route handles sobre o primitive Breadcrumb do @usetheo/ui (adoção M0).
   const matches = useMatches();
   const labels = matches
     .map((m) => (m.handle as RouteHandle | undefined)?.label)
     .filter((l): l is string => Boolean(l));
   return (
-    <nav aria-label="breadcrumb" className="flex items-center text-sm">
-      <ol className="flex items-center gap-2">
-        <li className="text-muted-foreground">Studio</li>
-        {labels.map((label) => (
-          <li key={label} aria-current="page" className="flex items-center gap-2">
-            <span className="text-muted-foreground/50">/</span>
-            <span className="font-medium text-foreground">{label}</span>
-          </li>
+    <Breadcrumb className="text-sm">
+      <Breadcrumb.List>
+        <Breadcrumb.Item>
+          <span className="text-muted-foreground">Studio</span>
+        </Breadcrumb.Item>
+        {labels.map((label, index) => (
+          <Fragment key={label}>
+            <Breadcrumb.Separator>
+              <span className="text-muted-foreground/50">/</span>
+            </Breadcrumb.Separator>
+            <Breadcrumb.Item>
+              {index === labels.length - 1 ? (
+                <Breadcrumb.Page className="font-medium">{label}</Breadcrumb.Page>
+              ) : (
+                <span className="text-muted-foreground">{label}</span>
+              )}
+            </Breadcrumb.Item>
+          </Fragment>
         ))}
-      </ol>
-    </nav>
+      </Breadcrumb.List>
+    </Breadcrumb>
   );
 }
 
@@ -184,7 +194,7 @@ export function Shell() {
       </Sidebar>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex h-14 shrink-0 items-center justify-between border-border/40 border-b bg-background/80 px-8 backdrop-blur">
-          <Breadcrumb />
+          <ShellBreadcrumb />
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-card px-3 py-1 text-muted-foreground text-xs">
               <span className="size-1.5 rounded-full bg-emerald-400" aria-hidden />

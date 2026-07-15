@@ -119,6 +119,28 @@ describe("Shell (T2.1 + drill-down IA)", () => {
     expect(within(breadcrumb).getByText(/collections/i)).toBeTruthy();
   });
 
+  it("breadcrumb_is_the_usetheo_ui_primitive", async () => {
+    renderShell(["/knowledge/collections"]);
+    const breadcrumb = await screen.findByRole("navigation", { name: /breadcrumb/i });
+    // Adoção M0 (usetheo-ui): o shell usa o primitive da lib (data-slot é o contrato de observabilidade).
+    expect(breadcrumb.getAttribute("data-slot")).toBe("breadcrumb");
+  });
+
+  it("breadcrumb_aria_current_only_on_last_item", async () => {
+    renderShell(["/knowledge/collections"]);
+    const breadcrumb = await screen.findByRole("navigation", { name: /breadcrumb/i });
+    const current = breadcrumb.querySelectorAll('[aria-current="page"]');
+    expect(current.length).toBe(1);
+    expect(current[0]?.textContent?.toLowerCase()).toContain("collections");
+  });
+
+  it("breadcrumb_bare_route_shows_only_root_without_current", async () => {
+    renderShell(["/"]);
+    await screen.findByRole("heading", { name: "Agents", level: 1 });
+    const breadcrumb = screen.getByRole("navigation", { name: /breadcrumb/i });
+    expect(within(breadcrumb).getByText("Studio")).toBeTruthy();
+  });
+
   it("unknown_route_renders_not_found_empty_state", async () => {
     renderShell(["/nope"]);
     expect(await screen.findByText(/not found/i)).toBeTruthy();
