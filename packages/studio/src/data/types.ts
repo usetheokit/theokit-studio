@@ -213,7 +213,8 @@ export interface RetrievalResult {
   strategy: string;
 }
 
-export type ServiceName = "memory" | "lens" | "rag";
+// "studio" = o próprio dev server/reflection (M1 T3.1, EC-3 — aditivo).
+export type ServiceName = "memory" | "lens" | "rag" | "studio";
 
 export interface ServiceHealth {
   status: "online" | "offline";

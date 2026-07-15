@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   honesta em fixtures mode), consistente com o Test Message do Processors
 
 ### Added
+- M1 T3.1 — Studio em live mode: `ReflectionDataSource` troca o adapter de fixtures pelo
+  real via o seam DIP do M5 — agents/tools/skills/workflows/health vêm da reflection do
+  dev server e o chat do playground roda o agent DE VERDADE (stream NDJSON traduzido para
+  o vocabulário de eventos da UI; conversa multi-turn com sessão estável por agent; abort
+  cancela o stream); superfícies fora da reflection seguem nas fixtures rotuladas; banner
+  do shell distingue "Live reflection" de "Fixtures mode"; health mostra o dev server
+  (novo serviço "studio") e os serviços theo-data offline com `theokit studio up` até
+  M2/M3; params de geração do painel são ignorados com aviso (sem destino no endpoint
+  live ainda); erro do stream vira mensagem tipada visível (#m1)
 - M1 T2.2 — SPA servida pelo plugin em `/_studio`: assets do dist embarcado (content-type
   correto; query de cache-busting ignorada) + fallback SPA para deep-links (index.html com
   `window.__STUDIO_CONFIG__` injetado — mode/basePath — escapado contra script-breakout e

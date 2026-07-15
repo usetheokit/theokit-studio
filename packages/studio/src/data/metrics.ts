@@ -5,7 +5,8 @@ export type CounterName =
   | "datasource_calls_total"
   | "stream_events_played_total"
   | "health_errors_total"
-  | "unknown_events_total";
+  | "unknown_events_total"
+  | "reflection_chunks_dropped_total";
 
 type CounterLabels = Record<string, number>;
 type MetricsSnapshot = Record<CounterName, CounterLabels>;
@@ -15,6 +16,7 @@ const emptyState = (): MetricsSnapshot => ({
   stream_events_played_total: {},
   health_errors_total: {},
   unknown_events_total: {},
+  reflection_chunks_dropped_total: {},
 });
 
 let state = emptyState();

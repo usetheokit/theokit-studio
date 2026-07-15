@@ -57,6 +57,7 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 - [ ] Coverage ≥ 90% nos arquivos alterados (críticos 100%)
 - [ ] CHANGELOG `[Unreleased]` por task com mudança visível
 
+<!-- ADR-DEFER-WIRING-B: chunkToStudioEvent (src/data/reflection-datasource.ts) é peça interna do adapter, exercitada de ponta a ponta pelo teste de integração do adapter contra o server real (test_reflection_datasource_against_the_real_server — o evento text-delta mapeado É a prova); referência nominal em tests/integration seria unit test deslocado. Pilar (a) PASS: chamado por runAgent do adapter. -->
 <!-- ADR-DEFER-WIRING-B: serveStudio (plugin/static-serve.ts) é o handler interno do dispatcher; o comportamento (fallback SPA + config injetado/escapado, assets, traversal, 503) é exercitado integralmente sobre HTTP REAL no teste de integração (test_spa_served_with_injected_config_over_real_http) — chamada nominal em tests/integration seria uma segunda invocação artificial com setup duplicado. Pilar (a) PASS: chamado pelo dispatcher do plugin. resolveSpaDir tem paridade nominal genuína (env do server == resolver). -->
 <!-- ADR-DEFER-WIRING-B: sendErrorEnvelope/sendJson (plugin/http.ts) são helpers HTTP internos compartilhados; o comportamento (shape do envelope, guard writableEnded) é exercitado em toda asserção de envelope sobre HTTP REAL nos testes de integração (404/500) — referência nominal em tests/integration/ seria artificial (gaming do grep). Pilar (a) PASS: importados por index.ts e reflection-api.ts. -->
 
@@ -78,10 +79,15 @@ Detalhes de cada task (Files to edit, TDD RED list, ACs com oráculo, deep dives
 
 **Registro T2.2:** política de extensão: só extensões CONHECIDAS do content-type map são assets; desconhecida → fallback SPA (deep-link de agent com ponto no nome navega — decisão SEPA pre-RED). safeJoin: decode 1× → null byte → normalize → prefix (decode duplo criaria traversal %252e). Escape anti-breakout \u003c no config injetado (testado com basePath malicioso). Env override de spa dir SEMPRE honrado (dir morto → 503, nunca fallthrough). Branch 404 provisório de T1.1 removido no mesmo diff (dead code).
 
+**Registro T3.1 (adendos pre-COMMIT):** decisão LSP formalizada — abort NUNCA lança em nenhum implementador de runAgent (return limpo; contrato do fixture stream-player). Followups amarrados a theokit#132: shape-guard do branch run-event quando o seam existir; candidato ReflectionFetchError p/ getJson (untyped Error hoje, mensagem acionável).
+
+**Registro T3.1:** decisão (c) do ponto aberto — mapeador anti-corrupção `chunkToStudioEvent` (evidência: switch exaustivo com guard never em event-to-part.ts:141; chunk cru do bridge leria campos errados em silêncio). sessionId estável POR AGENT no adapter (multi-turn; usa o suporte de body.sessionId do T1.4). RunAgentParams (model/temperature/topP do painel M7) IGNORADOS com warn 1× — sem destino no run endpoint (gap honesto; followup F4). Ponto ÚNICO do mode no composition root (obrigação T2.1 QUITADA — verificado por grep: só main.tsx lê config.mode). ServiceName += studio tocou aditivamente: types.ts, fixture-datasource.ts (3 health maps), service-state.tsx (Record total — declarado p/ diff-cohesion). Abort cancela o READER explícito (lock do for-await impedia body.cancel()).
+
 ## Followups (scope-creep avoided)
 
 | # | Observed during | Description | Recommended owner |
 |---|---|---|---|
+| F4 | T3.1 | Params de geração (model/temperature/topP) no run live quando o bridge expor knobs (hoje: warn + ignorados) | bump bridge |
 | F3 | T1.4 | Threadar `cwd` no streamAgentUIMessages quando @theokit/agents 0.40 for publicado (settingSources resolve contra process.cwd() até lá) | bump 0.40 |
 | F2 | T1.3 | Fixture decorator-based (@SubAgents) para exercitar workflows de ponta a ponta na integração | próximo plano |
 | F1 | plan D3 | Deduplicar `scanStudioAgents` quando o theokit exportar `scanAgents` publicamente em `theokit/server/scan` | próximo plano |

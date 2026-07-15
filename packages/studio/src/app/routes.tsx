@@ -71,11 +71,14 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   traces: "/observability/traces",
 };
 
-export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
+export function buildRoutes(
+  extraChildren: RouteObject[] = [],
+  opts: { live?: boolean } = {},
+): RouteObject[] {
   return [
     {
       path: "/",
-      element: <Shell />,
+      element: <Shell live={opts.live ?? false} />,
       hydrateFallbackElement: <SurfacePlaceholder title="Loading" />,
       children: [
         { index: true, loader: () => redirect("/agents"), element: null },

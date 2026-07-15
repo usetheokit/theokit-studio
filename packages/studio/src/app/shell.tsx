@@ -73,7 +73,7 @@ function LogoMark() {
   );
 }
 
-export function Shell() {
+export function Shell({ live = false }: { live?: boolean } = {}) {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -184,10 +184,17 @@ export function Shell() {
           {renderPanel(activeMenu)}
           <Sidebar.Footer className="mt-auto px-4 py-3">
             <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
-              <FlaskConical className="size-3.5 text-amber-400" aria-hidden />
+              <FlaskConical
+                className={`size-3.5 ${live ? "text-emerald-400" : "text-amber-400"}`}
+                aria-hidden
+              />
               <div className="leading-tight">
-                <span className="block font-medium text-foreground text-xs">Fixtures mode</span>
-                <span className="block text-[11px] text-muted-foreground">M5 · simulated data</span>
+                <span className="block font-medium text-foreground text-xs">
+                  {live ? "Live reflection" : "Fixtures mode"}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {live ? "dev server · fixtures where noted" : "M5 · simulated data"}
+                </span>
               </div>
             </div>
           </Sidebar.Footer>

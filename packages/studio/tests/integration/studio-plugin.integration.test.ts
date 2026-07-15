@@ -11,6 +11,9 @@ import {
   listReflectionSkills,
 } from "../../plugin/reflection-api";
 import { resolveSpaDir } from "../../plugin/static-serve";
+import { createFixtureDataSource } from "../../src/data/fixture-datasource";
+import { createReflectionDataSource, parseNdjson } from "../../src/data/reflection-datasource";
+import type { StudioEvent } from "../../src/data/types";
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -156,6 +159,36 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     // Paridade: o dir que o server serviu é exatamente o que resolveSpaDir resolve
     // do MESMO env (o override do teste) — o serving não tem 2ª lógica de resolução.
     expect(resolveSpaDir({ env: process.env })).toBe(spaTmp);
+  });
+
+  it("test_reflection_datasource_against_the_real_server", async () => {
+    // O loop COMPLETO do M1: ReflectionDataSource (SPA, react-free) → HTTP real →
+    // plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código que o
+    // browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    const ds = createReflectionDataSource({
+      fallback: createFixtureDataSource({ scenario: "default" }),
+      baseUrl,
+      fetchImpl: fetch,
+    });
+    const agents = await ds.listAgents();
+    expect(agents.map((a) => a.id)).toContain("support");
+    expect(agents.find((a) => a.id === "nested")?.description).toContain("failed to load");
+    const events: StudioEvent[] = [];
+    for await (const e of ds.runAgent("support", "ping de integração")) events.push(e);
+    // streamFactory do server ecoa a mensagem — mapeada para o vocabulário da UI.
+    expect(events).toEqual([{ type: "text-delta", text: "echo: ping de integração" }]);
+    // E o corpo NDJSON cru parseia com o MESMO parser do adapter (paridade nominal).
+    const raw = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "raw" }),
+    });
+    async function* chunks() {
+      yield new TextEncoder().encode(await raw.text());
+    }
+    const kinds: string[] = [];
+    for await (const line of parseNdjson(chunks())) kinds.push(String(line.kind));
+    expect(kinds).toEqual(["message", "done"]);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

@@ -61,17 +61,20 @@ export interface FixtureDataSourceOptions {
 
 const HEALTH: Record<FixtureScenario, ServiceHealthMap> = {
   default: {
+    studio: { status: "online" },
     memory: { status: "online" },
     rag: { status: "online" },
     // lens offline por design no M5: a tab Traces é placeholder até o M2 embedar lens-web.
     lens: { status: "offline", hint: "theokit studio up" },
   },
   empty: {
+    studio: { status: "online" },
     memory: { status: "online" },
     rag: { status: "online" },
     lens: { status: "offline", hint: "theokit studio up" },
   },
   offline: {
+    studio: { status: "online" },
     memory: { status: "offline", hint: "theokit studio up" },
     rag: { status: "offline", hint: "theokit studio up" },
     lens: { status: "offline", hint: "theokit studio up" },
