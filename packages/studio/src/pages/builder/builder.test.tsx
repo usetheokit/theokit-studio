@@ -93,10 +93,15 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     await openPinnedSession();
     // Abre o Review a partir de "Changes" no painel de detalhes.
     await userEvent.click(screen.getByRole("button", { name: /changes/i }));
-    await screen.findByTestId("builder-review");
-    const treeFiles = screen.getAllByTestId("review-tree-file");
+    const review = await screen.findByTestId("builder-review");
+    // Árvore de arquivos do <CodeReviewPanel>: botões cujo title é o caminho
+    // completo (a lib não expõe testid por item — seletor ajustado, comportamento
+    // idêntico ao painel manual anterior).
+    const treeFiles = within(review)
+      .getAllByRole("button")
+      .filter((b) => b.getAttribute("title")?.includes("/"));
     expect(treeFiles.length).toBe(2);
-    const tone = treeFiles.find((f) => f.textContent?.includes("support-tone.md"));
+    const tone = treeFiles.find((f) => f.getAttribute("title")?.includes("support-tone.md"));
     if (!tone) throw new Error("tree file not found");
     await userEvent.click(tone);
     const diffs = screen.getAllByTestId("review-file-diff");
@@ -215,10 +220,11 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(attach.disabled).toBe(true);
     const mic = screen.getByRole("button", { name: /voice input/i }) as HTMLButtonElement;
     expect(mic.disabled).toBe(true);
-    // Approval mode é config local REAL.
-    await userEvent.click(screen.getByRole("combobox", { name: /approval mode/i }));
-    await userEvent.click(await screen.findByRole("option", { name: "Auto-approve edits" }));
-    expect(screen.getByRole("combobox", { name: /approval mode/i }).textContent).toContain(
+    // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui:
+    // dropdown-menu, não combobox — seletor ajustado, comportamento idêntico).
+    await userEvent.click(screen.getByRole("button", { name: /approval mode/i }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Auto-approve edits" }));
+    expect(screen.getByRole("button", { name: /approval mode/i }).textContent).toContain(
       "Auto-approve edits",
     );
     // Model picker refinado: nome amigável + esforço num só controle.

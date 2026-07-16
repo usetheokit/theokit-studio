@@ -1,9 +1,7 @@
+import { CodeReviewPanel, WorkLog } from "@theokit/ui";
 import { Badge, Button, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
-  ChevronDown,
-  ChevronRight,
-  Clock,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
@@ -13,38 +11,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import type { BuilderArtifactFile, BuilderSessionDetail } from "../../data/types";
-import { DetailsPanel, ReviewPanel } from "./review";
-
-function WorkLog({ workedFor, steps }: { workedFor: string; steps: string[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
-        aria-expanded={open}
-      >
-        <Clock className="size-3.5" aria-hidden />
-        Worked for {workedFor}
-        {open ? (
-          <ChevronDown className="size-3.5" aria-hidden />
-        ) : (
-          <ChevronRight className="size-3.5" aria-hidden />
-        )}
-      </button>
-      {open && (
-        <ul className="mt-2 space-y-1 border-border/40 border-l pl-3" data-testid="builder-worklog">
-          {steps.map((step) => (
-            <li key={step} className="text-muted-foreground text-xs">
-              {step}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+import { DetailsPanel } from "./review";
 
 function EditedFilesCard({
   files,
@@ -211,7 +178,13 @@ export function SessionView({
                 ) : (
                   // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
                   <div key={i} className="flex flex-col gap-2.5">
-                    {i === 1 && <WorkLog workedFor={session.workedFor} steps={session.workLog} />}
+                    {i === 1 && (
+                      <WorkLog
+                        workedFor={session.workedFor}
+                        steps={session.workLog}
+                        data-testid="builder-worklog"
+                      />
+                    )}
                     <div
                       data-testid="builder-message"
                       className="text-foreground text-sm leading-relaxed"
@@ -278,10 +251,11 @@ export function SessionView({
         {showPanel && (
           <div className="flex min-h-0 min-w-0 flex-1">
             {rightPane === "review" ? (
-              <ReviewPanel
+              <CodeReviewPanel
+                data-testid="builder-review"
                 files={session.files}
                 selectedPath={selectedPath}
-                onSelect={(path) => setSelectedPath(path === "" ? null : path)}
+                onSelect={setSelectedPath}
                 onClose={() => {
                   setRightPane("details");
                   setDetailsFromClose(true);

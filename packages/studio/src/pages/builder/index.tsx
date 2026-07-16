@@ -1,3 +1,4 @@
+import { type ApprovalMode, ApprovalModeSelector, ModelEffortPicker } from "@theokit/ui";
 import { Button, EmptyState, Select, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
@@ -7,7 +8,6 @@ import {
   ChevronDown,
   Clock,
   FolderKanban,
-  Hand,
   LayoutTemplate,
   Mic,
   Pin,
@@ -22,8 +22,15 @@ import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
 import { useDataSource } from "../../data/datasource";
 import type { BuilderMessage, BuilderSessionDetail } from "../../data/types";
-import { ModelPicker } from "./model-picker";
 import { SessionView } from "./session-view";
+
+// Model options for the composer's <ModelEffortPicker> (from @theokit/ui).
+const MODELS = [
+  { id: "claude-fable-5", name: "Fable 5", blurb: "Deepest reasoning for complex builds" },
+  { id: "claude-opus-4-8", name: "Opus 4.8", blurb: "Strong all-round builder" },
+  { id: "claude-sonnet-4-6", name: "Sonnet 4.6", blurb: "Fast and balanced" },
+  { id: "claude-haiku-4-5", name: "Haiku 4.5", blurb: "Snappy for quick edits" },
+];
 
 const surface = getSurface("/builder");
 
@@ -142,7 +149,7 @@ export function AgentBuilderPage() {
   const [target, setTarget] = useState("new");
   const [prompt, setPrompt] = useState("");
   // Config local da sessão (real — nada executa em fixtures, mas a escolha é do usuário).
-  const [approval, setApproval] = useState("ask");
+  const [approval, setApproval] = useState<ApprovalMode>("ask");
   const [model, setModel] = useState("claude-fable-5");
   const [effort, setEffort] = useState("Medium");
   const [project, setProject] = useState("demo-workspace");
@@ -417,28 +424,13 @@ export function AgentBuilderPage() {
                     >
                       <Plus className="size-4" aria-hidden />
                     </button>
-                    <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                      <Hand className="size-3.5" aria-hidden />
-                      <Select value={approval} onValueChange={setApproval}>
-                        <Select.Trigger
-                          aria-label="Approval mode"
-                          size="sm"
-                          className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
-                        >
-                          <Select.Value />
-                        </Select.Trigger>
-                        <Select.Content>
-                          <Select.Item value="ask">Ask for approval</Select.Item>
-                          <Select.Item value="auto-edits">Auto-approve edits</Select.Item>
-                          <Select.Item value="readonly">Read-only</Select.Item>
-                        </Select.Content>
-                      </Select>
-                    </span>
+                    <ApprovalModeSelector value={approval} onChange={setApproval} />
                     <span className="ml-auto flex items-center gap-1.5">
-                      <ModelPicker
+                      <ModelEffortPicker
+                        models={MODELS}
                         model={model}
-                        effort={effort}
                         onModelChange={setModel}
+                        effort={effort}
                         onEffortChange={setEffort}
                       />
                       <button

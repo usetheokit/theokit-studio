@@ -13,10 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   API do M1 montada na mesma origem (`/_studio/api/*`)
 
 ### Changed
+- Builder agora consome componentes do `@theokit/ui` para as superfícies de agente com
+  paridade visual 1:1 (mesma experiência — sem diff perceptível): `ModelEffortPicker`
+  (model picker do composer), `ApprovalModeSelector` (modo de aprovação inline),
+  `CodeReviewPanel` (painel Review com diffs por arquivo + árvore) e `WorkLog` ("Worked
+  for …" expansível). O shell do Builder (form do composer, splitter, roteamento, painel
+  de detalhes) permanece no Studio, orquestrando os componentes da lib (#builder-ui-migration)
 
 ### Deprecated
 
 ### Removed
+- `packages/studio/src/pages/builder/model-picker.tsx` — substituído pelo `ModelEffortPicker`
+  do `@theokit/ui` (mesma anatomia: nome amigável + esforço num só controle) (#builder-ui-migration)
+- `ReviewPanel` / `FileDiff` / `parseDiff` de `builder/review.tsx` — substituídos pelo
+  `CodeReviewPanel` do `@theokit/ui` (o `DetailsPanel`, composição do Studio, permanece) (#builder-ui-migration)
 
 ### Fixed
 - Restaurado `packages/studio/src/pages/builder/model-picker.tsx` que foi removido por
