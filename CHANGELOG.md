@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- Restaurado `packages/studio/src/pages/builder/model-picker.tsx` que foi removido por
+  engano num commit de release (a deleção estava staged pela sessão paralela M7, mas a
+  edição correspondente do builder ainda não commitada deixava o HEAD importando um módulo
+  inexistente); o arquivo volta à versão consistente para o HEAD compilar
 
 ### Security
 
