@@ -27,8 +27,8 @@
     "vite": ">=6 <9"
   },
   "dependencies": {
-    "@theokit/ui": "^1.2.0",
-    "@usetheo/ui": "^0.28.1",
+    "@theokit/ui": "^1.2.1",
+    "@usetheo/ui": "^0.28.2",
     "lucide-react": "^0.471.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
