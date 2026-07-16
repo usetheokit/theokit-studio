@@ -276,9 +276,9 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("intent_card_click_fills_the_composer_starter", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    const cards = screen.getAllByTestId("builder-intent");
-    const guardrails = cards.find((c) => c.textContent?.includes("guardrails"));
-    if (!guardrails) throw new Error("intent card not found");
+    // <IntentSelector layout="tiles"> de @theokit/ui: botões com aria-pressed, sem
+    // data-testid por tile — seletor ajustado, comportamento idêntico (clique preenche).
+    const guardrails = screen.getByRole("button", { name: /guardrails/i });
     await userEvent.click(guardrails);
     const composer = screen.getByRole("textbox", {
       name: /build instructions/i,

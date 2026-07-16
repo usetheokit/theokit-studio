@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CodeReviewPanel` (painel Review com diffs por arquivo + árvore) e `WorkLog` ("Worked
   for …" expansível). O shell do Builder (form do composer, splitter, roteamento, painel
   de detalhes) permanece no Studio, orquestrando os componentes da lib (#builder-ui-migration)
+- Builder adota mais dois componentes do `@theokit/ui@1.2.0` com paridade visual 0-diff:
+  `IntentSelector layout="tiles"` no lugar do grid manual de intents (as 4 cores por tile —
+  sky/violet/emerald/amber — preservadas via a nova prop `tileClassName`), e `SessionListItem`
+  nas listas de sessões da sidebar (Pinned + Tasks). Bump `@theokit/ui` para `^1.2.0`.
+  `EditedFilesCard` e os composers (home + follow-up) permanecem no shell do Studio: o
+  `CreatedFilesCard` da lib renderiza cada arquivo como mini-card com ícone (o Studio usa
+  lista simples) e o `ChatComposer` tem `border-t` na action row + sombras próprias — migrar
+  quebraria o 0-diff; as props do 1.2.0 (`headerAggregate`/`ctaPlacement`, `submitIcon`/`submitLabel`)
+  cobrem header e submit, mas não a lista de arquivos nem a moldura (#builder-ui-migration)
 
 ### Deprecated
 

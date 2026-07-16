@@ -1,4 +1,10 @@
-import { type ApprovalMode, ApprovalModeSelector, ModelEffortPicker } from "@theokit/ui";
+import {
+  type ApprovalMode,
+  ApprovalModeSelector,
+  IntentSelector,
+  ModelEffortPicker,
+  SessionListItem,
+} from "@theokit/ui";
 import { Button, EmptyState, Select, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
@@ -10,7 +16,6 @@ import {
   FolderKanban,
   LayoutTemplate,
   Mic,
-  Pin,
   Plus,
   Search,
   ShieldCheck,
@@ -313,18 +318,13 @@ export function AgentBuilderPage() {
               <ul className="space-y-0.5">
                 {pinned.map((s) => (
                   <li key={s.id}>
-                    <button
-                      type="button"
+                    <SessionListItem
                       data-testid="builder-session"
+                      title={s.title}
+                      pinned
+                      timestamp={s.lastActivity}
                       onClick={() => openById(s.id)}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
-                    >
-                      <Pin className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
-                      <span className="shrink-0 text-muted-foreground text-xs">
-                        {s.lastActivity}
-                      </span>
-                    </button>
+                    />
                   </li>
                 ))}
               </ul>
@@ -348,15 +348,12 @@ export function AgentBuilderPage() {
             <ul className="space-y-0.5">
               {recent.map((s) => (
                 <li key={s.id}>
-                  <button
-                    type="button"
+                  <SessionListItem
                     data-testid="builder-session"
+                    title={s.title}
+                    timestamp={s.lastActivity}
                     onClick={() => openById(s.id)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
-                    <span className="shrink-0 text-muted-foreground text-xs">{s.lastActivity}</span>
-                  </button>
+                  />
                 </li>
               ))}
               {recent.length === 0 && (
@@ -380,29 +377,23 @@ export function AgentBuilderPage() {
               <h2 className="text-center font-display font-semibold text-2xl text-foreground tracking-tight">
                 What should we build?
               </h2>
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {BUILD_INTENTS.map((intent) => {
-                  const Icon = intent.icon;
-                  return (
-                    <button
-                      key={intent.id}
-                      type="button"
-                      data-testid="builder-intent"
-                      onClick={() => setPrompt(intent.starter)}
-                      className="flex min-h-24 flex-col justify-between rounded-xl border border-border/40 bg-card/60 p-3 text-left transition-colors hover:border-primary/40"
-                    >
-                      <span
-                        className={`flex size-7 items-center justify-center rounded-lg ${intent.tile}`}
-                      >
-                        <Icon className="size-4" aria-hidden />
-                      </span>
-                      <span className="mt-3 font-medium text-foreground text-xs leading-snug">
-                        {intent.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <IntentSelector
+                layout="tiles"
+                value=""
+                className="mt-6"
+                options={BUILD_INTENTS.map((intent) => ({
+                  id: intent.id,
+                  label: intent.label,
+                  icon: intent.icon,
+                  tileClassName: intent.tile,
+                }))}
+                onChange={(id) => {
+                  const intent = BUILD_INTENTS.find((i) => i.id === id);
+                  if (intent) {
+                    setPrompt(intent.starter);
+                  }
+                }}
+              />
               <form onSubmit={startSession} className="mt-6">
                 {/* Anatomia do composer (referência): texto → linha de ações → linha do projeto */}
                 <div className="relative rounded-2xl border border-border/60 bg-card p-3 shadow-black/20 shadow-lg transition-colors focus-within:border-primary/50">

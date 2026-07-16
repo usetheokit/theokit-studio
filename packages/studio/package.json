@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "TheoKit Studio \u2014 local dev UI (M1: reflection plugin + embeddable SPA)",
+  "description": "TheoKit Studio — local dev UI (M1: reflection plugin + embeddable SPA)",
   "exports": {
     "./plugin": {
       "types": "./dist/plugin/index.d.ts",
@@ -27,7 +27,7 @@
     "vite": ">=6 <9"
   },
   "dependencies": {
-    "@theokit/ui": "^1.1.0",
+    "@theokit/ui": "^1.2.0",
     "@usetheo/ui": "^0.28.0",
     "lucide-react": "^0.471.0",
     "react": "^19.2.7",
@@ -35,7 +35,7 @@
     "react-router": "^7.18.1"
   },
   "_comments": {
-    "@theokit/sdk": "SPA: types-only (`import type`); plugin node-side consome em runtime no host \u2014 por isso tamb\u00e9m peerDependency (M1 T1.1)",
+    "@theokit/sdk": "SPA: types-only (`import type`); plugin node-side consome em runtime no host — por isso também peerDependency (M1 T1.1)",
     "@theokit/agents": "plugin node-side: compileAgentModule/streamAgentUIMessages do ./bridge (M1 ADR D2); devDep para fixtures/testes (EC-4)"
   },
   "devDependencies": {
