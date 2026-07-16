@@ -1,5 +1,5 @@
 import { Badge, Button } from "@usetheo/ui";
-import { ArrowLeft, Bot, Check, Copy, Workflow, Wrench } from "lucide-react";
+import { ArrowLeft, Bot, Check, Copy, Play, Workflow, Wrench } from "lucide-react";
 import { useState } from "react";
 import { EntityTable } from "../../app/entity-table";
 import { getSurface } from "../../app/nav-items";
@@ -85,25 +85,111 @@ function CopyField({ value }: { value: string }) {
   );
 }
 
-function ExposedToolCard({ tool }: { tool: McpExposedTool }) {
+function ExposedToolCard({ tool, onOpen }: { tool: McpExposedTool; onOpen: () => void }) {
   const Icon = TOOL_KIND_ICON[tool.kind];
   return (
-    <li
-      data-testid="mcp-exposed-tool"
-      className="flex items-start gap-3 rounded-xl border border-border/40 bg-card/60 px-4 py-3"
-    >
-      <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-      <div className="min-w-0">
-        <p className="font-medium font-mono text-foreground text-sm">{tool.name}</p>
-        <p className="mt-0.5 text-muted-foreground text-xs">{tool.description}</p>
-      </div>
+    <li>
+      <button
+        type="button"
+        data-testid="mcp-exposed-tool"
+        onClick={onOpen}
+        className="flex w-full items-start gap-3 rounded-xl border border-border/40 bg-card/60 px-4 py-3 text-left transition-colors hover:border-primary/40"
+      >
+        <Icon className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+        <div className="min-w-0">
+          <p className="font-medium font-mono text-foreground text-sm">{tool.name}</p>
+          <p className="mt-0.5 text-muted-foreground text-xs">{tool.description}</p>
+        </div>
+      </button>
     </li>
   );
 }
 
+// Detail da tool exposta (padrão Mastra: /mcps/{server}/tools/{tool}): descrição +
+// form "Input Data" derivado do input schema + Submit e painel de Output. Fixtures-only:
+// o Submit é desabilitado com nota honesta — nenhuma invocação simulada de tool.
+function ExposedToolDetail({
+  server,
+  tool,
+  onBack,
+}: {
+  server: McpServerSummary;
+  tool: McpExposedTool;
+  onBack: () => void;
+}) {
+  const Icon = TOOL_KIND_ICON[tool.kind];
+  return (
+    <div className="flex min-h-0 flex-1 gap-6 px-8 py-6" data-testid="mcp-tool-detail">
+      <div className="flex w-96 shrink-0 flex-col gap-4">
+        <div className="rounded-xl border border-border/40 bg-card/60 p-4">
+          <p className="flex items-center gap-2 text-sm">
+            <Icon className="size-4 shrink-0 text-primary" aria-hidden />
+            <span className="font-medium font-mono text-foreground">{tool.name}</span>
+          </p>
+          <p className="mt-1.5 text-muted-foreground text-xs">{tool.description}</p>
+        </div>
+        <div className="rounded-xl border border-border/40 bg-card/60 p-4">
+          <p className="font-medium text-foreground text-sm">Input Data</p>
+          <div className="mt-3 space-y-3">
+            {tool.inputFields.map((field) => (
+              <div key={field.name}>
+                <label
+                  className="block text-muted-foreground text-xs uppercase tracking-wide"
+                  htmlFor={`tool-input-${field.name}`}
+                >
+                  {field.label}
+                  {field.required && (
+                    <span className="ml-0.5 text-red-400" aria-hidden>
+                      *
+                    </span>
+                  )}
+                </label>
+                <input
+                  id={`tool-input-${field.name}`}
+                  className="mt-1.5 h-9 w-full rounded-lg border border-border/60 bg-background px-3 text-foreground text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50"
+                  placeholder={field.label}
+                />
+              </div>
+            ))}
+          </div>
+          <Button
+            className="mt-4 w-full gap-1.5"
+            disabled
+            title="Invocations land with the real registry"
+          >
+            <Play className="size-4" aria-hidden />
+            Submit
+          </Button>
+          <p className="mt-2 text-muted-foreground text-xs">
+            Tool invocations are disabled in fixtures mode — they land when Studio attaches to a
+            real registry.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" onClick={onBack} className="w-fit gap-1.5">
+          <ArrowLeft className="size-4" aria-hidden />
+          {server.name}
+        </Button>
+      </div>
+      <div className="flex-1 overflow-auto rounded-xl border border-border/40 bg-card/40 p-4">
+        <p className="text-muted-foreground text-xs uppercase tracking-wide">Output</p>
+        <pre className="mt-2 font-mono text-muted-foreground text-sm">{"{}"}</pre>
+      </div>
+    </div>
+  );
+}
+
 // Detail do MCP server (padrão Mastra): transportes de acesso à esquerda (HTTP/SSE/CLI
-// com copy) + painel "Available Tools" à direita com origem por ícone.
+// com copy) + painel "Available Tools" à direita com origem por ícone; cada tool abre
+// o detail com o form do input schema.
 function McpServerDetail({ server, onBack }: { server: McpServerSummary; onBack: () => void }) {
+  const [selectedTool, setSelectedTool] = useState<McpExposedTool | null>(null);
+
+  if (selectedTool) {
+    return (
+      <ExposedToolDetail server={server} tool={selectedTool} onBack={() => setSelectedTool(null)} />
+    );
+  }
+
   return (
     <div className="flex min-h-0 flex-1 gap-6 px-8 py-6">
       <div className="min-w-0 flex-1">
@@ -140,7 +226,7 @@ function McpServerDetail({ server, onBack }: { server: McpServerSummary; onBack:
         <p className="font-medium text-foreground text-sm">Available Tools</p>
         <ul className="mt-3 space-y-2.5">
           {server.availableTools.map((tool) => (
-            <ExposedToolCard key={tool.name} tool={tool} />
+            <ExposedToolCard key={tool.name} tool={tool} onOpen={() => setSelectedTool(tool)} />
           ))}
         </ul>
       </div>

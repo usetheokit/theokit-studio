@@ -22,6 +22,51 @@ export interface SkillSummary {
   description: string;
 }
 
+export interface BuilderSessionSummary {
+  id: string;
+  title: string;
+  /** agente alvo da sessão (quando já existe). */
+  agentId?: string;
+  /** atividade relativa exibida na lista (fixture display-ready, ex.: "2m"). */
+  lastActivity: string;
+  pinned: boolean;
+}
+
+export interface BuilderMessage {
+  role: "user" | "assistant";
+  text: string;
+}
+
+export interface BuilderArtifactFile {
+  /** caminho do arquivo alterado (ex.: "agents/support-agent.ts"). */
+  path: string;
+  additions: number;
+  deletions: number;
+  /** diff unificado exibido no painel de review (+/- coloridos). */
+  diff: string;
+}
+
+export interface BuilderSessionDetail extends BuilderSessionSummary {
+  messages: BuilderMessage[];
+  /** duração exibida no log de trabalho (fixture display-ready, ex.: "2m 30s"). */
+  workedFor: string;
+  /** passos do log de trabalho (expansível na thread). */
+  workLog: string[];
+  /** arquivos editados pela sessão (painel Review à direita). */
+  files: BuilderArtifactFile[];
+}
+
+export interface PromptSummary {
+  id: string;
+  name: string;
+  description: string;
+  /** versão publicada do bloco (prompt-ops: overrides versionados sobre o baseline). */
+  version: string;
+  /** quantos agentes referenciam este bloco nas instructions. */
+  usedBy: number;
+  content: string;
+}
+
 export interface WorkflowStep {
   id: string;
   name: string;
@@ -58,11 +103,19 @@ export interface ProcessorSummary {
   usedBy: number;
 }
 
+export interface McpToolInputField {
+  name: string;
+  label: string;
+  required: boolean;
+}
+
 export interface McpExposedTool {
   name: string;
   description: string;
   /** origem do item exposto: tool direta, wrapper de agente ou de workflow. */
   kind: "tool" | "agent" | "workflow";
+  /** campos do input schema (form "Input Data" no detail da tool). */
+  inputFields: McpToolInputField[];
 }
 
 export interface McpServerSummary {
@@ -111,10 +164,11 @@ export interface ExperimentSummary {
 }
 
 export interface WorkspaceFileEntry {
-  name: string;
+  /** caminho completo relativo à raiz do workspace (ex.: "data/orders.csv"). */
+  path: string;
   kind: "dir" | "file";
-  /** tamanho em bytes (apenas kind === "file"). */
-  sizeBytes?: number;
+  /** conteúdo do arquivo (apenas kind === "file"); tamanho deriva daqui. */
+  content?: string;
 }
 
 export interface WorkspaceSummary {
@@ -159,7 +213,8 @@ export interface RetrievalResult {
   strategy: string;
 }
 
-export type ServiceName = "memory" | "lens" | "rag";
+// "studio" = o próprio dev server/reflection (M1 T3.1, EC-3 — aditivo).
+export type ServiceName = "memory" | "lens" | "rag" | "studio";
 
 export interface ServiceHealth {
   status: "online" | "offline";
@@ -196,5 +251,47 @@ export class UnknownCollectionError extends Error {
   constructor(collectionId: string) {
     super(`Knowledge collection '${collectionId}' does not exist`);
     this.name = "UnknownCollectionError";
+  }
+}
+
+export class UnknownWorkspaceError extends Error {
+  constructor(workspaceId: string) {
+    super(`Workspace '${workspaceId}' does not exist`);
+    this.name = "UnknownWorkspaceError";
+  }
+}
+
+export class UnknownWorkspacePathError extends Error {
+  constructor(path: string) {
+    super(`Workspace path '${path}' does not exist or is not a file`);
+    this.name = "UnknownWorkspacePathError";
+  }
+}
+
+export class DuplicateWorkspacePathError extends Error {
+  constructor(path: string) {
+    super(`Workspace path '${path}' already exists`);
+    this.name = "DuplicateWorkspacePathError";
+  }
+}
+
+export class BlankBuildPromptError extends Error {
+  constructor() {
+    super("Build prompt must not be blank — describe what to build");
+    this.name = "BlankBuildPromptError";
+  }
+}
+
+export class UnknownBuilderSessionError extends Error {
+  constructor(sessionId: string) {
+    super(`Builder session '${sessionId}' does not exist`);
+    this.name = "UnknownBuilderSessionError";
+  }
+}
+
+export class BlankFolderNameError extends Error {
+  constructor() {
+    super("Folder name must not be blank");
+    this.name = "BlankFolderNameError";
   }
 }

@@ -87,6 +87,8 @@ describe("Studio integration", () => {
     const smoke = await screen.findByTestId("studio-smoke");
     for (const entry of [
       "Agents",
+      "Agent Builder",
+      "Prompts",
       "Workflows",
       "Processors",
       "MCP Servers",

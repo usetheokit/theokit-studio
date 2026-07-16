@@ -70,6 +70,35 @@ describe("Playground (T3.1)", () => {
     expect(screen.getByText(/no agents match/i)).toBeTruthy();
   });
 
+  it("chat_shows_agent_tabs_with_only_chat_enabled", async () => {
+    renderPlayground();
+    await pickAgent();
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((t) => t.textContent)).toEqual([
+      "Chat",
+      "Editor",
+      "Evaluate",
+      "Review",
+      "Traces",
+    ]);
+    const chat = tabs[0] as HTMLButtonElement;
+    expect(chat.getAttribute("aria-selected")).toBe("true");
+    expect(chat.disabled).toBe(false);
+    // Fake doors honestos: as demais abas chegam em milestones futuros.
+    for (const tab of tabs.slice(1)) {
+      expect((tab as HTMLButtonElement).disabled).toBe(true);
+    }
+  });
+
+  it("chat_empty_state_greets_and_memory_notice_is_honest", async () => {
+    renderPlayground();
+    await pickAgent();
+    expect(screen.getByText("How can I help you today?")).toBeTruthy();
+    const notice = screen.getByTestId("chat-memory-notice");
+    expect(notice.textContent).toContain("Memory not enabled");
+    expect(notice.textContent).toContain("theo-memory");
+  });
+
   it("back_button_returns_to_agents_list", async () => {
     renderPlayground();
     await pickAgent();
@@ -140,5 +169,42 @@ describe("Playground (T3.1)", () => {
     expect(await screen.findByText(/adapter crashed/)).toBeTruthy();
     const sendButton = screen.getByRole("button", { name: /send/i }) as HTMLButtonElement;
     expect(sendButton.disabled).toBe(false);
+  });
+});
+
+describe("Playground — painel de params (M7 T3.2)", () => {
+  beforeEach(() => {
+    metrics.reset();
+  });
+
+  it("test_params_panel_renders_sliders_and_model_combobox", async () => {
+    renderPlayground();
+    await pickAgent();
+    expect(document.body.querySelectorAll('[data-slot="slider"]').length).toBe(2);
+    expect(screen.getByRole("combobox", { name: /model/i })).toBeTruthy();
+    expect(screen.getByText(/temperature/i)).toBeTruthy();
+    expect(screen.getByText(/top.p/i)).toBeTruthy();
+  });
+
+  it("test_params_flow_into_run_request", async () => {
+    // review F-tests-2: interage ANTES do send e asserta os valores efetivos + model
+    const ds = renderPlayground();
+    const spy = vi.spyOn(ds, "runAgent");
+    await pickAgent();
+    const tempSlider = screen.getByRole("slider", { name: /temperature/i });
+    tempSlider.focus();
+    await userEvent.keyboard("{Home}"); // temperature → 0 (min)
+    await userEvent.type(screen.getByRole("textbox", { name: /prompt/i }), "hi");
+    await userEvent.click(screen.getByRole("button", { name: /send/i }));
+    expect(spy).toHaveBeenCalledWith(
+      expect.any(String),
+      "hi",
+      expect.anything(),
+      expect.objectContaining({
+        temperature: 0,
+        topP: 1,
+        model: expect.any(String),
+      }),
+    );
   });
 });

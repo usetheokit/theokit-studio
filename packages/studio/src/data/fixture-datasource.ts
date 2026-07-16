@@ -7,9 +7,15 @@ import {
 } from "./fixtures/knowledge";
 import { fixtureMemories } from "./fixtures/memory";
 import {
+  BUILDER_SCRIPTED_FILES,
+  BUILDER_SCRIPTED_REPLY,
+  BUILDER_SCRIPTED_WORK_LOG,
   fixtureAgents,
+  fixtureBuilderSessionDetails,
+  fixtureBuilderSessions,
   fixtureMcpServers,
   fixtureProcessors,
+  fixturePrompts,
   fixtureSkills,
   fixtureTools,
   fixtureWorkflows,
@@ -20,6 +26,10 @@ import { metrics } from "./metrics";
 import { play } from "./stream-player";
 import {
   type AgentSummary,
+  BlankBuildPromptError,
+  BlankFolderNameError,
+  type BuilderSessionDetail,
+  DuplicateWorkspacePathError,
   EmptyQueryError,
   type FixtureScenario,
   type KnowledgeCollection,
@@ -31,8 +41,12 @@ import {
   type SkillSummary,
   type StudioRunEvent,
   type ToolSummary,
+  UnknownBuilderSessionError,
   UnknownCollectionError,
+  UnknownWorkspaceError,
+  UnknownWorkspacePathError,
   type WorkflowSummary,
+  type WorkspaceSummary,
 } from "./types";
 
 export interface FixtureDataSourceOptions {
@@ -47,17 +61,20 @@ export interface FixtureDataSourceOptions {
 
 const HEALTH: Record<FixtureScenario, ServiceHealthMap> = {
   default: {
+    studio: { status: "online" },
     memory: { status: "online" },
     rag: { status: "online" },
     // lens offline por design no M5: a tab Traces é placeholder até o M2 embedar lens-web.
     lens: { status: "offline", hint: "theokit studio up" },
   },
   empty: {
+    studio: { status: "online" },
     memory: { status: "online" },
     rag: { status: "online" },
     lens: { status: "offline", hint: "theokit studio up" },
   },
   offline: {
+    studio: { status: "online" },
     memory: { status: "offline", hint: "theokit studio up" },
     rag: { status: "offline", hint: "theokit studio up" },
     lens: { status: "offline", hint: "theokit studio up" },
@@ -67,6 +84,12 @@ const HEALTH: Record<FixtureScenario, ServiceHealthMap> = {
 export function createFixtureDataSource(options: FixtureDataSourceOptions): StudioDataSource {
   const { scenario, overrides, streamDelayMs = 0, runScript = DEFAULT_RUN } = options;
   const isEmpty = scenario === "empty";
+
+  // Estado de SESSÃO dos workspaces (por instância do datasource): operações de
+  // pasta/arquivo agem sobre esta cópia — reset no reload, como o Request Context.
+  const workspaceState: WorkspaceSummary[] = isEmpty ? [] : structuredClone([...fixtureWorkspaces]);
+  // Ids únicos para sessões de build efêmeras (F-dom-2 do review).
+  let draftSessionCounter = 0;
 
   const counted = <T>(method: string, value: T): Promise<T> => {
     metrics.increment("datasource_calls_total", method);
@@ -79,6 +102,42 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listTools: (): Promise<ToolSummary[]> => counted("listTools", isEmpty ? [] : [...fixtureTools]),
     listSkills: (): Promise<SkillSummary[]> =>
       counted("listSkills", isEmpty ? [] : [...fixtureSkills]),
+    listPrompts: () => counted("listPrompts", isEmpty ? [] : [...fixturePrompts]),
+    listBuilderSessions: () =>
+      counted("listBuilderSessions", isEmpty ? [] : [...fixtureBuilderSessions]),
+
+    startBuilderSession: (
+      prompt: string,
+      targetAgentId?: string,
+    ): Promise<BuilderSessionDetail> => {
+      metrics.increment("datasource_calls_total", "startBuilderSession");
+      // Validação na fronteira (error-handling.md § 2): prompt vazio rejeita tipado.
+      const text = prompt.trim();
+      if (text.length === 0) {
+        return Promise.reject(new BlankBuildPromptError());
+      }
+      draftSessionCounter += 1;
+      return Promise.resolve({
+        id: `draft-session-${draftSessionCounter}`,
+        title: text.length > 48 ? `${text.slice(0, 48)}…` : text,
+        agentId: targetAgentId,
+        lastActivity: "now",
+        pinned: false,
+        workedFor: BUILDER_SCRIPTED_WORK_LOG.workedFor,
+        workLog: [...BUILDER_SCRIPTED_WORK_LOG.steps],
+        messages: [{ role: "user", text }, { ...BUILDER_SCRIPTED_REPLY }],
+        files: structuredClone([...BUILDER_SCRIPTED_FILES]),
+      });
+    },
+
+    getBuilderSession: (sessionId: string): Promise<BuilderSessionDetail> => {
+      metrics.increment("datasource_calls_total", "getBuilderSession");
+      const detail = fixtureBuilderSessionDetails[sessionId];
+      if (!detail || isEmpty) {
+        return Promise.reject(new UnknownBuilderSessionError(sessionId));
+      }
+      return Promise.resolve(structuredClone(detail));
+    },
     listWorkflows: (): Promise<WorkflowSummary[]> =>
       counted("listWorkflows", isEmpty ? [] : [...fixtureWorkflows]),
     listProcessors: () => counted("listProcessors", isEmpty ? [] : [...fixtureProcessors]),
@@ -86,9 +145,45 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
     listScorers: () => counted("listScorers", isEmpty ? [] : [...fixtureScorers]),
     listDatasets: () => counted("listDatasets", isEmpty ? [] : [...fixtureDatasets]),
     listExperiments: () => counted("listExperiments", isEmpty ? [] : [...fixtureExperiments]),
-    listWorkspaces: () => counted("listWorkspaces", isEmpty ? [] : [...fixtureWorkspaces]),
+    listWorkspaces: () => counted("listWorkspaces", workspaceState),
 
-    async *runAgent(_agentId: string, _prompt: string, signal?: AbortSignal) {
+    readWorkspaceFile: (workspaceId: string, path: string): Promise<string> => {
+      metrics.increment("datasource_calls_total", "readWorkspaceFile");
+      const ws = workspaceState.find((w) => w.id === workspaceId);
+      if (!ws) {
+        return Promise.reject(new UnknownWorkspaceError(workspaceId));
+      }
+      const entry = ws.files.find((e) => e.path === path && e.kind === "file");
+      if (!entry || entry.content === undefined) {
+        return Promise.reject(new UnknownWorkspacePathError(path));
+      }
+      return Promise.resolve(entry.content);
+    },
+
+    createWorkspaceFolder: (workspaceId: string, path: string): Promise<void> => {
+      metrics.increment("datasource_calls_total", "createWorkspaceFolder");
+      const ws = workspaceState.find((w) => w.id === workspaceId);
+      if (!ws) {
+        return Promise.reject(new UnknownWorkspaceError(workspaceId));
+      }
+      // Validação na fronteira (error-handling.md § 2): nome vazio ou colisão rejeitam.
+      const name = path.split("/").at(-1) ?? "";
+      if (name.trim().length === 0) {
+        return Promise.reject(new BlankFolderNameError());
+      }
+      if (ws.files.some((e) => e.path === path)) {
+        return Promise.reject(new DuplicateWorkspacePathError(path));
+      }
+      ws.files.push({ path, kind: "dir" });
+      return Promise.resolve();
+    },
+
+    async *runAgent(
+      _agentId: string,
+      _prompt: string,
+      signal?: AbortSignal,
+      _params?: import("./datasource").RunAgentParams,
+    ) {
       metrics.increment("datasource_calls_total", "runAgent");
       for await (const event of play(runScript, { delayMs: streamDelayMs, signal })) {
         metrics.increment("stream_events_played_total");

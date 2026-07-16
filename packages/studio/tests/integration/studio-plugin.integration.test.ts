@@ -1,0 +1,208 @@
+// @vitest-environment node
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createServer, type ViteDevServer } from "vite";
+import { theokitStudio } from "../../plugin";
+import { scanStudioAgents } from "../../plugin/agent-scan";
+import {
+  aggregateReflection,
+  listReflectionAgents,
+  listReflectionSkills,
+} from "../../plugin/reflection-api";
+import { resolveSpaDir } from "../../plugin/static-serve";
+import { createFixtureDataSource } from "../../src/data/fixture-datasource";
+import { createReflectionDataSource, parseNdjson } from "../../src/data/reflection-datasource";
+import type { StudioEvent } from "../../src/data/types";
+
+// Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
+// montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
+// O e2e completo (run + SPA) chega em T3.2; este ancora o wiring pilar (b) desde T1.1.
+
+let server: ViteDevServer;
+let baseUrl: string;
+let spaTmp: string;
+
+beforeAll(async () => {
+  // SPA fake para o static serving (o build real é validado na Integration Validation).
+  spaTmp = mkdtempSync(join(tmpdir(), "studio-it-spa-"));
+  mkdirSync(join(spaTmp, "assets"), { recursive: true });
+  writeFileSync(
+    join(spaTmp, "index.html"),
+    "<!doctype html><html><head></head><body>studio-it</body></html>",
+  );
+  writeFileSync(join(spaTmp, "assets/app.js"), "console.log('it')");
+  process.env.THEOKIT_STUDIO_DIST = spaTmp;
+  // streamFactory determinístico injetado via options (DIP) — LLM real fica fora de
+  // teste (testing.md § 6); env do teste garante a key para o run endpoint.
+  process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY ?? "integration-test-key";
+  server = await createServer({
+    root: join(import.meta.dirname, "../fixtures/demo-project"),
+    configFile: false,
+    logLevel: "silent",
+    plugins: [
+      theokitStudio({
+        streamFactory: async function* (_compiled, _apiKey, input) {
+          yield { type: "text-delta", delta: `echo: ${input.message}` };
+        },
+      }),
+    ],
+    server: { port: 0 },
+  });
+  await server.listen();
+  const address = server.httpServer?.address();
+  if (!address || typeof address === "string") {
+    throw new Error("vite dev server did not expose a network address");
+  }
+  baseUrl = `http://localhost:${address.port}`;
+}, 30_000);
+
+afterAll(async () => {
+  // Teardown com race de timeout (padrão safe-close do theokit) — nunca pendurar o vitest.
+  await Promise.race([server.close(), new Promise((r) => setTimeout(r, 5_000))]);
+  delete process.env.THEOKIT_STUDIO_DIST;
+  rmSync(spaTmp, { recursive: true, force: true });
+});
+
+describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
+  it("test_health_responds_over_real_http", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/health`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; studio: string };
+    expect(body.ok).toBe(true);
+    expect(typeof body.studio).toBe("string");
+  });
+
+  it("test_unknown_api_route_404_envelope_over_real_http", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/definitely-not-a-route`);
+    expect(res.status).toBe(404);
+    const body = (await res.json()) as { error: { code: string } };
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("test_agents_reflection_over_real_http_with_real_ssr_load", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/agents`);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      items: Array<{ name: string; model?: string; tools?: Array<{ name: string }> }>;
+    };
+    const support = body.items.find((a) => a.name === "support");
+    expect(support?.model).toBe("anthropic/claude-sonnet-4-6");
+    expect(support?.tools?.[0]?.name).toBe("lookupOrder");
+    // Item degradado (nested exporta não-agent) presente com error — nunca omitido.
+    expect(body.items.find((a) => a.name === "nested")).toBeTruthy();
+  });
+
+  it("test_tools_workflows_and_skills_aggregates_over_real_http", async () => {
+    // T1.3: agregados derivados da compilação real + skills da convenção .theokit/skills.
+    const tools = (await (await fetch(`${baseUrl}/_studio/api/tools`)).json()) as {
+      items: Array<{ name: string; usedBy: number }>;
+    };
+    // lookupOrder é compartilhada por support e team/support (fixture) → usedBy 2.
+    expect(tools.items.find((t) => t.name === "lookupOrder")?.usedBy).toBe(2);
+    const workflows = (await (await fetch(`${baseUrl}/_studio/api/workflows`)).json()) as {
+      items: unknown[];
+    };
+    expect(Array.isArray(workflows.items)).toBe(true);
+    const skills = (await (await fetch(`${baseUrl}/_studio/api/skills`)).json()) as {
+      items: Array<{ name: string }>;
+    };
+    expect(skills.items.map((s) => s.name)).toEqual(["demo-skill"]);
+
+    // Paridade HTTP == chamada direta (mesmo loader do server) — o endpoint é uma
+    // projeção fiel das funções puras, nunca uma segunda implementação.
+    const fixtureRoot = join(import.meta.dirname, "../fixtures/demo-project");
+    const direct = await listReflectionAgents({
+      projectRoot: fixtureRoot,
+      load: (file) => server.ssrLoadModule(file),
+    });
+    expect(aggregateReflection(direct.items).tools).toEqual(tools.items);
+    const directSkills = await listReflectionSkills({ projectRoot: fixtureRoot });
+    expect(directSkills.items).toEqual(skills.items);
+  });
+
+  it("test_run_endpoint_streams_ndjson_over_real_http", async () => {
+    // T1.4: POST run com sessionId + parse NDJSON incremental sobre HTTP real.
+    const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "ping", sessionId: "it-session" }),
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/x-ndjson");
+    const lines = (await res.text())
+      .split("\n")
+      .filter((l) => l.trim())
+      .map((l) => JSON.parse(l) as { kind: string; chunk?: { delta?: string } });
+    expect(lines.map((l) => l.kind)).toEqual(["message", "done"]);
+    expect(lines[0]?.chunk?.delta).toBe("echo: ping");
+    // handleAgentRun exercitado na fronteira real via matchRunPath do dispatcher.
+    const nested = await fetch(`${baseUrl}/_studio/api/agents/team/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "nested ping" }),
+    });
+    expect(nested.status).toBe(200);
+  });
+
+  it("test_spa_served_with_injected_config_over_real_http", async () => {
+    // T2.2: fallback SPA + asset sobre HTTP real, com o config injetado no HTML.
+    const page = await fetch(`${baseUrl}/_studio/agents`);
+    expect(page.status).toBe(200);
+    const html = await page.text();
+    expect(html).toContain("window.__STUDIO_CONFIG__");
+    expect(html).toContain('"basePath":"/_studio"');
+    const asset = await fetch(`${baseUrl}/_studio/assets/app.js?v=cache-bust`);
+    expect(asset.status).toBe(200);
+    const traversal = await fetch(`${baseUrl}/_studio/%2e%2e/secret.txt`);
+    expect([400, 403, 404]).toContain(traversal.status);
+    // Paridade: o dir que o server serviu é exatamente o que resolveSpaDir resolve
+    // do MESMO env (o override do teste) — o serving não tem 2ª lógica de resolução.
+    expect(resolveSpaDir({ env: process.env })).toBe(spaTmp);
+  });
+
+  it("test_reflection_datasource_against_the_real_server", async () => {
+    // O loop COMPLETO do M1: ReflectionDataSource (SPA, react-free) → HTTP real →
+    // plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código que o
+    // browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    const ds = createReflectionDataSource({
+      fallback: createFixtureDataSource({ scenario: "default" }),
+      baseUrl,
+      fetchImpl: fetch,
+    });
+    const agents = await ds.listAgents();
+    expect(agents.map((a) => a.id)).toContain("support");
+    expect(agents.find((a) => a.id === "nested")?.description).toContain("failed to load");
+    const events: StudioEvent[] = [];
+    for await (const e of ds.runAgent("support", "ping de integração")) events.push(e);
+    // streamFactory do server ecoa a mensagem — mapeada para o vocabulário da UI.
+    expect(events).toEqual([{ type: "text-delta", text: "echo: ping de integração" }]);
+    // E o corpo NDJSON cru parseia com o MESMO parser do adapter (paridade nominal).
+    const raw = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "raw" }),
+    });
+    async function* chunks() {
+      yield new TextEncoder().encode(await raw.text());
+    }
+    const kinds: string[] = [];
+    for await (const line of parseNdjson(chunks())) kinds.push(String(line.kind));
+    expect(kinds).toEqual(["message", "done"]);
+  });
+
+  it("test_http_view_matches_fs_scan_and_direct_call", async () => {
+    // Invariante de integração: a visão HTTP == verdade do fs (scanStudioAgents) ==
+    // chamada direta do handler (listReflectionAgents com o MESMO loader do server).
+    const fixtureRoot = join(import.meta.dirname, "../fixtures/demo-project");
+    const scanned = scanStudioAgents(fixtureRoot).map((n) => n.name);
+    const direct = await listReflectionAgents({
+      projectRoot: fixtureRoot,
+      load: (file) => server.ssrLoadModule(file),
+    });
+    const res = await fetch(`${baseUrl}/_studio/api/agents`);
+    const body = (await res.json()) as { items: Array<{ name: string }> };
+    expect(body.items.map((a) => a.name)).toEqual(scanned);
+    expect(direct.items.map((a) => a.name)).toEqual(scanned);
+  });
+});

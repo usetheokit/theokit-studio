@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRunLogOptional } from "../../app/run-log";
+import type { RunAgentParams } from "../../data/datasource";
 import { useDataSource } from "../../data/datasource";
 import { applyEvent, initialPlayback, type PlaybackState } from "./event-to-part";
 
 export interface RunPlayback {
   state: PlaybackState;
-  send(agentId: string, prompt: string): void;
+  send(agentId: string, prompt: string, params?: RunAgentParams): void;
 }
 
 // Hook do playground (D3): consome o async iterable do runAgent com AbortController
@@ -26,7 +27,7 @@ export function useRunPlayback(): RunPlayback {
   );
 
   const send = useCallback(
-    (agentId: string, prompt: string) => {
+    (agentId: string, prompt: string, params?: RunAgentParams) => {
       // EC-1: envio em branco/sem agente é no-op — nenhum run inicia.
       if (agentId.length === 0 || prompt.trim().length === 0) {
         return;
@@ -42,7 +43,7 @@ export function useRunPlayback(): RunPlayback {
       runLog?.startRun();
       void (async () => {
         try {
-          for await (const event of ds.runAgent(agentId, prompt, controller.signal)) {
+          for await (const event of ds.runAgent(agentId, prompt, controller.signal, params)) {
             if (controller.signal.aborted) {
               return;
             }

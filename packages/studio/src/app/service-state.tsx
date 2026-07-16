@@ -8,6 +8,8 @@ const SERVICE_LABEL: Record<ServiceName, string> = {
   memory: "theo-memory",
   lens: "theo-lens",
   rag: "theo-rag",
+  // O próprio dev server/reflection (M1 EC-3) — Record total exige a chave.
+  studio: "studio dev server",
 };
 
 export function ServiceOfflineState({ service }: { service: ServiceName }) {

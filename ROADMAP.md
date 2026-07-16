@@ -134,7 +134,7 @@ SDK 3.x adoption ahead of the rest of the cluster.
 **Dependencies:** M2, M3.
 **Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.
 
-### M5 — [ ] Studio UX shell (all screens on fixtures, no integration)
+### M5 — [x] Studio UX shell (all screens on fixtures, no integration)
 
 > Added 2026-07-14 by `/roadmap-feature studio-ux-shell` (grill:
 > `knowledge-base/grills/studio-ux-shell-feature-grill.md`). UX-first: validate the full

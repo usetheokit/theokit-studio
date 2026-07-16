@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Script `dev` na raiz do monorepo — `npm run dev` (ou `pnpm dev`) sobe o TheoKit Studio
+  (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
+  API do M1 montada na mesma origem (`/_studio/api/*`)
 
 ### Changed
 
@@ -18,6 +21,180 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [0.3.0] - 2026-07-15
+
+### Added
+- M1 T4.1 (parcial) — guia de integração `docs/theokit-dev-integration.md` com o diff exato
+  (dependência + `plugins.push(theokitStudio())` + smoke test) para montar o plugin no
+  `theokit dev`; o commit cross-repo no `theokit` fica pendente de coordenação (feature em
+  voo lá) e da publicação do pacote — rastreado em theokit#133 (#m1)
+- M1 T3.2 — e2e `studio_e2e_reflection_and_run` (oráculo do Goal): sobe o `theokit dev`
+  real na fixture demo-project e valida a cadeia inteira — health, reflection dos agents
+  com tools, SPA em `/_studio` com config injetado, e run streamando NDJSON (toda linha
+  com `kind`, ≥1 `message`, última `done`) — a prova de que o M1 funciona ponta a ponta (#m1)
+- M1 T3.1 — Studio em live mode: `ReflectionDataSource` troca o adapter de fixtures pelo
+  real via o seam DIP do M5 — agents/tools/skills/workflows/health vêm da reflection do
+  dev server e o chat do playground roda o agent DE VERDADE (stream NDJSON traduzido para
+  o vocabulário de eventos da UI; conversa multi-turn com sessão estável por agent; abort
+  cancela o stream); superfícies fora da reflection seguem nas fixtures rotuladas; banner
+  do shell distingue "Live reflection" de "Fixtures mode"; health mostra o dev server
+  (novo serviço "studio") e os serviços theo-data offline com `theokit studio up` até
+  M2/M3; params de geração do painel são ignorados com aviso (sem destino no endpoint
+  live ainda); erro do stream vira mensagem tipada visível (#m1)
+- M1 T2.2 — SPA servida pelo plugin em `/_studio`: assets do dist embarcado (content-type
+  correto; query de cache-busting ignorada) + fallback SPA para deep-links (index.html com
+  `window.__STUDIO_CONFIG__` injetado — mode/basePath — escapado contra script-breakout e
+  nunca cacheado); path traversal bloqueado (decode único, null byte e `..` rejeitados —
+  nada fora do root é lido); dist ausente → 503 com instrução de build; dir da SPA
+  resolvido do pacote com override `THEOKIT_STUDIO_DIST` sempre honrado (#m1)
+- M1 T2.1 — SPA embarcável: build da SPA com assets relativos (`base './'`) em `dist/spa`
+  (o rebuild da SPA preserva `dist/plugin` — pacote publica os dois artefatos); router
+  aceita `basePath` (SPA funciona servida sob `/_studio`); `window.__STUDIO_CONFIG__`
+  ganha `mode` ("fixtures"|"live") e `basePath` com validação defensiva por campo (shape
+  M5 `{scenario}` continua válido; campo inválido → warn agregado 1× + fallback; basePath
+  normalizado com barra inicial e sem trailing) (#m1)
+- M1 T1.4 — run endpoint do playground: `POST /_studio/api/agents/{name}/run` streama a
+  resposta do agent como NDJSON (`{kind: message|done|error}` — uma linha JSON por evento;
+  `run-event` reservado até o bridge expor o seam, theokit#132); mesma origem obrigatória
+  ANTES de qualquer trabalho (um run gasta tokens reais; `Origin: null`/malformado → 403);
+  `sessionId` do body preservado para conversa multi-turn (ausente → UUID por request);
+  sem API key de provider → 424 nomeando `OPENROUTER_/OPENAI_/ANTHROPIC_API_KEY` (mesma
+  prioridade do theokit dev); agent inexistente → 404; módulo inválido → 422; erro
+  mid-stream vira linha `error` tipada (nunca `done` depois de erro); disconnect do
+  cliente aborta o run (AbortSignal propagado, zero writes pós-close) (#m1)
+- M1 T1.3 — endpoints agregados da reflection: `GET /_studio/api/tools` (dedup por nome com
+  `usedBy` contando agents; primeira descrição vence; ordenado), `GET /_studio/api/workflows`
+  (subagents declarados com `source: "subagent"` e nota honesta citando o gap theokit-sdk#123)
+  e `GET /_studio/api/skills` (convenção `.theokit/skills/<name>/SKILL.md` via `discoverSkills`
+  do SDK; skills malformadas listadas em `invalid`, nunca puladas em silêncio; degradação
+  honesta em falha do discover); agents agora expõem `skills {enabled?, autoInject?}` por
+  agent (enabled ausente = todas — distinção preservada) (#m1)
+- M1 T1.2 — reflection de agents no plugin: `GET /_studio/api/agents` enumera os agents do
+  projeto (scan da convenção theokit `agents/<name>.ts` — espelho testado do fonte — +
+  `compileAgentModule` do `@theokit/agents/bridge` via `ssrLoadModule`, sem manifest e sem
+  cache: hot-reload nativo); metadados por agent (model, tools name+descrição, subagents);
+  módulo quebrado ou travado no import degrada SÓ aquele item com a mensagem real (timeout
+  10s configurável); sem `agents/` → lista vazia com hint honesto (#m1)
+- M1 T1.1 — plugin Vite `@theokit/studio/plugin` (skeleton): `theokitStudio()` registra o
+  middleware do Studio no dev server (connect via `configureServer`); `GET /_studio/api/health`
+  responde `{ok, studio: versão}`; envelope de erro tipado `{error:{code,message}}` para rotas
+  desconhecidas; requests fora de `/_studio` passam intocados (boundary estrita, pathname-only
+  — query strings não afetam o match); build node via tsup (`dist/plugin`, export `./plugin`);
+  montado no dev do próprio Studio (dogfood); teste de integração com Vite server real (#m1)
+- M1 plan: `m1-studio-table-stakes` v1.2 (plan-confidence SHIPPABLE 97.6) — plugin Vite
+  `@theokit/studio/plugin` (reflection API + run NDJSON + static `/_studio`), SPA
+  embarcável com `base './'`, `ReflectionDataSource` híbrido honesto e wiring
+  cross-repo no theokit dev; edge-cases (4 MUST FIX absorvidos) e deps-audit
+  PASS_WITH_CAVEATS (0 CVEs) (#m1)
+- M1 discovery: blueprint `m1-studio-table-stakes` (verdict SHIPPABLE 100.0) mapeando
+  reflection endpoint + SPA `/_studio` — prior art Genkit/Mastra + superfície real do
+  `theokit dev` (vite-plugin middlewares) e `@theokit/sdk` 3.8.0 (`Agent.list()`,
+  `run.stream()`, 9 RunEvents tipados); gaps de enumeração de tools/workflows
+  reportados em theokit-sdk#123 (#m1)
+- Studio Agent Builder — model picker refinado no composer (dogfood): o badge mono cru
+  "claude-fable-5" + select solto de esforço viram um só controle elegante (tile
+  Sparkles + nome amigável "Fable 5 · Medium" + chevron) sobre o DropdownMenu do
+  design system, com seção Model (4 opções com nome amigável, descrição e id mono,
+  radio no ativo) e seção Reasoning effort (Low/Medium/High) (M5 dogfood)
+- Studio Agent Builder — minimizar chat ou painel lateral na sessão (dogfood): toggles
+  de ícone no header da sessão (Minimize/Restore chat e Minimize/Restore side panel,
+  com aria-pressed); no máximo UM lado minimizado por vez (nunca tela vazia — minimizar
+  um lado com o outro escondido troca automaticamente); o lado restante ocupa 100% e o
+  splitter some enquanto minimizado (M5 dogfood)
+- Studio Agent Builder — largura do chat redimensionável na sessão (dogfood): splitter
+  arrastável entre o chat e o painel lateral (pointer drag + setas do teclado no
+  separator focável, com aria-valuenow e clamp 25–75%); implementação própria sem
+  dependência nova (M5 dogfood)
+- Studio Agent Builder — painel lateral de detalhes da sessão (dogfood): default à
+  direita com seções "Branch details" (Changes com contadores +A −R que abre o Review,
+  Git actions como fake door honesto, "Pull request status unavailable") e "Artifacts"
+  (arquivos da sessão; clicar abre o Review já filtrado no artefato); a tab Review
+  ganha × para voltar aos detalhes (M5 dogfood)
+- Studio Agent Builder — composer da home com a anatomia da referência (dogfood):
+  linha de ações dentro do composer com "+" (fake door honesto), select de modo de
+  aprovação real (Ask for approval / Auto-approve edits / Read-only), modelo + select
+  de esforço (Low/Medium/High), mic (fake door honesto) e seta redonda; linha do
+  projeto ABAIXO do composer (select de projeto com "New project" + select de agente
+  alvo) (M5 dogfood)
+- Studio Agent Builder — estrutura de app de code assistant completa (dogfood, passo a
+  passo sobre as referências visuais): sidebar reordenada (título com switcher →
+  New session ⌘N → Search ⌘K → navegação Skills/Scheduled/Templates → Pinned →
+  Projects → Tasks), vista de Skills consumindo listSkills real (fecha o achado
+  F-wire-2 do review), Scheduled/Templates com empty states honestos; sessão ganha
+  work log expansível ("Worked for Xs" com passos), card "Edited N files +A −R" com
+  contadores por arquivo, Undo (fake door honesto) e Review; painel Review à direita
+  com tab, toolbar "Unstaged +A −R" + Commit (fake door honesto), diffs por arquivo
+  com números de linha e árvore "All files" que filtra os diffs (M5 dogfood)
+- Studio Agent Builder em três painéis (dogfood): sidebar de app com Search (⌘K real,
+  filtra sessões), New session (⌘N) e seções Pinned/Projects/Tasks clicáveis; clicar
+  numa sessão abre o chat com transcript (bolhas user/assistant, badge "Simulated
+  session") e o viewer de artefato à direita (arquivo + diff unificado com linhas
+  +/- coloridas); enviar da home inicia sessão roteirizada com scaffold do agente e
+  follow-ups anexam ao transcript (mesma premissa dos runs roteirizados do playground);
+  StudioDataSource ganha getBuilderSession() com erro tipado (M5 dogfood)
+- Studio Agent Builder (dogfood): nova superfície de construção de agentes no estilo
+  code-assistant — sidebar de sessões (Pinned + Recent, fixtures com atividade
+  relativa), home centrada "What should we build?" com 4 cards de intenção que
+  preenchem o composer (criar agente, adicionar tools, ajustar guardrails, diagnosticar
+  run), composer com barra de contexto (select de agente alvo + workspace) e badge do
+  modelo; envio e "New session" como fake doors honestos até o registry real;
+  StudioDataSource ganha listBuilderSessions(); item "Agent Builder" no menu raiz
+  (M5 dogfood)
+- Studio agent chat revisado (dogfood, paridade com o chat de agente do Mastra): abas
+  por agente no header (Chat ativa; Editor/Evaluate/Review/Traces como fake doors
+  honestos até seus milestones), painel lateral "Memory not enabled" explicando que
+  threads chegam com o theo-memory (M1), empty state centrado com avatar do agente +
+  "How can I help you today?", e badge mono do modelo no composer (M5 dogfood)
+- Studio Workspaces interativo (dogfood): navegar em pastas com breadcrumb clicável,
+  abrir arquivo em viewer lateral (nome + Close + conteúdo mono com tamanho real),
+  criar pasta (validação na fronteira: nome vazio/duplicado vira erro tipado visível)
+  e refresh refazendo a chamada real ao datasource; operações agem sobre estado de
+  SESSÃO do fixture datasource (nota honesta: reset no reload, workspace real chega
+  com o dev server); StudioDataSource ganha readWorkspaceFile/createWorkspaceFolder
+  e useListing ganha reload() (M5 dogfood)
+- Studio Prompts create view (dogfood): "Create Prompt" abre a tela de criação em duas
+  colunas — Configuration (Name obrigatório, Description) e Content (editor mono com
+  hint de template variables), seção Variables funcional com sintaxe {{variableName}},
+  validação na fronteira (nome vazio/duplicado vira erro visível) e chips removíveis;
+  form 100% preenchível com fake door honesto apenas no "Create prompt block"
+  (M5 dogfood)
+- Studio Prompts (dogfood, tela que faltava da paridade Mastra): lista de prompt blocks
+  reutilizáveis/versionados (Name | Description | Version | Used by, com filtro),
+  detail read-only com o conteúdo publicado e nota honesta (edição/versionamento chegam
+  com o registry real), botão Create Prompt como fake door honesto; item "Prompts" no
+  menu raiz entre Agents e Workflows (ordem Mastra); StudioDataSource ganha
+  listPrompts() com fixtures (M5 dogfood)
+- Studio MCP tool detail (dogfood): cada tool exposta no detail do server agora é
+  clicável e abre o detail com descrição, form "Input Data" derivado do input schema
+  da fixture (labels + required), Submit desabilitado com nota honesta (fixtures) e
+  painel de Output; botão de voltar retorna ao detail do server (M5 dogfood)
+
+
+### Changed
+- M1 — peer de `vite` do plugin relaxado de `>=7 <9` para `>=6 <9`: o consumidor
+  pretendido (`theokit dev`) está em Vite 6 e o middleware connect do plugin
+  (`configureServer`/`server.middlewares.use`/`ssrLoadModule`) é idêntico em Vite 5/6/7 —
+  o range anterior embutia uma incompatibilidade conhecida com o único host real (#m1)
+
+
+
+### Fixed
+- Review builder (batch): gate canônico `pnpm run check` restaurado (suppressions
+  reposicionados no builder/use-listing, key composta nas linhas de diff, label do
+  Phase ligado ao select do Processors); síntese da sessão roteirizada movida para o
+  datasource (`startBuilderSession` no contrato DIP com erro tipado de prompt vazio,
+  métrica contada e ids únicos de draft); builder/index.tsx (1145 LoC) extraído em
+  módulos (model-picker, review, session-view); `key` por sessão zera estado do
+  painel ao trocar de sessão; foco devolvido ao fechar Review/viewer/cancelar pasta
+  (a11y); nome de pasta com "/" rejeitado na fronteira; aria-label do model picker
+  anuncia a seleção; testes novos: negativos de getBuilderSession/startBuilderSession,
+  loadError visível em Prompts/Builder/Workspaces, cenário empty do builder e
+  validação de "/"; formatação canônica do biome aplicada também aos arquivos do
+  delta M7 (events/playground) para manter o gate da raiz verde (M5 dogfood)
+- Studio (dogfood): campos de input dos details de MCP tool e Workflow agora aceitam
+  digitação — o "fake door" fica só na execução (Run/Submit desabilitados com nota
+  honesta em fixtures mode), consistente com o Test Message do Processors
 
 ## [0.2.0] - 2026-07-15
 

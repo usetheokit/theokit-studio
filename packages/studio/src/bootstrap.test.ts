@@ -27,3 +27,44 @@ describe("bootstrap config (T2.1 — EC-8, seam do M1)", () => {
     warn.mockRestore();
   });
 });
+
+describe("bootstrap config M1 (mode/basePath — T2.1)", () => {
+  it("test_parse_accepts_live_mode_and_base_path", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Shape só-M1 (sem scenario) é válido e NÃO gera warn — o host injeta {mode, basePath}.
+    const config = parseStudioConfig({ mode: "live", basePath: "/_studio" });
+    expect(config.mode).toBe("live");
+    expect(config.basePath).toBe("/_studio");
+    expect(config.scenario).toBe("default");
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("test_parse_defaults_mode_fixtures_for_m5_shape", () => {
+    // Shape M5 {scenario} continua válido; mode ausente resolve para fixtures.
+    const config = parseStudioConfig({ scenario: "empty" });
+    expect(config.scenario).toBe("empty");
+    // mode ausente no shape M5 — o consumo resolve fixtures via `?? "fixtures"`.
+    expect(config.mode).toBeUndefined();
+    expect(parseStudioConfig({ mode: "live" }).mode).toBe("live");
+  });
+
+  it("test_parse_invalid_mode_falls_back_with_warn", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const config = parseStudioConfig({ mode: "prod" });
+    expect(config.mode).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it("test_parse_normalizes_malformed_base_path_with_warn", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Não-string → ignorado com warn (mesmo padrão do scenario).
+    expect(parseStudioConfig({ mode: "live", basePath: 42 }).basePath).toBeUndefined();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+    // Normalização das variantes válidas (sem warn): barra inicial + trailing removida.
+    expect(parseStudioConfig({ basePath: "_studio" }).basePath).toBe("/_studio");
+    expect(parseStudioConfig({ basePath: "/_studio/" }).basePath).toBe("/_studio");
+  });
+});

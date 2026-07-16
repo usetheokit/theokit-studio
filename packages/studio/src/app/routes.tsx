@@ -2,6 +2,7 @@ import { EmptyState } from "@usetheo/ui";
 import type { ReactElement } from "react";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
+import { AgentBuilderPage } from "../pages/builder";
 import {
   DatasetsPage,
   EvaluationOverviewPage,
@@ -17,6 +18,7 @@ import { MetricsPage } from "../pages/metrics";
 import { PlannedSurfacePage } from "../pages/planned";
 import { PlaygroundPage } from "../pages/playground";
 import { ProcessorsPage } from "../pages/processors";
+import { PromptsPage } from "../pages/prompts";
 import { RequestContextPage } from "../pages/request-context";
 import { SettingsPage } from "../pages/settings";
 import { ToolsPage } from "../pages/tools";
@@ -41,6 +43,8 @@ function NotFound() {
 // honesto (PlannedSurfacePage) — IA Mastra-parity, dogfood 2026-07-14.
 const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
   "/agents": <PlaygroundPage />,
+  "/builder": <AgentBuilderPage />,
+  "/prompts": <PromptsPage />,
   "/workflows": <WorkflowsPage />,
   "/processors": <ProcessorsPage />,
   "/mcp-servers": <McpServersPage />,
@@ -67,11 +71,14 @@ const LEGACY_REDIRECTS: Record<string, string> = {
   traces: "/observability/traces",
 };
 
-export function buildRoutes(extraChildren: RouteObject[] = []): RouteObject[] {
+export function buildRoutes(
+  extraChildren: RouteObject[] = [],
+  opts: { live?: boolean } = {},
+): RouteObject[] {
   return [
     {
       path: "/",
-      element: <Shell />,
+      element: <Shell live={opts.live ?? false} />,
       hydrateFallbackElement: <SurfacePlaceholder title="Loading" />,
       children: [
         { index: true, loader: () => redirect("/agents"), element: null },

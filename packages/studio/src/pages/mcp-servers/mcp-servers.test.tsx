@@ -54,6 +54,38 @@ describe("MCP Servers (Mastra-parity clone)", () => {
     expect(names.some((n) => n.includes("run_customerOnboarding"))).toBe(true);
   });
 
+  it("exposed_tool_click_opens_tool_detail_with_input_form_and_disabled_submit", async () => {
+    renderMcpServers();
+    await openDemoServer();
+    const tools = await screen.findAllByTestId("mcp-exposed-tool");
+    const refund = tools.find((t) => t.textContent?.includes("refundOrder"));
+    if (!refund) throw new Error("exposed tool not found");
+    await userEvent.click(refund);
+
+    expect(await screen.findByTestId("mcp-tool-detail")).toBeTruthy();
+    // Form derivado do input schema da fixture (2 campos do refundOrder).
+    // Fake door SÓ na execução: os campos aceitam digitação (dogfood 2026-07-15).
+    const orderId = screen.getByLabelText(/order id/i) as HTMLInputElement;
+    await userEvent.type(orderId, "ORD-1234");
+    expect(orderId.value).toBe("ORD-1234");
+    expect(screen.getByLabelText(/amount \(usd\)/i)).toBeTruthy();
+    // Submit desabilitado em fixtures mode (honestidade — nada de invocação simulada).
+    const submit = screen.getByRole("button", { name: /submit/i }) as HTMLButtonElement;
+    expect(submit.disabled).toBe(true);
+    expect(screen.getByText(/output/i)).toBeTruthy();
+  });
+
+  it("tool_detail_back_returns_to_server_detail", async () => {
+    renderMcpServers();
+    await openDemoServer();
+    const tools = await screen.findAllByTestId("mcp-exposed-tool");
+    await userEvent.click(tools[0] as HTMLElement);
+    await screen.findByTestId("mcp-tool-detail");
+    await userEvent.click(screen.getByRole("button", { name: "Demo MCP Server" }));
+    // De volta ao detail do server: transportes visíveis de novo.
+    expect((await screen.findAllByTestId("mcp-transport")).length).toBe(3);
+  });
+
   it("back_button_returns_to_server_list", async () => {
     renderMcpServers();
     await openDemoServer();
