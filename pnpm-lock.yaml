@@ -25,10 +25,10 @@ importers:
     dependencies:
       '@theokit/ui':
         specifier: ^1.0.4
-        version: 1.0.4(@tailwindcss/vite@4.3.2(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@usetheo/ui@0.22.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)(typescript@5.9.3)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0))
+        version: 1.0.4(@tailwindcss/vite@4.3.2(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@usetheo/ui@0.28.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)(typescript@5.9.3)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0))
       '@usetheo/ui':
-        specifier: ^0.22.1
-        version: 0.22.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
+        specifier: ^0.28.0
+        version: 0.28.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
       lucide-react:
         specifier: ^0.471.0
         version: 0.471.2(react@19.2.7)
@@ -1576,8 +1576,8 @@ packages:
   '@types/react@19.2.17':
     resolution: {integrity: sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==}
 
-  '@usetheo/ui@0.22.1':
-    resolution: {integrity: sha512-wWQ9mg6mN3f7M+/4IG8e5ltHkTBjwZmfbxz1ryo1ex7A+dk2jsmHH+nBnajVLBYpwD52Ny6t061RX5CDglPCPw==}
+  '@usetheo/ui@0.28.0':
+    resolution: {integrity: sha512-o0DaOEFdM5RQlDugtL4oG+ND9ggnS9VbTsb26+noikblb6+otOCS1GqD3QsmA0FeLd+hjXrItx00IcvZXpJB4Q==}
     engines: {node: '>=20'}
     peerDependencies:
       react: '>=18'
@@ -4095,10 +4095,10 @@ snapshots:
       ws: 8.21.0
       zod: 4.4.3
 
-  '@theokit/ui@1.0.4(@tailwindcss/vite@4.3.2(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@usetheo/ui@0.22.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)(typescript@5.9.3)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0))':
+  '@theokit/ui@1.0.4(@tailwindcss/vite@4.3.2(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0)))(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(@usetheo/ui@0.28.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)(typescript@5.9.3)(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0))':
     dependencies:
       '@radix-ui/react-dropdown-menu': 2.1.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      '@usetheo/ui': 0.22.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
+      '@usetheo/ui': 0.28.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       lucide-react: 0.471.2(react@19.2.7)
@@ -4163,7 +4163,7 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@usetheo/ui@0.22.1(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
+  '@usetheo/ui@0.28.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.2)':
     dependencies:
       '@radix-ui/react-avatar': 1.2.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@radix-ui/react-checkbox': 1.3.7(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
