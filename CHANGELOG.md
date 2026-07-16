@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Script `dev` na raiz do monorepo — `npm run dev` (ou `pnpm dev`) sobe o TheoKit Studio
+  (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
+  API do M1 montada na mesma origem (`/_studio/api/*`)
 
 ### Changed
 
