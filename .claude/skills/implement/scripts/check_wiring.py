@@ -190,13 +190,6 @@ def check_pillar_b_integration_test(project_root: Path, symbol: str, deferral_pa
             candidate = project_root / tdir / idir
             if candidate.exists():
                 integration_dirs.append(candidate)
-    # Monorepo (review F-wire-2): testes de integração escopados por pacote.
-    for pkg_tests in project_root.glob("packages/*/"):
-        for tdir in TEST_DIR_NAMES:
-            for idir in INTEGRATION_DIR_NAMES:
-                candidate = pkg_tests / tdir / idir
-                if candidate.exists():
-                    integration_dirs.append(candidate)
 
     if not integration_dirs:
         return {
