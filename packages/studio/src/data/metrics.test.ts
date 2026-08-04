@@ -13,9 +13,18 @@ describe("metrics (T1.1 — ADR D5)", () => {
   });
 
   it("reset_clears_all_counters", () => {
-    metrics.increment("stream_events_played_total");
+    metrics.increment("datasource_calls_total");
     metrics.reset();
-    expect(metrics.snapshot().stream_events_played_total.total ?? 0).toBe(0);
+    const afterReset = metrics.snapshot().datasource_calls_total.total ?? 0;
+    expect(afterReset).toBe(0);
+  });
+
+  // M7 T3.1: um contador declarado sem emissor aparece zerado para sempre em
+  // window.__STUDIO_METRICS__ — e quem lê conclui "não houve erro" onde o certo é
+  // "ninguém conta". Esta é a trava contra reintroduzir um nome sem emissor.
+  it("every_declared_counter_has_a_production_emitter", () => {
+    const declared = Object.keys(metrics.snapshot());
+    expect(declared).toEqual(["datasource_calls_total"]);
   });
 
   it("snapshot_returns_a_copy_not_a_live_reference", () => {

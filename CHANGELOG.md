@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+- Quatro contadores que nunca eram emitidos saem de `window.__STUDIO_METRICS__`: `stream_events_played_total`, `health_errors_total`, `unknown_events_total` e `reflection_chunks_dropped_total`. Eles apareciam zerados para sempre, e um zero permanente lê-se como "não houve erro" quando o fato era "ninguém contava" (#M7)
 - `scenario: "offline"` deixa de ser um valor de configuração aceito. Ele passava pela validação e não fazia nada — nenhum código o distinguia de `"default"`. Agora é rejeitado como qualquer valor inválido: aviso no console nomeando o valor e queda para `"default"` (#M7)
 
 ### Fixed
