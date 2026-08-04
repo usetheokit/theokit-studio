@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import { createFixtureDataSource } from "./data/fixture-datasource";
 import { metrics } from "./data/metrics";
 import { mount } from "./main";
 
@@ -62,13 +63,29 @@ describe("mount (composition root — basename wiring)", () => {
       basePath: "/_studio",
     });
     try {
-      // Rótulo honesto da origem dos dados + wiring pilar (c): métrica da reflection
-      // observada não-zero (o adapter live foi de fato o escolhido pelo root).
+      // M8 T1.1: a ÚNICA asserção que separa os dois ramos do ternário é o dado que só a
+      // reflection produz. As duas asserções anteriores eram satisfeitas pelos DOIS ramos —
+      // o rótulo vem de buildRoutes({ live }), que lê o booleano direto, e o contador
+      // datasource_calls_total.listAgents é incrementado tanto pelo fixture quanto pela
+      // reflection. Reproduzido: invertendo o ternário, a suíte devolvia 3 passed.
+      const liveAgent = await screen.findByText("live-agent");
+      expect(liveAgent).toBeTruthy();
+      // O rótulo e a métrica continuam asseverados — não provam a escolha, mas travam
+      // regressões próprias (rótulo honesto e wiring pilar c).
       expect(await screen.findByText(/live reflection/i)).toBeTruthy();
       expect(metrics.snapshot().datasource_calls_total?.listAgents).toBeGreaterThanOrEqual(1);
     } finally {
       cleanup();
       globalThis.fetch = realFetch;
     }
+  });
+
+  // EC-1: a asserção acima só discrimina enquanto "live-agent" NÃO existir no fixture. Sem esta
+  // trava, adicionar um agente com esse nome ao registry devolveria o teste ao estado oco em
+  // silêncio — o defeito que este milestone existe para matar, repetido com um passo a mais.
+  it("the_discriminating_name_is_absent_from_the_fixtures", async () => {
+    const fixtureAgents = await createFixtureDataSource({ scenario: "default" }).listAgents();
+    const names = fixtureAgents.map((a) => a.name);
+    expect(names).not.toContain("live-agent");
   });
 });

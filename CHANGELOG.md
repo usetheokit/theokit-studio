@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+- O teste que verificava a escolha do modo de dados do Studio voltou a poder falhar: ele afirmava checar que o modo "live" usa a reflection real, mas passava mesmo com a lógica invertida. Agora assevera um dado que só o caminho real produz (#M8)
 
 ### Security
 
