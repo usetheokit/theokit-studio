@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import type { ServerResponse } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -47,6 +47,11 @@ function makeRes(): FakeRes {
     },
     get destroyed() {
       return false;
+    },
+    // M6 EC-2: headersSent REFLETE writeHead. Um literal congelado nunca viraria true e
+    // tornaria o guard de resposta comprometida inalcançável por construção (finding #68).
+    get headersSent() {
+      return state.statusCode !== undefined;
     },
   } as unknown as ServerResponse;
   return state;
@@ -225,5 +230,33 @@ describe("resolveSpaDir (T2.2)", () => {
       moduleUrl: pathToFileURL(join(base, "plugin/index.ts")).href,
     });
     expect(resolved).toBe(join(base, "dist/spa"));
+  });
+});
+
+describe("asset ilegível não compromete o head (T1.2)", () => {
+  it("asset_read_failure_yields_error_envelope_not_committed_200", async () => {
+    // EACCES é DETERMINÍSTICO depois de existsSync/statSync passarem — não é corrida.
+    // Comprometer o head 200 antes da leitura deixava a resposta 200 truncada e, no
+    // dispatcher, matava o processo (M6 findings #46/#47).
+    const assetPath = join(spaDir, "locked.css");
+    writeFileSync(assetPath, "body{}");
+    chmodSync(assetPath, 0o000);
+    const state = makeRes();
+
+    await serveStudio("/_studio/locked.css", state.res, { spaDir, config: CONFIG });
+
+    expect(state.statusCode).not.toBe(200);
+    expect(JSON.parse(state.body).error.code).toBeDefined();
+  });
+
+  it("empty_asset_still_returns_200_with_content_type", async () => {
+    // EC-6: 0 byte é asset VÁLIDO; com a leitura antes do head não pode virar falha.
+    writeFileSync(join(spaDir, "empty.css"), "");
+    const state = makeRes();
+
+    await serveStudio("/_studio/empty.css", state.res, { spaDir, config: CONFIG });
+
+    expect(state.statusCode).toBe(200);
+    expect(state.headers["Content-Type"]).toBe("text/css; charset=utf-8");
   });
 });

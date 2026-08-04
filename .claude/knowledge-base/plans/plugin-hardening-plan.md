@@ -250,16 +250,19 @@ produção, verificados por grep). Nenhum teste o importa hoje — por isso o br
 exercitado. A mudança é aditiva no comportamento: o caminho não-comprometido é idêntico.
 
 #### TDD
-- **RED 1:** `sendErrorEnvelope_writes_body_when_headers_already_sent` — dado um `ServerResponse`
-  real de um servidor `node:http` com `writeHead(200)` já chamado, invocar `sendErrorEnvelope`
-  NÃO deve lançar e o corpo recebido pelo cliente deve conter `"code"` e a mensagem.
-- **RED 2:** `sendErrorEnvelope_does_not_throw_ERR_HTTP_HEADERS_SENT` — asserção explícita de que
-  nenhuma exceção escapa (o modo de falha original).
-- **RED 3:** `sendJson_returns_silently_when_headers_already_sent` — não lança, não escreve.
-- **RED 4:** `sendErrorEnvelope_sets_status_and_json_when_not_committed` — caminho feliz intacto.
-- **RED 5 (EC-1, MUST FIX):** `sendErrorEnvelope_does_not_write_when_response_already_ended` —
-  resposta com `writableEnded === true` E `headersSent === true`: NÃO escrever nada e NÃO lançar
-  `ERR_STREAM_WRITE_AFTER_END`. **A ordem dos predicados é o contrato:** `writableEnded ||
+- **RED 1** `sendErrorEnvelope_writes_body_when_headers_already_sent`: given um `ServerResponse`
+  real de `node:http` com `writeHead(200)` já chamado, when `sendErrorEnvelope(res, 500, "INTERNAL", "boom")`,
+  then `expect(body).toContain("INTERNAL")` e `expect(body).toContain("boom")`.
+- **RED 2** `sendErrorEnvelope_does_not_throw_when_headers_sent`:
+  `expect(() => sendErrorEnvelope(res, 500, "INTERNAL", "boom")).not.toThrow()` — o modo de falha original.
+- **RED 3** `sendJson_returns_silently_when_headers_already_sent`:
+  `expect(() => sendJson(res, 200, {})).not.toThrow()` e `expect(res.write).toHaveBeenCalledTimes(0)`.
+- **RED 4** `sendErrorEnvelope_sets_status_and_json_when_not_committed`: caminho feliz intacto —
+  `expect(res.statusCode).toBe(404)` e `expect(JSON.parse(body).error.code).toBe("NOT_FOUND")`.
+- **RED 5 (EC-1, MUST FIX)** `sendErrorEnvelope_does_not_write_when_response_already_ended`:
+  given resposta com `writableEnded === true` E `headersSent === true`, when `sendErrorEnvelope(...)`,
+  then `expect(() => ...).not.toThrow()` e `expect(res.end).toHaveBeenCalledTimes(0)`.
+  **A ordem dos predicados é o contrato:** `writableEnded ||
   destroyed` sai primeiro; só então o branch de `headersSent` escreve o corpo. Sem isso, o M6
   troca um crash por outro.
 - **GREEN:** implementar o guard nessa ordem.
@@ -306,10 +309,12 @@ deixa de existir.
 anterior e não é tocada — os testes dela seguem sendo a rede de proteção (R1).
 
 #### TDD
-- **RED:** `asset_read_failure_yields_error_envelope_not_committed_200` — arquivo existente mas
-  ilegível (`chmod 000` em tmpdir) → resposta com status de erro e envelope JSON, não 200 truncado.
-- **RED 2 (EC-6, SHOULD TEST):** `empty_asset_still_returns_200_with_content_type` — arquivo de
-  0 byte é asset válido; com a leitura agora antes do head, não pode ser confundido com falha.
+- **RED 1** `asset_read_failure_yields_error_envelope_not_committed_200`: given arquivo existente
+  mas ilegível (`chmod 000` em tmpdir), when `serveStudio(...)`, then
+  `expect(res.statusCode).not.toBe(200)` e `expect(JSON.parse(body).error.code).toBeDefined()`.
+- **RED 2 (EC-6, SHOULD TEST)** `empty_asset_still_returns_200_with_content_type`: given arquivo
+  de 0 byte, when `serveStudio(...)`, then `expect(res.statusCode).toBe(200)` e
+  `expect(headers["Content-Type"]).toBe("text/css")`.
 - **GREEN:** inverter a ordem.
 - **REFACTOR:** nenhuma prevista.
 
@@ -349,8 +354,9 @@ Só arquivos de teste. Risco R2: valor explícito (`headersSent: false`) em vez 
 para não trocar um falso-negativo por outro.
 
 #### TDD
-- **RED:** um teste no dispatcher (`index.test.ts`) que simula handler lançando **depois** do
-  head comprometido e assevera que o processo não recebe unhandled rejection.
+- **RED** `dispatcher_error_after_committed_head_does_not_reject`: given um handler que lança
+  **depois** de `writeHead`, when a requisição atravessa o middleware, then
+  `expect(rejections).toHaveBeenCalledTimes(0)` — nenhuma unhandled rejection.
 - **GREEN:** fakes atualizados + guard de T1.1.
 - **EC-2 (MUST FIX):** o fake de `index.test.ts` expõe `headersSent` como **getter que reflete se
   `writeHead` foi chamado** — um literal congelado nunca vira `true` e faria o RED acima passar
@@ -394,15 +400,19 @@ para não trocar um falso-negativo por outro.
 o contrato: reservado → rota → 404 tipado; SPA só depois.
 
 #### TDD
-- **RED 1:** `svc_namespace_without_route_returns_typed_404_json` para `/_studio/svc/lens/v1/traces`.
-- **RED 2:** `svc_namespace_404_is_extension_independent` — `.../query` e `.../index.json`
-  produzem **o mesmo** status e content-type.
-- **RED 3 (EC-3, MUST FIX):** `bare_svc_path_is_also_reserved` — `/_studio/svc` **sem barra
-  final** também recebe o 404 tipado. O predicado é
+- **RED 1** `svc_namespace_without_route_returns_typed_404_json`: given `/_studio/svc/lens/v1/traces`,
+  when despachado, then `expect(res.statusCode).toBe(404)` e
+  `expect(JSON.parse(body).error.code).toBe("NOT_FOUND")`.
+- **RED 2** `svc_namespace_404_is_extension_independent`: given `.../query` e `.../index.json`,
+  when ambos despachados, then `expect(a.statusCode).toBe(b.statusCode)` e
+  `expect(a.contentType).toBe(b.contentType)`.
+- **RED 3 (EC-3, MUST FIX)** `bare_svc_path_is_also_reserved`: given `/_studio/svc` **sem barra
+  final**, when despachado, then `expect(res.statusCode).toBe(404)`. O predicado é
   `pathname === "/_studio/svc" || pathname.startsWith("/_studio/svc/")` — a mesma forma do mastra
   (`index.ts:429-430`). Sem isso, o bug sobrevive exatamente na borda.
-- **RED 4 (EC-7, SHOULD TEST):** `reserved_namespace_requires_separator` — `/_studio/svcfoo`
-  **não** é reservado; protege contra a forma insegura `startsWith("/_studio/svc")`.
+- **RED 4 (EC-7, SHOULD TEST)** `reserved_namespace_requires_separator`: given `/_studio/svcfoo`,
+  when despachado, then `expect(res.statusCode).not.toBe(404)` — protege contra a forma insegura
+  `startsWith("/_studio/svc")`.
 - **GREEN:** lista de namespaces reservados consultada antes do fallback.
 - **REFACTOR:** extrair `isReservedApiNamespace(pathname)`.
 
@@ -442,8 +452,9 @@ A função devolve `AgentFileNode[]`; a forma do retorno não muda. Degradação
 espírito do agent com `error` que a reflection já expõe.
 
 #### TDD
-- **RED:** `unreadable_subdirectory_is_skipped_not_fatal` — tmpdir com subpasta `chmod 000`;
-  o scan devolve os agents legíveis em vez de lançar.
+- **RED** `unreadable_subdirectory_is_skipped_not_fatal`: given tmpdir com subpasta `chmod 000`,
+  when `scanStudioAgents(root)`, then `expect(nodes.map(n => n.name)).toContain("support")` e
+  `expect(warnSpy).toHaveBeenCalled()`.
 - **GREEN:** try/catch por diretório com registro.
 - **EC-4 (MUST FIX):** o mecanismo de visibilidade é **fixado aqui, não deixado ao gosto do
   implementador**: `console.warn` com o caminho e o `code` do erro, e o teste assevera a chamada
@@ -490,12 +501,15 @@ fallback não é tocada. O tipo de erro lançado é observado pela UI via `loadE
 a mudança é aditiva: a mensagem fica melhor, o shape do que a UI lê não muda.
 
 #### TDD
-- **RED 1:** `reflection_error_envelope_is_propagated_with_code` — servidor devolve 404 com
-  `{error:{code:"NOT_FOUND",message:"..."}}`; o erro lançado carrega `NOT_FOUND` e a mensagem.
-- **RED 2:** `non_envelope_error_body_falls_back_to_status_message` — corpo não-JSON não pode
-  quebrar o cliente (caso negativo, `rules/testing.md` § 4.1).
-- **RED 3 (EC-8, SHOULD TEST):** `envelope_without_code_falls_back_to_status_message` — corpo
-  `{"error":{"message":"x"}}` é JSON válido e envelope incompleto: não pode lançar.
+- **RED 1** `reflection_error_envelope_is_propagated_with_code`: given servidor devolvendo 404 com
+  `{error:{code:"NOT_FOUND",message:"sem rota"}}`, when `ds.listAgents()`, then
+  `expect(err.code).toBe("NOT_FOUND")` e `expect(err.message).toContain("sem rota")`.
+- **RED 2** `non_envelope_error_body_falls_back_to_status_message`: given corpo não-JSON num 500,
+  when `ds.listAgents()`, then `expect(...).rejects.toThrow(/responded 500/)` — caso negativo
+  (`rules/testing.md` § 4.1).
+- **RED 3 (EC-8, SHOULD TEST)** `envelope_without_code_falls_back_to_status_message`: given corpo
+  `{"error":{"message":"x"}}` (JSON válido, envelope incompleto), when `ds.listAgents()`, then
+  `expect(err.message).toContain("x")` sem `SyntaxError`.
 - **GREEN:** parse defensivo do envelope. **EC-5 (MUST FIX):** ler o corpo **uma única vez** como
   texto (`const raw = await res.text()`) e então `JSON.parse(raw)` dentro de try/catch. A forma
   ingênua (`await res.json()` no try, `await res.text()` no catch) lança

@@ -51,6 +51,14 @@ function makeRes(): FakeRes {
     get writableEnded() {
       return state.ended;
     },
+    // M6 EC-2: getter REAL — reflete se writeHead já comprometeu o head. Um literal
+    // congelado tornaria o guard de resposta comprometida inalcançável (finding #68).
+    get headersSent() {
+      return state.statusCode !== undefined;
+    },
+    get destroyed() {
+      return false;
+    },
   } as unknown as ServerResponse;
   return state;
 }

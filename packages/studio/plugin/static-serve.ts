@@ -150,7 +150,23 @@ export async function serveStudio(
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio asset at ${pathname}`);
     return;
   }
+  // LER ANTES DE COMPROMETER O HEAD (M6 T1.2). existsSync + statSync passarem NÃO garante
+  // leitura: EACCES é determinístico num arquivo sem permissão. Comprometer o 200 antes
+  // deixava a resposta truncada e o throw subia até o .catch() do dispatcher, matando o
+  // processo. `serveIndexWithConfig` (:85→:98) já lia antes — este era o único fora do padrão.
+  let content: Buffer;
+  try {
+    content = readFileSync(safe.path);
+  } catch (error) {
+    sendErrorEnvelope(
+      res,
+      500,
+      "ASSET_READ_FAILED",
+      `could not read studio asset at ${pathname}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return;
+  }
   if (res.writableEnded || res.destroyed) return;
   res.writeHead(200, { "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream" });
-  res.end(readFileSync(safe.path));
+  res.end(content);
 }

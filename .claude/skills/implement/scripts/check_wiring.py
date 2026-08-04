@@ -183,13 +183,23 @@ def check_pillar_b_integration_test(project_root: Path, symbol: str, deferral_pa
                 "recommended_action": "Bind the deferral marker to this specific symbol or add a real integration test.",
             }
 
-    # Search tests/integration/ for symbol references
+    # Search tests/integration/ for symbol references.
+    # Monorepo-aware: in a pnpm/turborepo workspace the suites live at
+    # <workspace-root>/packages/<pkg>/tests/integration, not at the repo root. Searching only
+    # the root made pillar (b) report FAIL for symbols that ARE covered — a false blocker.
+    search_roots = [project_root]
+    for workspace_dir in ("packages", "apps", "libs", "services"):
+        workspace_root = project_root / workspace_dir
+        if workspace_root.is_dir():
+            search_roots.extend(child for child in workspace_root.iterdir() if child.is_dir())
+
     integration_dirs = []
-    for tdir in TEST_DIR_NAMES:
-        for idir in INTEGRATION_DIR_NAMES:
-            candidate = project_root / tdir / idir
-            if candidate.exists():
-                integration_dirs.append(candidate)
+    for root in search_roots:
+        for tdir in TEST_DIR_NAMES:
+            for idir in INTEGRATION_DIR_NAMES:
+                candidate = root / tdir / idir
+                if candidate.exists():
+                    integration_dirs.append(candidate)
 
     if not integration_dirs:
         return {
