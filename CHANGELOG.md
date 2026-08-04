@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- O adapter de dados "live" passa a delegar explicitamente ao fallback de fixtures em vez de espalhá-lo. Um método novo no contrato de dados agora quebra a compilação em vez de cair silenciosamente no fixture em tempo de execução (#M8)
 
 ### Deprecated
 
