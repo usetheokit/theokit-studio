@@ -81,6 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   um `EACCES` determinístico virava `ERR_HTTP_HEADERS_SENT` dentro de um `.catch()` e encerrava
   o processo. Agora o arquivo é lido antes de comprometer o cabeçalho e, quando a resposta já
   começou, o erro é entregue **no corpo** em vez de a conexão morrer calada (#m6)
+- Uma resposta de sucesso pedida depois que o cabeçalho já foi enviado agora **encerra** a
+  requisição com um aviso, em vez de deixá-la pendurada aberta. A correção anterior trocava o
+  crash ruidoso por um travamento silencioso — o cliente esperava para sempre (#m6)
 - `/_studio/svc/{lens,memory,rag}/*` responde 404 com envelope tipado em vez de devolver o HTML
   da SPA. O comportamento anterior dependia da extensão da URL: `.../query` devolvia HTML 200 e
   `.../index.json` devolvia 404 JSON — duas respostas para o mesmo namespace de contrato (#m6)
