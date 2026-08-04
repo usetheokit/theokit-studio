@@ -106,6 +106,32 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
     expect(writeHead).not.toHaveBeenCalled();
   });
 
+  it("sendJson_does_not_write_when_response_already_ended", () => {
+    // AC6 do M6 exige 100% de branch em http.ts, e a aceitação da v0.4.0 mediu 90%: o guard
+    // `writableEnded || destroyed` do sendJson — adicionado ao corrigir o F-arch-1 da review —
+    // não tinha teste. A ordem também importa aqui: encerrada sai ANTES de comprometida.
+    const end = vi.fn();
+    const writeHead = vi.fn();
+    const res = {
+      end,
+      writeHead,
+      get writableEnded() {
+        return true;
+      },
+      get destroyed() {
+        return false;
+      },
+      get headersSent() {
+        return true;
+      },
+    } as unknown as ServerResponse;
+
+    expect(() => sendJson(res, 200, { nunca: "escrito" })).not.toThrow();
+
+    expect(end).not.toHaveBeenCalled();
+    expect(writeHead).not.toHaveBeenCalled();
+  });
+
   it("sendJson_ends_the_response_when_headers_already_sent", () => {
     // F-arch-1: apenas retornar deixava a requisição pendurada — hang silencioso no lugar do
     // crash ruidoso. Encerrar é obrigatório; o aviso torna o bug de chamador visível.

@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Fixed
+- Cobertura de branch de `plugin/http.ts` volta a 100%: o guard que impede escrita numa resposta
+  já encerrada não tinha teste. Achado pela aceitação da v0.4.0, que mediu 90% contra o critério
+  de 100% declarado no ROADMAP (#m6)
+
 ### Deprecated
 
 ### Removed
