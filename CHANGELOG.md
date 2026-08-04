@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Definition of done de M1, M2 e M3 reconciliado com o escopo entregue: M1 fica exercitável (5 critérios reescritos em torno do Agent Builder), M2 e M3 ficam registrados como cancelados com data e razão em vez de exigir telas que não existem (#M7)
 - README descreve o Agent Builder como a única superfície entregue e declara, com o SHA do commit que a causou, que playground, traces, memory e knowledge foram removidos — quem precisa dessas telas deve fixar `v0.3.0` (#M7)
 
 ### Deprecated

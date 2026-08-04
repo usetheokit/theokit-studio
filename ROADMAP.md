@@ -82,13 +82,16 @@ embedding-dim drift if embedder changes after first migration.
 
 **Objective:** The Mastra/Genkit experience inside `theokit dev`: playground + live typed events.
 
+> Escopo reconciliado em 2026-08-04 (M7): dois critérios foram cancelados porque as telas que
+> exigiam saíram em `74a96c6`. O milestone permanece `[ ]` e agora é exercitável.
+
 **Definition of done:**
-- [ ] Reflection endpoint in the dev server exposing the live registry (agents/tools/skills/
-      workflows) from `@theokit/sdk` — no manifest.
-- [ ] Studio SPA (built with current `@theokit/ui`) served at `/_studio`, same origin.
-- [ ] Chat playground against any registered agent; event inspector rendering `Run.stream()`
-      typed events live (text deltas, tool calls, permissions, rate-limit, completion).
-- [ ] Works with Docker absent; service tabs show actionable "run `theokit studio up`" state.
+- [ ] Reflection endpoint in the dev server exposes the live `@theokit/sdk` registry (agents, tools, skills, workflows) with no manifest file — `GET /_studio/api/agents` responds 200 with an `items` envelope.
+- [ ] Studio SPA (built with current `@theokit/ui`) is served at `/_studio`, same origin as the dev server.
+- [ ] The Agent Builder turns a prompt into an agent definition end to end: a session started from `/builder` writes an agent file and the file is loadable by the registry.
+- [ ] Studio loads and the Agent Builder works with Docker absent — no service dependency on the builder path.
+- [ ] CANCELADO 2026-08-04 (M7): "Chat playground against any registered agent; event inspector rendering `Run.stream()` typed events live" — a tela foi removida em `74a96c6`; retomada é decisão de produto em aberto (Q1 do plano `docs-dead-surface-reconciliation`).
+- [ ] CANCELADO 2026-08-04 (M7): "service tabs show actionable run `theokit studio up` state" — não existem abas de serviço desde `74a96c6`; o critério de degradação graciosa que sobrevive está no bullet 4 acima.
 
 **Dependencies:** none (parallel to M0).
 **Top risks:** dev-server integration surface in `theokit` (Vite plugin vs server route);
@@ -98,12 +101,17 @@ SDK 3.x adoption ahead of the rest of the cluster.
 
 **Objective:** One agent run in the playground produces a durable, inspectable trace.
 
+> **CANCELADO em 2026-08-04 (M7).** A aba Traces saiu em `74a96c6` junto com as outras 19 telas.
+> Os quatro critérios originais dependiam dela e nenhum é exercitável contra o produto atual. O
+> milestone permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto
+> (Q1 do plano `docs-dead-surface-reconciliation`); se voltar, entra como milestone novo com DoD
+> reescrito, não reabrindo este.
+
 **Definition of done:**
-- [ ] Spike verified: SDK `exporter: "otlp"` emits OTLP **http/json** with `gen_ai` semconv
-      that lens maps to typed columns (model/provider/tokens) — or gap fixed in the SDK.
-- [ ] `theokit dev` auto-configures the SDK exporter at the lens endpoint when the stack is up.
-- [ ] Traces tab embeds/links lens-web through the same-origin proxy; trace tree + cost visible.
-- [ ] Traces survive dev-server hot-reload and restart (the differentiator, demonstrated).
+- [ ] CANCELADO 2026-08-04 (M7): "Spike verified: SDK `exporter: otlp` emits OTLP http/json with `gen_ai` semconv that lens maps to typed columns" — sem aba Traces, não há consumidor do spike neste pacote.
+- [ ] CANCELADO 2026-08-04 (M7): "`theokit dev` auto-configures the SDK exporter at the lens endpoint" — a configuração é do `theokit dev`, não do Studio; migra para o repo do CLI se for retomada.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces tab embeds/links lens-web through the same-origin proxy" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces survive dev-server hot-reload and restart" — o diferenciador dependia da aba removida.
 
 **Dependencies:** M0, M1.
 **Top risks:** protocol mismatch (protobuf vs http/json); lens `@theokit/ui` 0.18.x vs 1.x drift.
@@ -112,12 +120,14 @@ SDK 3.x adoption ahead of the rest of the cluster.
 
 **Objective:** Inspect what the agent knows and remembers.
 
+> **CANCELADO em 2026-08-04 (M7).** As abas Memory e Knowledge saíram em `74a96c6`. O milestone
+> permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto (Q1 do
+> plano `docs-dead-surface-reconciliation`).
+
 **Definition of done:**
-- [ ] Memory tab over theo-memory REST: scoped memories, entities, temporal graph view.
-- [ ] Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval
-      playground (query → retrieved chunks with scores/strategy).
-- [ ] Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path
-      (`@usetheo/rag-sdk` or MCP) exercised in one example.
+- [ ] CANCELADO 2026-08-04 (M7): "Memory tab over theo-memory REST: scoped memories, entities, temporal graph view" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval playground" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path exercised in one example" — sem as abas, não há superfície neste pacote que exercite o binding.
 
 **Dependencies:** M0, M1.
 **Top risks:** memory dashboards overlap with theo-cloud M3 plans — keep Studio dev-only.
