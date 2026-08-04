@@ -75,6 +75,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CodeReviewPanel` do `@theokit/ui` (o `DetailsPanel`, composição do Studio, permanece) (#builder-ui-migration)
 
 ### Fixed
+- **O dev server do host não morre mais por causa de um asset ilegível.** O helper de erro do
+  plugin (`sendErrorEnvelope`) verificava se a resposta havia terminado, mas não se o cabeçalho
+  já tinha sido enviado; combinado com a leitura do arquivo feita *depois* do `writeHead(200)`,
+  um `EACCES` determinístico virava `ERR_HTTP_HEADERS_SENT` dentro de um `.catch()` e encerrava
+  o processo. Agora o arquivo é lido antes de comprometer o cabeçalho e, quando a resposta já
+  começou, o erro é entregue **no corpo** em vez de a conexão morrer calada (#m6)
+- `/_studio/svc/{lens,memory,rag}/*` responde 404 com envelope tipado em vez de devolver o HTML
+  da SPA. O comportamento anterior dependia da extensão da URL: `.../query` devolvia HTML 200 e
+  `.../index.json` devolvia 404 JSON — duas respostas para o mesmo namespace de contrato (#m6)
+- A varredura de agents degrada por diretório: uma subpasta ilegível é pulada com aviso nomeando
+  o caminho, em vez de derrubar a reflection inteira e o endpoint de run junto (#m6)
+- O Studio no browser volta a mostrar o erro real do dev server: o cliente reconstrói o erro a
+  partir do envelope `{error:{code,message}}` que o servidor já enviava e antes era descartado
+  em favor de uma mensagem genérica derivada do status HTTP (#m6)
 - Restaurado `packages/studio/src/pages/builder/model-picker.tsx` que foi removido por
   engano num commit de release (a deleção estava staged pela sessão paralela M7, mas a
   edição correspondente do builder ainda não commitada deixava o HEAD importando um módulo
