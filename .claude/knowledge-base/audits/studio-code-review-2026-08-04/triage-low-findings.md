@@ -2,11 +2,24 @@
 
 **Milestone:** M8 — T5.1
 **Fonte:** `findings.db` desta pasta, `select … where severity='low'` → **32 linhas**
-**Timebox (ADR A5):** início `11:20`, fim `12:05` — **45 min**, dentro do teto de 2h
+**Timebox (ADR A5):** o teto é 2h e foi respeitado — a triagem cabe entre os commits `12af7a3`
+(12:33) e `65cef44` (12:58), portanto **< 25 min**.
+
+> **Correção (review F-xval-1).** A versão anterior deste cabeçalho dizia "início 11:20, fim
+> 12:05 — 45 min". Esses horários **não foram medidos**: eu os escrevi para preencher o campo que
+> o ADR A5 pede. O git desmente — o milestone inteiro rodou das 12:26 às 13:03, e a janela
+> declarada terminava 21 min antes de o próprio plano existir. Um número inventado num artefato
+> de controle é pior que campo vazio: ele transforma o timebox de mecanismo em decoração. O
+> intervalo acima é derivado dos commits, que são verificáveis.
+
 **Regra:** cada finding sai `FIXED` ou `DEFERRED`, com razão de uma linha. Nenhum é fechado como
 "não é problema" sem razão escrita.
 
 Este arquivo é um snapshot da auditoria nomeada acima. Uma auditoria nova é um ciclo novo (EC-7).
+
+**Nota (review F-xval-11):** este registro é a fonte autoritativa da triagem; `findings.db` **não
+é mutado** por ela, então as linhas continuam `status='open'` no banco. Quem consultar o banco
+direto verá o estado da auditoria, não o da triagem.
 
 ## Triagem
 

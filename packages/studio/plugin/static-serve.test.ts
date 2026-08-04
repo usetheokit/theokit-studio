@@ -167,6 +167,10 @@ describe("serveStudio (T2.2)", () => {
     expect(state.statusCode).toBe(403);
     const body = JSON.parse(state.body);
     expect(body.error.code).toBe("FORBIDDEN");
+    // Review F-tests-8: os DOIS ramos forbidden emitem 403 + FORBIDDEN; só a mensagem separa o
+    // caminho de asset (:151) do caminho de índice (:139). Sem esta linha, forçar
+    // `isKnownAsset = false` deixava o teste verde com o ramo errado.
+    expect(body.error.message).toBe("asset path escapes the studio root");
   });
 
   it("test_null_byte_and_malformed_percent_rejected_400", async () => {

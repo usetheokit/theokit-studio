@@ -149,9 +149,12 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(body).toMatchObject({ error: { code: "METHOD_NOT_ALLOWED" } });
   });
 
-  // EC-5: a ORDEM dos guards é contrato. Rota que não casa decide ANTES do método — trocar a
-  // ordem faria um cliente receber 405 onde esperava 404.
-  it("test_unmatched_route_is_404_before_the_method_check", async () => {
+  // Review F-xval-4: este teste NÃO prova ordem de guard — o path não casa `matchRunPath`, então
+  // o dispatcher responde no ramo de namespace reservado (plugin/index.ts:121) e `handleAgentRun`
+  // nunca é chamado. A trava de ordem real vive em `run-endpoint.test.ts`, no nível unitário.
+  // O que este teste protege de fato é o 404 tipado do namespace reservado — vale manter, com o
+  // nome honesto.
+  it("test_reserved_api_namespace_returns_typed_404", async () => {
     const res = await fetch(`${baseUrl}/_studio/api/definitely-not-a-run-route`);
     expect(res.status).toBe(404);
     const body = await res.json();

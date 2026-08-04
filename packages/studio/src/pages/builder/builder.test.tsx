@@ -178,6 +178,10 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     const separator = screen.getByRole("separator", { name: /resize chat/i });
     const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
     const initial = widthOf(chatPane);
+    // Review F-tests-4: a reescrita perdeu esta asserção. A razão inicial é decisão de produto,
+    // separada do PASSO do teclado — desacoplar do passo não exigia largar o default.
+    expect(initial).toBe(54);
+    expect(separator.getAttribute("aria-valuenow")).toBe("54");
     separator.focus();
 
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
@@ -186,6 +190,21 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
 
     await userEvent.keyboard("{ArrowRight}");
     expect(widthOf(chatPane)).toBeGreaterThan(afterShrink);
+  });
+
+  // Review F-tests-5: `clampPct` tem DOIS limites e só o inferior tinha teste. Um mutante
+  // `Math.min(75, …)` -> `Math.min(100, …)` sobrevivia.
+  it("chat_pane_width_clamps_at_the_upper_bound", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const separator = screen.getByRole("separator", { name: /resize chat/i });
+    const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
+    separator.focus();
+    for (let i = 0; i < 30; i++) {
+      await userEvent.keyboard("{ArrowRight}");
+    }
+    expect(widthOf(chatPane)).toBe(75);
+    expect(separator.getAttribute("aria-valuenow")).toBe("75");
   });
 
   it("chat_pane_width_clamps_at_the_lower_bound", async () => {
@@ -294,7 +313,9 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(picker.textContent).toContain("Medium");
   });
 
-  it("composer_model_picker_applies_the_selected_model_and_effort", async () => {
+  // Review F-tests-9: modelo e esforço são dois menus e dois estados independentes
+  // (setModel/setEffort). Este nome era meu e ainda carregava "_and_".
+  it("composer_model_picker_applies_the_selected_model", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
@@ -305,6 +326,11 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain(
       "Sonnet 4.6",
     );
+  });
+
+  it("composer_effort_selection_applies_to_the_picker", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
     await userEvent.click(await screen.findByRole("menuitemradio", { name: "High" }));
     expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain("High");
@@ -342,6 +368,18 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     await submitPrompt("Create a billing reconciliation agent");
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("disk is full");
+  });
+
+  // Review F-xval-2: o ROADMAP nomeia DOIS caminhos (index.tsx:198 e :210) e eu só tinha coberto
+  // o segundo. O :198 é o guard de prompt vazio — um early return silencioso, não um erro
+  // visível: submeter em branco não pode iniciar sessão nem chamar o datasource.
+  it("blank_prompt_does_not_start_a_session", async () => {
+    const startBuilderSession = vi.fn();
+    renderBuilderWith({ startBuilderSession });
+    await screen.findByText("What should we build?");
+    await userEvent.type(screen.getByRole("textbox", { name: /build instructions/i }), "   ");
+    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+    expect(startBuilderSession).not.toHaveBeenCalled();
   });
 
   // EC-6: o ramo `String(error)` para rejeição não-Error — exatamente o que o M7 encontrou

@@ -80,12 +80,36 @@ describe("mount (composition root — basename wiring)", () => {
     }
   });
 
-  // EC-1: a asserção acima só discrimina enquanto "live-agent" NÃO existir no fixture. Sem esta
-  // trava, adicionar um agente com esse nome ao registry devolveria o teste ao estado oco em
-  // silêncio — o defeito que este milestone existe para matar, repetido com um passo a mais.
-  it("the_discriminating_name_is_absent_from_the_fixtures", async () => {
-    const fixtureAgents = await createFixtureDataSource({ scenario: "default" }).listAgents();
-    const names = fixtureAgents.map((a) => a.name);
-    expect(names).not.toContain("live-agent");
+  // Review F-tests-1: eu tinha armado UM lado do ternário. Sem este teste, o mutante
+  // `const live = true` passava a suíte inteira — os testes de modo fixtures asseveravam só
+  // `builder-surface`, que renderiza nos DOIS ramos. Era o mesmo defeito do milestone,
+  // espelhado: o nome do teste ficou honesto e a outra metade da linha 20 seguiu nua.
+  it("test_composition_root_selects_fixtures_when_mode_is_absent", async () => {
+    const cleanup = mountAt("/_studio/builder", { scenario: "default", basePath: "/_studio" });
+    try {
+      // Dado que SÓ o fixture produz — a reflection devolveria o que o stub de fetch mandasse,
+      // e aqui não há stub: em modo live o fetch relativo rejeita e a lista fica vazia.
+      const fixtureAgent = await screen.findByText("Support Agent");
+      expect(fixtureAgent).toBeTruthy();
+      // E o rótulo de origem tem de dizer fixtures, não live.
+      expect(screen.queryByText(/live reflection/i)).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  // EC-1 + review F-tests-6: a asserção discriminante só funciona enquanto "live-agent" não
+  // existir em NENHUMA superfície de fixture que a página renderiza. A primeira versão olhava
+  // só para os agents; as sessões do builder vêm do fallback mesmo em modo live
+  // (reflection-datasource.ts delega listBuilderSessions), então um título de sessão com esse
+  // nome devolveria o teste ao estado oco sem esta trava perceber.
+  it("the_discriminating_name_is_absent_from_every_rendered_fixture", async () => {
+    const fx = createFixtureDataSource({ scenario: "default" });
+    const rendered = [
+      ...(await fx.listAgents()).map((a) => a.name),
+      ...(await fx.listSkills()).map((s) => s.name),
+      ...(await fx.listBuilderSessions()).map((s) => s.title),
+    ];
+    expect(rendered).not.toContain("live-agent");
   });
 });

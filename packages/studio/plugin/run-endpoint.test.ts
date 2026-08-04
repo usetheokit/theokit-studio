@@ -282,6 +282,23 @@ describe("handleAgentRun (T1.4)", () => {
     expect(JSON.parse(state.body).error.code).toBe("NOT_FOUND");
   });
 
+  // Review F-tests-3 / F-xval-3: o guard #2 (percent-encoding malformado) e o #1 (rota que não
+  // casa) NÃO estavam cobertos como RESPOSTA — o teste existente assevera o valor de retorno de
+  // `matchRunPath`, não o envelope HTTP. O #2 é alcançável em produção: `/…/agents/%/run` casa
+  // prefixo e sufixo, então o dispatcher despacha e o guard dispara.
+  it("test_malformed_percent_encoding_in_agent_name_rejected_400", async () => {
+    const { deps } = makeDeps();
+    const state = await run(
+      "/_studio/api/agents/%/run",
+      makeReq({ body: JSON.stringify({ message: "hi" }) }),
+      deps,
+    );
+    expect(state.statusCode).toBe(400);
+    const body = JSON.parse(state.body);
+    expect(body.error.code).toBe("BAD_REQUEST");
+    expect(body.error.message).toContain("percent-encoding");
+  });
+
   it("test_broken_agent_returns_422_with_module_error", async () => {
     const { deps } = makeDeps();
     const state = await run(

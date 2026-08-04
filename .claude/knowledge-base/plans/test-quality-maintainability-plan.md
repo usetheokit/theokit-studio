@@ -388,7 +388,7 @@ renderiza.
 #### Acceptance criteria
 
 - [ ] Uma rejeição de `startBuilderSession` produz um elemento com `role="alert"` contendo a mensagem do erro, verificado por `npx vitest run src/pages/builder/builder.test.tsx` exit 0.
-- [ ] O mesmo para o caminho de follow-up, verificado pelo mesmo comando.
+- [ ] O guard de prompt vazio (`index.tsx:198`) não inicia sessão nem chama o datasource, verificado por `npx vitest run src/pages/builder/builder.test.tsx` exit 0. **AC corrigida durante a implementação (review F-xval-2):** a original dizia "o mesmo para o caminho de follow-up", mas `sendFollowUp` é síncrono, sem promise e sem `.catch` — o caminho descrito não existe. O ROADMAP nomeia `index.tsx:198,210`; :198 é este guard.
 - [ ] Remover o `.catch` de `index.tsx:210` deixa ao menos um dos dois RED — prova de mutação registrada.
 
 #### DoD
@@ -445,7 +445,7 @@ RED registrado; sem ela a task teria TDD apenas nominal, que é o defeito que o 
 
 #### Acceptance criteria
 
-- [ ] `grep -c '\.\.\.opts\.fallback' packages/studio/src/data/reflection-datasource.ts` retorna `0`.
+- [ ] `grep -c '\.\.\.opts\.fallback' packages/studio/src/data/reflection-datasource.ts` retorna `1`, e a única ocorrência é o comentário que documenta a troca — o spread não existe mais no objeto de retorno. **Oráculo corrigido (review F-xval-7):** a AC original exigia `0` e ficava vermelha por causa da própria documentação da mudança.
 - [ ] Os 5 métodos de `StudioDataSource` aparecem nomeados no objeto de retorno, verificado por grep de cada nome no arquivo.
 - [ ] Remover uma das delegações faz `npm run typecheck` falhar — prova registrada no log.
 - [ ] `npx vitest run src/data/reflection-datasource.test.ts` exit 0.
@@ -480,7 +480,7 @@ extração, ou a extração não o toca. O número entra no log.
 
 - `packages/studio/plugin/run-endpoint.ts` — extração da cadeia de guards, se a medição justificar
 - `packages/studio/src/pages/builder/session-view.tsx` — idem
-- `.claude/knowledge-base/adrs/0002-complexity-decision.md` (NEW) — se alguma permanecer acima
+- `.claude/knowledge-base/adrs/0002-session-view-complexity.md` (NEW) — se alguma permanecer acima
 
 #### Deep file dependency analysis
 
@@ -509,7 +509,7 @@ resultado. Uma mudança de comportamento aqui é falha, não progresso.
 #### Acceptance criteria
 
 - [ ] O log do milestone registra, para cada função, o número de complexidade medido por ferramenta antes e depois, com o comando que o produziu.
-- [ ] Cada função mede abaixo de 15 pelo mesmo comando, **ou** `grep -c '<nome-da-função>' knowledge-base/adrs/0002-complexity-decision.md` retorna ≥ 1.
+- [ ] Cada função mede abaixo de 15 pelo mesmo comando, **ou** `grep -c '<nome-da-função>' knowledge-base/adrs/0002-session-view-complexity.md` retorna ≥ 1.
 - [ ] Nenhum teste existente muda de resultado, verificado por `npm test` exit 0 antes e depois.
 - [ ] A cobertura de linha de `plugin/run-endpoint.ts` é medida ANTES da extração e os guards descobertos são listados no log (EC-3); cada um ganha teste ou fica fora do escopo da extração.
 - [ ] Toda função extraída é referenciada por nome no ADR ou no log do milestone com o conceito de domínio que ela nomeia; `git diff --stat` do commit não mostra arquivo novo sem entrada correspondente.

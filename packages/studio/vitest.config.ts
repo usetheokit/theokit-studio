@@ -17,7 +17,10 @@ export default defineConfig({
       provider: "v8",
       // plugin/** incluído (M1 T1.1 — config-honesty: DoD de coverage cobre o node-side).
       include: ["src/**", "plugin/**"],
-      exclude: ["src/test/**", "src/main.tsx", "src/vite-env.d.ts", "plugin/**/*.test.ts"],
+      // M8 (review F-tests-10): `src/main.tsx` saiu do exclude. O composition root é o arquivo
+      // cujo defeito nomeia o milestone, e mantê-lo fora da medição foi o que tornou o buraco do
+      // ramo de fixtures invisível ao DoD numérico de cobertura.
+      exclude: ["src/test/**", "src/vite-env.d.ts", "plugin/**/*.test.ts"],
     },
   },
 });
