@@ -30,6 +30,38 @@ PRODUCTION_DIR_NAMES = ("src", "lib", "packages")
 TEST_DIR_NAMES = ("test", "tests", "__tests__", "spec")
 INTEGRATION_DIR_NAMES = ("integration", "e2e")
 
+# Pillar (a) asks ONE question — "is this file production code?" — and it needs TWO
+# signals, because "is it a test file" and "is it test support" have different shapes.
+#
+# Matching a bare SUBSTRING of the basename conflates them and is wrong in both
+# directions. `latest-run.ts` contains "test"; `event-inspector.ts` contains "spec";
+# `fixture-datasource.ts` contains "fixture" and is the real production DataSource.
+# Excluding those hides live callers, so a live symbol gets reported dead. Demoting
+# "fixture" to a bare path segment (the first attempt at this fix) then let a
+# `src/test-helpers/` file count as a production caller — a hard gate failing OPEN,
+# which is strictly worse: a false FAIL is loud, a false PASS is silent.
+_TEST_FILE_RE = re.compile(
+    r"^test_.*\.py$"  # pytest:            test_foo.py
+    r"|_test\.[^.]+$"  # go / python:       foo_test.go
+    r"|\.(?:test|spec)\.[^.]+$"  # js / ts:  foo.test.ts, foo.spec.tsx
+    r"|(?:^|[-._])mocks?(?:[-._]|$)",  # mock as a DELIMITED token, never a substring
+    re.IGNORECASE,
+)
+# Test-support directories. `fixtures/` is deliberately NOT here: `src/data/fixtures/`
+# ships in the bundle. A fixtures folder under a test root is already excluded by the
+# grep's --exclude-dir, so no extra rule is needed for it.
+_TEST_DIR_RE = re.compile(
+    r"^(?:tests?|__tests__|__mocks__|spec|test-.*|.*-tests?)$",
+    re.IGNORECASE,
+)
+
+
+def _is_test_support_file(path: Path) -> bool:
+    """True when `path` is a test file or lives in a test-support directory."""
+    if _TEST_FILE_RE.search(path.name):
+        return True
+    return any(_TEST_DIR_RE.match(part) for part in path.parts[:-1])
+
 # Lines that DEFINE a symbol rather than CALL it. A file whose only occurrences of
 # the symbol match these patterns is the definition site, not a caller.
 _DEFINITION_PATTERNS = (
@@ -117,11 +149,9 @@ def check_pillar_a_static_caller(project_root: Path, symbol: str) -> dict[str, A
         include_globs=["*.ts", "*.tsx", "*.js", "*.mjs", "*.py"],
         exclude_dirs=["node_modules", ".git", "dist", "build", "tests", "test", "__tests__", "spec"],
     )
-    # Exclude files with "test" / "spec" / "fixture" / "mock" in basename
-    production_files = [
-        p for p in matches
-        if not any(t in p.name.lower() for t in ("test", "spec", "fixture", "mock"))
-    ]
+    # Test files and test-support directories are not production callers (see _TEST_FILE_RE
+    # / _TEST_DIR_RE for why this is two signals and not one substring match).
+    production_files = [p for p in matches if not _is_test_support_file(p)]
     # Exclude files where the symbol appears ONLY on definition lines (origin, not caller)
     production_callers = [p for p in production_files if not _is_definition_only(p, symbol)]
     definition_only_files = [p for p in production_files if _is_definition_only(p, symbol)]

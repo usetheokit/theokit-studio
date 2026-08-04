@@ -26,6 +26,54 @@ describe("bootstrap config (T2.1 — EC-8, seam do M1)", () => {
     expect(warn).toHaveBeenCalledTimes(1);
     warn.mockRestore();
   });
+
+  // M7 T2.1: "offline" era aceito pela fronteira e nunca lido por ninguém — falha silenciosa
+  // (rules/error-handling.md § 2). Passa a ser tratado como qualquer outro valor inválido.
+  it("scenario_offline_is_rejected_with_warning_naming_it", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(parseStudioConfig({ scenario: "offline" })).toEqual({ scenario: "default" });
+    const message = warn.mock.calls[0]?.[0];
+    expect(message).toContain('invalid scenario "offline"');
+    warn.mockRestore();
+  });
+
+  // EC-5: os dois valores sobreviventes não podem virar dano colateral do estreitamento.
+  it.each(["default", "empty"])("scenario_%s_is_accepted_without_warning", (value) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(parseStudioConfig({ scenario: value })).toEqual({ scenario: value });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  // Review F-tests-8: o type guard `typeof input.scenario === "string"` não tinha teste —
+  // removê-lo deixava a suíte verde porque `Set.has(42)` também é false.
+  it.each([
+    42,
+    null,
+    ["empty"],
+    { scenario: "empty" },
+  ])("non_string_scenario_%s_falls_back_with_warning", (value) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(parseStudioConfig({ scenario: value })).toEqual({ scenario: "default" });
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  // F-arch-8: nomear só o valor recusado não diz ao operador para o que migrar.
+  it("invalid_scenario_warning_names_the_accepted_set", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    parseStudioConfig({ scenario: "offline" });
+    expect(warn.mock.calls[0]?.[0]).toContain('(expected "default" | "empty")');
+    warn.mockRestore();
+  });
+
+  // EC-6: ausência da chave é caso VÁLIDO, não inválido.
+  it("config_without_scenario_key_uses_default_without_warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(parseStudioConfig({})).toEqual({ scenario: "default" });
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });
 
 describe("bootstrap config M1 (mode/basePath — T2.1)", () => {

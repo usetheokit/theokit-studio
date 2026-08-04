@@ -19,6 +19,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [0.5.0] - 2026-08-04
+
+### Added
+- README documenta `/_studio/api/tools`, `/_studio/api/workflows` e `POST /_studio/api/agents/{name}/run` como API host-facing: são consumidos por quem monta o Studio, não pela interface, e por isso permanecem mesmo sem consumidor neste repositório. Os dois agregados agora têm status e content-type fixados por teste de integração (#M7)
+
+
+### Changed
+- README reescrito depois da review: o hero prometia "get a working agent file back" e o Builder não escreve arquivo nenhum — a sessão de build é fixture roteirizado. O README agora separa explicitamente o que é ao vivo (lista de agentes e skills) do que é roteirizado (resposta, work log e arquivos propostos), diz que a integração com `theokit dev` ainda não existe, e corrige o conselho de "pin v0.3.0" (o pacote nunca foi publicado) (#M7)
+- Definition of done reconciliado em todos os milestones que o `cycle-acceptance` lê: M1 fica exercitável, M2 e M3 ficam cancelados com data e razão, e M0/M5 saem de bullets multi-linha (que chegavam truncados ao extrator de critérios) para uma linha cada (#M7)
+- M2, M3 e M4 saem da lista de milestones ativos para uma seção própria de retirados: nenhum dos seus critérios é exercitável contra o produto atual, e enquanto estivessem lá o super-loop do roadmap os selecionaria e travaria neles. O texto original fica preservado por inteiro (#M7)
+- As notas de cancelamento de M1 saem de dentro do bloco de Definition of done: o extrator de critérios lê todo `- [ ]` do bloco, então uma nota ali dentro tornava o milestone permanentemente não-validável — o oposto do que a reconciliação existe para resolver (#M7)
+- M4 deixa de declarar dependência de M2 e M3: com os dois cancelados e permanentemente `[ ]`, a dependência tornaria M4 inelegível para sempre no super-loop do roadmap (#M7)
+- Preâmbulo do ROADMAP e invariantes 4 e 5 do `CLAUDE.md` marcados como pré-`74a96c6` / suspensos em vez de continuarem descrevendo as telas removidas (#M7)
+- README descreve o Agent Builder como a única superfície entregue e declara, com o SHA do commit que a causou, que playground, traces, memory e knowledge foram removidos — quem precisa dessas telas deve fazer checkout da tag `v0.3.0` — o pacote nunca foi publicado, então não há versão a fixar (#M7)
+
+
+### Removed
+- `useListing` deixa de expor `reload()`. Nenhuma das três telas que usam o hook chamava a função; ela existia apenas para alimentar um estado interno que, por sua vez, só existia para justificar uma supressão de lint. Um botão de refresh, quando for pedido, volta em poucas linhas (#M7)
+- Quatro contadores que nunca eram emitidos saem de `window.__STUDIO_METRICS__`: `stream_events_played_total`, `health_errors_total`, `unknown_events_total` e `reflection_chunks_dropped_total`. Eles apareciam zerados para sempre, e um zero permanente lê-se como "não houve erro" quando o fato era "ninguém contava" (#M7)
+- `scenario: "offline"` deixa de ser um valor de configuração aceito. Ele passava pela validação e não fazia nada — nenhum código o distinguia de `"default"`. Agora é rejeitado como qualquer valor inválido: aviso no console nomeando o valor e queda para `"default"` (#M7)
+
+
+### Fixed
+- Um carregamento bem-sucedido depois de um que falhou agora limpa o alerta de erro em vez de deixá-lo na tela ao lado dos itens novos (#M7)
+- O aviso de `scenario` inválido passa a nomear os valores aceitos (`expected "default" | "empty"`), não apenas o valor recusado — quem tinha `"offline"` configurado precisa saber para o que migrar (#M7)
+- O verificador de wiring do kit (`check_wiring.py`) classifica arquivo de teste por convenção de sufixo (`*.test.ts`, `*_test.py`, `mock` como token) e por diretório de apoio, em vez de procurar a substring no nome. Nomes de produção legítimos como `fixture-datasource.ts`, `latest-run.ts` e `event-inspector.ts` deixam de ser descartados, e um helper em `src/test-helpers/` deixa de contar como caller de produção — este último fazia o gate falhar *aberto*, reportando código morto como vivo (#M7)
+
 ## [0.4.1] - 2026-08-04
 
 ### Fixed

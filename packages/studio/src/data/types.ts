@@ -48,7 +48,9 @@ export interface BuilderSessionDetail extends BuilderSessionSummary {
   files: BuilderArtifactFile[];
 }
 
-export type FixtureScenario = "default" | "empty" | "offline";
+// M7 T2.1: `"offline"` removido — nenhum consumidor o distinguia de `"default"`
+// (`fixture-datasource.ts` só ramifica em `"empty"`), então era superfície aceita e ignorada.
+export type FixtureScenario = "default" | "empty";
 
 // Erros tipados da fronteira de dados (error-handling.md § 2 — fail-fast, contexto na mensagem).
 

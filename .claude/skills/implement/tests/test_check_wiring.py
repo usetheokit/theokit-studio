@@ -88,3 +88,83 @@ def test_pillar_c_pass_with_evidence(fake_project: Path) -> None:
     pillar_c = next(p for p in data["pillars"] if p["pillar"] == "c_runtime_metric")
     assert pillar_c["status"] == "PASS"
     assert pillar_c["count_observed"] == 12
+
+
+# --- Pillar (a) file-classification (M7 review: F-arch-1/2/3, F-tests-2, F-xval-6) ---------
+#
+# The caller filter must answer TWO different questions with two different signals:
+#   "is this a test file?"   -> a SUFFIX/token convention on the basename
+#   "is this fixture data?"  -> a DIRECTORY under a test root
+# Matching `fixture`/`test`/`spec` as a bare SUBSTRING of the basename conflates them and is
+# wrong in both directions: it hides production callers (`fixture-datasource.ts`,
+# `event-inspector.ts`, `latest-run.ts`) and, once "fixture" is demoted to a path segment,
+# it counts test-support files as production callers — a hard gate failing OPEN.
+
+
+def test_pillar_a_counts_production_file_named_fixture(fake_project: Path) -> None:
+    """`fixture-datasource.ts` under src/ is PRODUCTION code, not a test fixture."""
+    (fake_project / "src" / "fixture-datasource.ts").write_text(
+        "export const ds = { load: () => rememberFact('x') };\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "PASS", pillar_a
+
+
+def test_pillar_a_counts_production_file_under_src_data_fixtures(fake_project: Path) -> None:
+    """`src/data/fixtures/registry.ts` is production data, shipped in the bundle."""
+    fixtures_dir = fake_project / "src" / "data" / "fixtures"
+    fixtures_dir.mkdir(parents=True, exist_ok=True)
+    (fixtures_dir / "registry.ts").write_text(
+        "export const seed = () => rememberFact('x');\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "PASS", pillar_a
+
+
+def test_pillar_a_ignores_fixture_under_a_test_root(fake_project: Path) -> None:
+    """A symbol referenced ONLY from tests/fixtures/ is still dead production code."""
+    fixtures_dir = fake_project / "tests" / "fixtures"
+    fixtures_dir.mkdir(parents=True, exist_ok=True)
+    (fixtures_dir / "demo.ts").write_text(
+        "export const demo = () => rememberFact('x');\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "FAIL", pillar_a
+
+
+def test_pillar_a_ignores_test_support_helper_outside_a_test_root(fake_project: Path) -> None:
+    """Gate must fail CLOSED: a *.test-support helper is not a production caller."""
+    helpers = fake_project / "src" / "test-helpers"
+    helpers.mkdir(parents=True, exist_ok=True)
+    (helpers / "builders.ts").write_text(
+        "export const build = () => rememberFact('x');\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "FAIL", pillar_a
+
+
+def test_pillar_a_counts_production_names_containing_test_or_spec(fake_project: Path) -> None:
+    """`latest-run.ts` and `event-inspector.ts` are production — substring matching is wrong."""
+    (fake_project / "src" / "latest-run.ts").write_text(
+        "export const a = () => rememberFact('x');\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "PASS", pillar_a
+
+
+def test_pillar_a_still_ignores_real_test_files(fake_project: Path) -> None:
+    """The suffix convention must keep excluding genuine `*.test.ts` / `*.spec.ts`."""
+    (fake_project / "src" / "thing.test.ts").write_text(
+        "it('x', () => { rememberFact('x'); });\n", encoding="utf-8"
+    )
+    (fake_project / "src" / "other.spec.ts").write_text(
+        "it('y', () => { rememberFact('y'); });\n", encoding="utf-8"
+    )
+    _, data = _run_wiring("rememberFact", fake_project)
+    pillar_a = next(p for p in data["pillars"] if p["pillar"] == "a_static_caller")
+    assert pillar_a["status"] == "FAIL", pillar_a

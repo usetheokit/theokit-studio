@@ -7,17 +7,13 @@ import { type StudioDataSource, useDataSource } from "../data/datasource";
 export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
   items: T[];
   loadError: string | null;
-  /** refetch explícito (ex.: botão refresh) — nova chamada contada nas métricas. */
-  reload: () => void;
 } {
   const ds = useDataSource();
   const [items, setItems] = useState<T[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [version, setVersion] = useState(0);
   const loadRef = useRef(load);
   loadRef.current = load;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `version` é o trigger explícito do reload() — removê-lo quebraria o refresh (coberto por teste)
   useEffect(() => {
     let ignore = false;
     loadRef
@@ -25,6 +21,9 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
       .then((list) => {
         if (!ignore) {
           setItems(list);
+          // Um load que dá certo depois de um que falhou tem de apagar o alerta; sem isto o
+          // banner de erro fica na tela ao lado dos itens novos (review F-arch-9).
+          setLoadError(null);
         }
       })
       .catch((error: unknown) => {
@@ -35,7 +34,7 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
     return () => {
       ignore = true;
     };
-  }, [ds, version]);
+  }, [ds]);
 
-  return { items, loadError, reload: () => setVersion((v) => v + 1) };
+  return { items, loadError };
 }
