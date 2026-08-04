@@ -139,6 +139,25 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(body).toMatchObject({ items: expect.any(Array) });
   });
 
+  // M8 T2.1: o guard de 405 (run-endpoint.ts:153-156) era o ÚNICO dos oito guards de
+  // handleAgentRun sem teste — medido por cobertura antes da refatoração do T3.2. Ele protege o
+  // endpoint que gasta tokens reais do provider do usuário.
+  it("test_run_endpoint_rejects_non_post_with_405", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`);
+    expect(res.status).toBe(405);
+    const body = await res.json();
+    expect(body).toMatchObject({ error: { code: "METHOD_NOT_ALLOWED" } });
+  });
+
+  // EC-5: a ORDEM dos guards é contrato. Rota que não casa decide ANTES do método — trocar a
+  // ordem faria um cliente receber 405 onde esperava 404.
+  it("test_unmatched_route_is_404_before_the_method_check", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/definitely-not-a-run-route`);
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body).toMatchObject({ error: { code: "NOT_FOUND" } });
+  });
+
   it("test_run_endpoint_streams_ndjson_over_real_http", async () => {
     // T1.4: POST run com sessionId + parse NDJSON incremental sobre HTTP real.
     const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
