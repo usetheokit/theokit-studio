@@ -35,7 +35,7 @@
 
 ### acceptance_criteria — `WARN`
 
-- [LOW] criterion_requires_human_evidence: 20 acceptance criterion(s) cannot be machine-verified and need explicit evidence in review (not a silently-ticked box): Mutação aplicada, RED registrado, mutante revertido, árvore limpa.; O mesmo para o caminho de follow-up, verificado pelo mesmo comando.; Remover o `.catch` de `index.tsx:210` deixa ao menos um dos dois RED — prova de mutação registrada.; `grep -c '\.\.\.opts\.fallback' packages/studio/src/data/reflection-datasource.ts` retorna `0`.
+- [LOW] criterion_requires_human_evidence: 19 acceptance criterion(s) cannot be machine-verified and need explicit evidence in review (not a silently-ticked box): Mutação aplicada, RED registrado, mutante revertido, árvore limpa.; Remover o `.catch` de `index.tsx:210` deixa ao menos um dos dois RED — prova de mutação registrada.; `grep -c '\.\.\.opts\.fallback' packages/studio/src/data/reflection-datasource.ts` retorna `1`, e a única ocorrência é o comentário que documenta a troca — o spread não existe mais no objeto de retorno. **Oráculo corrigido (review F-xval-7):** a AC original exigia `0` e ficava vermelha por causa da própria documentação da mudança.; Os 5 métodos de `StudioDataSource` aparecem nomeados no objeto de retorno, verificado por grep de cada nome no arquivo.
 
 ### test_obligations — `PASS`
 

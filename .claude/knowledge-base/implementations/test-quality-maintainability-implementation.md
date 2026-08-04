@@ -60,11 +60,11 @@ imperativa, não markup, foi extraído.
 
 | Gate | Resultado |
 |---|---|
-| `npm test` | **189/189** (19 arquivos) + guard do ROADMAP em 6 milestones |
+| `npm test` | **191/191** (19 arquivos) + guard do ROADMAP em 6 milestones |
 | `npm run typecheck` | limpo |
 | `npm run check` (biome) | 61 arquivos, 0 diagnósticos, nenhuma supressão nova |
 | `npm run build` | 0 erros |
-| Cobertura de branch global | **91,85%** — era 90,17% no início do M8; piso 89,46%. Inclui `main.tsx` (100% de branch), que estava fora da medição até a review F-tests-10 |
+| Cobertura de branch global | **91,90–91,92%** — piso 89,46%. Inclui `main.tsx` (100% de branch), fora da medição até a review F-tests-10 |
 | `run_validation.py` | 8 PASS, 0 FAIL, 2 WARN, 1 N/A |
 
 ## A medição do EC-3 que eu li errado — corrigido
@@ -132,6 +132,22 @@ passa — a informação parecia estar lá e não estava.
 | F-tests-9 (LOW) | Um nome meu ainda juntava dois comportamentos | Dividido em modelo e esforço |
 | F-tests-10 (LOW) | `main.tsx` fora da medição de cobertura | Removido do `exclude`; mede **100% de branch** |
 | F-xval-7/8/9, F-xval-11/12 (LOW/INFO) | ACs com oráculo errado, ADR renomeado, `refuse` sem menção, banco não mutado, escopo do ADR | Todos corrigidos nos artefatos |
+| F-r2-7 (MEDIUM, rodada 2) | **Dois números de cobertura contraditórios neste documento**, nenhum reproduzível — 91,85% e 91,04%. O 91,04% era a cobertura de **um arquivo** (`run-endpoint.ts`) transcrita como global | Substituídos por um intervalo medido; ver a nota sobre determinismo abaixo |
+| F-r2-8 (LOW, rodada 2) | ADR 0002 afirmava 279 linhas / 213 — números que a **própria extração do mesmo commit** invalidou | Atualizados para 284 / 218 |
+| F-r2-9 (LOW, rodada 2) | O `.catch` de `openById` (`index.tsx:192`) e o ramo `target !== "new"` seguiam descobertos | Ambos ganharam teste |
+
+**Sobre o número de cobertura, com a honestidade que o F-r2-7 cobra.** Duas execuções limpas e
+consecutivas de `npx vitest run --coverage` em `packages/studio` deram **91,92%** e **91,90%**
+(totais de branch 443/482 e 441/480 — o denominador muda). A medida **não é determinística**: a
+variação vem do teste de integração, que sobe um Vite dev server real e não cobre exatamente as
+mesmas linhas a cada execução. Por isso o gate é reportado como intervalo, e não como um dígito
+que eu escolheria. O piso de 89,46% é folgado sob qualquer das medições. Registrar a instabilidade
+é parte da resposta ao achado — foi fingir precisão que produziu os dois números errados.
+
+**O F-r2-7 merece ser dito sem atenuação:** é a mesma classe de erro do F-tests-3 — ler um número
+da fonte errada — reaparecendo no documento que registra essa exata lição, duas seções acima. Ter
+escrito "foi preciso medir na fonte certa" não me impediu de transcrever a cobertura de um arquivo
+como se fosse a global. A correção agora cita o comando e o arquivo de onde o número sai.
 
 **Trajetória da contagem de asserções em `builder.test.tsx`** (AC de T4.1, registrada como a AC
 exige): `7583514` = 74 → `a6ca495` = 76 → `c1967a8` = 76 → `65cef44` = **75** (queda não
@@ -162,7 +178,7 @@ escrever na resposta.
 | Spread substituído por delegações explícitas | T3.1 | ✅ prova de compilação |
 | Dois testes multi-comportamento divididos; CSS literal trocado | T4.1 | ✅ |
 | 32 findings `low` triados | T5.1 | ✅ 5 FIXED, 27 DEFERRED com razão |
-| Cobertura de branch ≥ 89,46% | Global DoD | ✅ **91,04%** |
+| Cobertura de branch ≥ 89,46% | Global DoD | ✅ **91,90–91,92%** |
 
 **7/7.**
 

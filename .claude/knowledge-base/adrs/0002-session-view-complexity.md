@@ -23,7 +23,7 @@ O projeto usa **Biome**, não ESLint. O número CC=16 veio da regra ESLint `comp
 complexidade disponível aqui):
 
 ```
-$ lizard src/pages/builder/session-view.tsx
+$ lizard src/pages/builder/session-view.tsx    # saída PRÉ-extração de handleSplitterKey
       6      1     23      3       6 SessionView@61-66
      12      2     69      1      17 startResize@85-101
        8      2     40      1       8 handleSubmit@103-110
@@ -31,7 +31,7 @@ $ lizard src/pages/builder/session-view.tsx
 ```
 
 **Correção após a review (F-arch-4): esta saída não é uma métrica concorrente — é um parser que
-falhou.** `SessionView` vai da linha 66 à 279 (213 linhas) e tem **um** parâmetro destruturado;
+falhou.** `SessionView` vai da linha 66 à 284 (218 linhas) e tem **um** parâmetro destruturado;
 `lizard` reporta 6 linhas e 3 parâmetros, terminando na linha 66. Ele não entrou no corpo do
 componente. Apresentar "nenhuma função passa de CCN 3" como tranquilizador seria derivar
 segurança de uma medição que não mediu o alvo.
@@ -78,7 +78,7 @@ renderização não são extraídos. A única extração feita é `handleSplitte
 
 **Aceitas:**
 
-- O arquivo tem 279 linhas e um componente com muito markup condicional. Ler o `SessionView`
+- O arquivo tem 284 linhas e um componente com muito markup condicional. Ler o `SessionView`
   inteiro exige rolar.
 - Não temos, e continuamos sem ter, uma medida automática de complexidade de componente React.
 

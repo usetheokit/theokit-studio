@@ -382,6 +382,46 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(startBuilderSession).not.toHaveBeenCalled();
   });
 
+  // Review F-r2-9: o `.catch` de `openById` (index.tsx:192) é o irmão de LEITURA do caminho de
+  // escrita que o DoD nomeia — mesma superfície `role="alert"`, zero cobertura.
+  it("open_session_rejection_surfaces_as_visible_error", async () => {
+    renderBuilderWith({
+      getBuilderSession: () => Promise.reject(new Error("session vanished")),
+    });
+    const sessions = await screen.findAllByTestId("builder-session");
+    const first = sessions[0];
+    if (!first) throw new Error("no session in the sidebar");
+    await userEvent.click(first);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("session vanished");
+  });
+
+  // Review F-r2-9: o ramo `target !== "new"` do ternário de index.tsx:204 nunca era exercitado —
+  // iniciar sessão contra um agente existente não tinha teste ponta a ponta.
+  it("start_session_forwards_the_selected_target_agent", async () => {
+    const startBuilderSession = vi.fn().mockResolvedValue({
+      id: "draft-1",
+      title: "t",
+      lastActivity: "now",
+      pinned: false,
+      workedFor: "1s",
+      workLog: [],
+      messages: [],
+      files: [],
+    });
+    renderBuilderWith({ startBuilderSession });
+    await screen.findByText("What should we build?");
+    await userEvent.click(screen.getByRole("combobox", { name: /target agent/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /support agent/i }));
+    await userEvent.type(
+      screen.getByRole("textbox", { name: /build instructions/i }),
+      "tune the tone",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+    const [, targetArg] = startBuilderSession.mock.calls[0] ?? [];
+    expect(targetArg).not.toBeUndefined();
+  });
+
   // EC-6: o ramo `String(error)` para rejeição não-Error — exatamente o que o M7 encontrou
   // descoberto no useListing.
   it("start_session_non_error_rejection_surfaces_as_string", async () => {
