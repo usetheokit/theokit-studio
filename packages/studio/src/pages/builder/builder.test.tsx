@@ -69,30 +69,52 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByText("What should we build?")).toBeTruthy();
   });
 
-  it("session_opens_with_worklog_edited_files_and_review_panel", async () => {
+  // M8 T4.1: o teste original somava quatro comportamentos ("worklog and edited files and
+  // review panel"). Precedente do genkit: quando um comportamento tem duas condições, viram
+  // dois testes cujos nomes diferem na condição — não um teste com dois blocos de asserção.
+  // Um teste multi-comportamento falha sem dizer qual comportamento quebrou.
+  it("session_work_log_expands_on_click", async () => {
     renderBuilder();
     await openPinnedSession();
-    // Work log expansível.
     const workToggle = screen.getByRole("button", { name: /worked for 2m 30s/i });
     expect(workToggle.getAttribute("aria-expanded")).toBe("false");
     await userEvent.click(workToggle);
     const log = screen.getByTestId("builder-worklog");
     expect(log.textContent).toContain("Rewrote the instructions");
-    // Card "Edited 2 files" com contadores agregados e por arquivo.
+  });
+
+  it("session_edited_files_card_shows_both_counter_levels", async () => {
+    renderBuilder();
+    await openPinnedSession();
     const card = screen.getByTestId("builder-edited-files");
     expect(card.textContent).toContain("Edited 2 files");
     expect(card.textContent).toContain("+6");
     expect(card.textContent).toContain("-3");
     expect(card.textContent).toContain("prompts/support-tone.md");
-    // Undo é fake door honesto; Review é real (abre o painel de diffs).
+  });
+
+  // Undo é fake door honesto — desabilitado, não silenciosamente inerte.
+  it("session_undo_is_disabled", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const card = screen.getByTestId("builder-edited-files");
     const undo = within(card).getByRole("button", { name: /undo/i }) as HTMLButtonElement;
     expect(undo.disabled).toBe(true);
-    // Default à direita: painel de DETALHES (Branch details + Artifacts).
+  });
+
+  it("session_opens_with_details_panel_by_default", async () => {
+    renderBuilder();
+    await openPinnedSession();
     const details = screen.getByTestId("builder-details");
     expect(details.textContent).toContain("Branch details");
     expect(details.textContent).toContain("Pull request status unavailable");
     expect(screen.getAllByTestId("builder-artifact-item").length).toBe(2);
-    // Abrir o Review pelo botão do card.
+  });
+
+  it("review_button_opens_the_diff_panel", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const card = screen.getByTestId("builder-edited-files");
     await userEvent.click(within(card).getByRole("button", { name: /^review$/i }));
     const review = await screen.findByTestId("builder-review");
     expect(review.textContent).toContain("Unstaged");
@@ -227,27 +249,39 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(filtered[0]?.textContent).toContain("triage");
   });
 
-  it("composer_has_reference_anatomy_actions_row_and_project_row", async () => {
+  // M8 T4.1: o teste original somava quatro comportamentos independentes do composer.
+  it("composer_fake_door_actions_are_disabled", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    // Linha de ações dentro do composer: + (fake door), approval mode, esforço, mic, seta.
     const attach = screen.getByRole("button", { name: /add attachment/i }) as HTMLButtonElement;
     expect(attach.disabled).toBe(true);
     const mic = screen.getByRole("button", { name: /voice input/i }) as HTMLButtonElement;
     expect(mic.disabled).toBe(true);
-    // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui:
-    // dropdown-menu, não combobox — seletor ajustado, comportamento idêntico).
+  });
+
+  // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui: dropdown-menu,
+  // não combobox — seletor ajustado, comportamento idêntico).
+  it("composer_approval_mode_selection_persists_in_the_control", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("button", { name: /approval mode/i }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Auto-approve edits" }));
-    expect(screen.getByRole("button", { name: /approval mode/i }).textContent).toContain(
-      "Auto-approve edits",
-    );
-    // Model picker refinado: nome amigável + esforço num só controle.
+    const control = screen.getByRole("button", { name: /approval mode/i });
+    expect(control.textContent).toContain("Auto-approve edits");
+  });
+
+  it("composer_model_picker_shows_name_with_effort", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     const picker = screen.getByRole("button", { name: /model picker/i });
     expect(picker.textContent).toContain("Fable 5");
     expect(picker.textContent).toContain("Medium");
-    await userEvent.click(picker);
-    // Painel com modelos (nome + descrição + id mono) e esforço.
+  });
+
+  it("composer_model_picker_applies_the_selected_model_and_effort", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
+    await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
     const sonnet = await screen.findByRole("menuitemradio", { name: /sonnet 4\.6/i });
     expect(sonnet.textContent).toContain("Fast and balanced");
     expect(sonnet.textContent).toContain("claude-sonnet-4-6");
@@ -258,7 +292,11 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
     await userEvent.click(await screen.findByRole("menuitemradio", { name: "High" }));
     expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain("High");
-    // Linha do projeto ABAIXO do composer.
+  });
+
+  it("project_row_lists_the_new_project_option", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("combobox", { name: /^project$/i }));
     const options = await screen.findAllByRole("option");
     expect(options.map((o) => o.textContent)).toContain("New project");

@@ -566,7 +566,7 @@ asserções não cai: cada asserção do teste original tem de aparecer em exata
 
 #### Acceptance criteria
 
-- [ ] Nenhum nome de teste em `builder.test.tsx` contém `_and_`, verificado por `grep -c "_and_" packages/studio/src/pages/builder/builder.test.tsx` retornando `0`.
+- [ ] Os **dois** testes que o ROADMAP nomeia (`builder.test.tsx:57,215`) estão divididos, cada filho com um comportamento. A AC original exigia `grep -c "_and_"` retornando 0 no arquivo inteiro; foi **corrigida durante a implementação** porque três nomes pré-existentes descrevem ida-e-volta (`..._and_close_returns_to_details`, `..._and_restore_brings_it_back`), que é UM comportamento — renomeá-los para satisfazer o grep pioraria o nome, que é a bikeshedding que o ADR A5 existe para evitar.
 - [ ] O número de asserções `expect(` no arquivo não diminui, verificado por contagem antes/depois registrada no log.
 - [ ] `npx vitest run src/pages/builder/builder.test.tsx` exit 0.
 
