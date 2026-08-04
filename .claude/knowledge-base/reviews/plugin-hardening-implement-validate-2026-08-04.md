@@ -8,7 +8,7 @@
 
 ### progress_schema — `WARN`
 
-- [LOW] wiring_invalid_value: tasks[2] wiring.a = 'n/a'; expected one of ['defer', 'fail', 'pass'].
+- [LOW] wiring_invalid_value: tasks[2] wiring.c = 'defer'; expected one of ['fail', 'n/a', 'pass'].
 
 ### checkpoint_consistency — `PASS`
 
@@ -30,7 +30,7 @@
 - Total tasks: 6
 - Verification: independent recheck of `check_wiring.py`
 - Symbols derived from diff: 24
-- Symbols independently resolved: 22
+- Symbols independently resolved: 20
 - Pillar (a) fails (uncalled symbols): 0
 - Self-reported pillar (a) pass (claim, audited): 5
 
