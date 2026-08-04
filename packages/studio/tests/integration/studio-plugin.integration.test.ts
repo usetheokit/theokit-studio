@@ -12,8 +12,7 @@ import {
 } from "../../plugin/reflection-api";
 import { resolveSpaDir } from "../../plugin/static-serve";
 import { createFixtureDataSource } from "../../src/data/fixture-datasource";
-import { createReflectionDataSource, parseNdjson } from "../../src/data/reflection-datasource";
-import type { StudioEvent } from "../../src/data/types";
+import { createReflectionDataSource } from "../../src/data/reflection-datasource";
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -147,7 +146,7 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
 
   it("test_spa_served_with_injected_config_over_real_http", async () => {
     // T2.2: fallback SPA + asset sobre HTTP real, com o config injetado no HTML.
-    const page = await fetch(`${baseUrl}/_studio/agents`);
+    const page = await fetch(`${baseUrl}/_studio/builder`);
     expect(page.status).toBe(200);
     const html = await page.text();
     expect(html).toContain("window.__STUDIO_CONFIG__");
@@ -162,33 +161,22 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
   });
 
   it("test_reflection_datasource_against_the_real_server", async () => {
-    // O loop COMPLETO do M1: ReflectionDataSource (SPA, react-free) → HTTP real →
-    // plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código que o
-    // browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    // O loop do M1 que a SPA ainda percorre: ReflectionDataSource (react-free) → HTTP
+    // real → plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código
+    // que o browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    // (O contrato NDJSON do run endpoint segue coberto em
+    // test_run_endpoint_streams_ndjson_over_real_http — a SPA reduzida ao Agent Builder
+    // não consome mais o stream.)
     const ds = createReflectionDataSource({
       fallback: createFixtureDataSource({ scenario: "default" }),
       baseUrl,
       fetchImpl: fetch,
     });
+
     const agents = await ds.listAgents();
     expect(agents.map((a) => a.id)).toContain("support");
     expect(agents.find((a) => a.id === "nested")?.description).toContain("failed to load");
-    const events: StudioEvent[] = [];
-    for await (const e of ds.runAgent("support", "ping de integração")) events.push(e);
-    // streamFactory do server ecoa a mensagem — mapeada para o vocabulário da UI.
-    expect(events).toEqual([{ type: "text-delta", text: "echo: ping de integração" }]);
-    // E o corpo NDJSON cru parseia com o MESMO parser do adapter (paridade nominal).
-    const raw = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "raw" }),
-    });
-    async function* chunks() {
-      yield new TextEncoder().encode(await raw.text());
-    }
-    const kinds: string[] = [];
-    for await (const line of parseNdjson(chunks())) kinds.push(String(line.kind));
-    expect(kinds).toEqual(["message", "done"]);
+    expect((await ds.listSkills()).map((s) => s.name)).toEqual(["demo-skill"]);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

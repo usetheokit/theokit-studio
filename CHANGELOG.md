@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   API do M1 montada na mesma origem (`/_studio/api/*`)
 
 ### Changed
+- **BREAKING: o Studio passa a ter uma única interface — o Agent Builder.** A tela abre em
+  tela cheia em `/builder`, a raiz `/` redireciona para ela e qualquer outro endereço
+  responde "Page not found". Quem abria o Studio para o playground, traces, memória ou
+  base de conhecimento deixa de encontrar essas telas (#studio-builder-only)
+- O contrato de dados do Studio (`StudioDataSource`) foi reduzido ao que o Builder consome:
+  agentes, skills e sessões de build. Em `mode: "live"` os agentes e skills continuam vindo
+  da reflection do dev server; as sessões de build seguem em fixtures roteirizados
+  (#studio-builder-only)
+- O rótulo de origem dos dados ("Fixtures mode" / "Live reflection") migrou do rodapé do
+  shell removido para o rodapé da barra lateral do Builder — a informação continua visível
+  em toda a sessão (#studio-builder-only)
 - Builder agora consome componentes do `@theokit/ui` para as superfícies de agente com
   paridade visual 1:1 (mesma experiência — sem diff perceptível): `ModelEffortPicker`
   (model picker do composer), `ApprovalModeSelector` (modo de aprovação inline),
@@ -32,6 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+- As 20 telas do Studio que não eram o Builder: Agents (playground), Prompts, Workflows,
+  Processors, MCP Servers, Tools, Workspaces, Request Context, Evaluation (visão geral,
+  scorers, datasets, experiments), Observability (events, metrics, traces, logs), Memory,
+  Knowledge e Settings — com seus fixtures e testes (#studio-builder-only)
+- A navegação do Studio (barra lateral com drill-down, breadcrumb e cabeçalho de página) e
+  os utilitários que só ela e as telas removidas usavam (#studio-builder-only)
+- O cliente de streaming de execução no lado da SPA: o Studio não executa mais agentes pela
+  interface. O endpoint `/_studio/api/agents/*/run` do plugin `@theokit/studio/plugin`
+  permanece intacto, publicado e coberto pelos próprios testes (#studio-builder-only)
 - `packages/studio/src/pages/builder/model-picker.tsx` — substituído pelo `ModelEffortPicker`
   do `@theokit/ui` (mesma anatomia: nome amigável + esforço num só controle) (#builder-ui-migration)
 - `ReviewPanel` / `FileDiff` / `parseDiff` de `builder/review.tsx` — substituídos pelo
