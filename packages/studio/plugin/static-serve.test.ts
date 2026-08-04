@@ -266,3 +266,18 @@ describe("asset ilegível não compromete o head (T1.2)", () => {
     expect(state.headers["Content-Type"]).toBe("text/css; charset=utf-8");
   });
 });
+
+describe("index.html não é asset cru (review F-dom-api-1)", () => {
+  it("explicit_index_html_gets_the_injected_config_like_the_root", async () => {
+    // /_studio e /_studio/index.html precisam bootar o MESMO produto: servir o html cru
+    // entregaria o index sem window.__STUDIO_CONFIG__, e o bootstrap cai em fixtures.
+    const root = makeRes();
+    const explicit = makeRes();
+
+    await serveStudio("/_studio", root.res, { spaDir, config: CONFIG });
+    await serveStudio("/_studio/index.html", explicit.res, { spaDir, config: CONFIG });
+
+    expect(explicit.body).toContain("__STUDIO_CONFIG__");
+    expect(explicit.headers["Cache-Control"]).toBe(root.headers["Cache-Control"]);
+  });
+});

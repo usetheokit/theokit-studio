@@ -206,9 +206,10 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
 describe("erro após head comprometido não vira unhandled rejection (M6 T1.3)", () => {
   it("dispatcher_error_after_committed_head_does_not_reject", async () => {
     // Este é o teste que a review F-tests-1 flagrou como DECLARADO no plano e nunca escrito.
-    // Sem ele, os getters de headersSent dos três fakes eram inertes (F-tests-2): revertê-los
-    // para literal congelado mantinha a suíte verde, ou seja, o finding #68 estava fechado
-    // só na forma. Aqui o guard é exercitado pelo caminho REAL do dispatcher.
+    // Ele precisa entrar no caminho de ERRO de verdade (review F-dom-1: a primeira versão
+    // matava o mutante por uma asserção de ARRANJO sobre o fake, não por comportamento).
+    // Por isso a rota escolhida é /_studio/svc/*, que chama sendErrorEnvelope — sobre uma
+    // resposta cujo head JÁ foi comprometido.
     const handler = captureHandler();
     const state = makeRes();
     const rejections: unknown[] = [];
@@ -216,21 +217,21 @@ describe("erro após head comprometido não vira unhandled rejection (M6 T1.3)",
     process.on("unhandledRejection", onRejection);
 
     try {
-      // Compromete o head ANTES de despachar: o handler vai falhar depois disso e cair no
-      // .catch() do middleware, que chama sendErrorEnvelope sobre resposta comprometida.
       state.res.writeHead(200, { "Content-Type": "text/plain" });
-      expect(state.res.headersSent).toBe(true);
 
       await new Promise<void>((resolve) => {
-        handler(makeReq("/_studio/api/agents"), state.res, () => resolve());
+        handler(makeReq("/_studio/svc/lens/v1/traces"), state.res, () => resolve());
         const wait = () => (state.ended ? resolve() : setTimeout(wait, 5));
         wait();
       });
       await new Promise((r) => setTimeout(r, 30));
 
       expect(rejections).toHaveLength(0);
-      // E o status original permanece: o head já tinha ido, não pode ser reescrito.
+      // O status original permanece — o head já foi, não pode ser reescrito para 404...
       expect(state.statusCode).toBe(200);
+      // ...mas o erro CHEGA ao cliente, no corpo (ADR A1). É esta asserção que morre se o
+      // guard de headersSent sumir do sendErrorEnvelope.
+      expect(state.body).toContain("NOT_FOUND");
     } finally {
       process.off("unhandledRejection", onRejection);
     }
