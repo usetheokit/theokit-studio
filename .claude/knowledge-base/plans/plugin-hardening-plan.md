@@ -31,13 +31,16 @@ duas vezes de forma independente (revisor no Node v22.22.2 e o quality gate cont
 O blueprint `plugin-hardening` mudou o desenho em três pontos, e o plano abaixo já nasce com
 eles absorvidos:
 
-1. **D1 do blueprint** — genkit (`reflection.ts:359-363`) não retorna em silêncio quando os
+1. **Erro no corpo quando a resposta já começou** (blueprint, primeira decisão) — genkit
+   (`reflection.ts:359-363`) não retorna em silêncio quando os
    cabeçalhos já foram enviados: encerra a resposta com o erro tipado **no corpo**. Nosso plano
    original só adicionaria o guard, o que trocaria um crash por um mistério.
-2. **D2 do blueprint** — mastra (`index.ts:428-435`) exclui o namespace de API **antes** do
+2. **Namespace de API antes do fallback** (blueprint, segunda decisão) — mastra
+   (`index.ts:428-435`) exclui o namespace de API **antes** do
    fallback da SPA. Nosso `handleStudioRequest` já faz isso para `/_studio/api/`, mas
    `/_studio/svc/` (namespace travado no `CLAUDE.md`) não casa e cai na SPA.
-3. **D3 do blueprint** — não importar framework HTTP. Ambos os peers carregam um (express,
+3. **Sem framework HTTP** (blueprint, terceira decisão) — não importar framework. Ambos os
+   peers carregam um (express,
    Hono); nós rodamos dentro do Vite do usuário e não podemos.
 
 ## Baseline Context (deep review of current state)
@@ -58,7 +61,9 @@ eles absorvidos:
 | `packages/studio/plugin/agent-scan.test.ts` | 64 | `3b9664e` (2026-07-15) | Testes do scan | Os 5 testes atuais continuam verdes |
 | `packages/studio/src/data/reflection-datasource.test.ts` | 100 | `74a96c6` (2026-08-03) | Testes do adapter live | Os 5 testes atuais continuam verdes |
 
-### Current callers (verificado por grep, não presumido)
+### Current callers / dependents
+
+*(verificado por grep, não presumido)*
 
 - `sendErrorEnvelope` / `sendJson` — **3 consumidores de produção**: `plugin/index.ts`,
   `plugin/static-serve.ts`, `plugin/run-endpoint.ts`. Nenhum arquivo de teste os importa
@@ -70,14 +75,14 @@ eles absorvidos:
 - Consumidores cross-repo: o pacote foi publicado em `v0.3.0`; um host externo pode montar o
   plugin. Nenhuma assinatura pública muda neste plano (ver ADR A3).
 
-### Architecture boundaries crossed
+### Architecture boundaries affected
 
 `rules/architecture.md` § 1: o plugin é camada **interface** (fronteira de rede), não domínio.
 Toda mudança fica em interface/adapters; nenhum tipo do domínio da SPA (`src/data/types.ts`)
 é importado pelo node-side. `plugin/http.ts` permanece sem dependência de domínio — é helper
 de transporte puro.
 
-### Glossary
+### Domain glossary
 
 | Termo | Definição |
 |---|---|
@@ -90,9 +95,9 @@ de transporte puro.
 ## Prior Art & Related Work
 
 - **Interno:** `knowledge-base/discoveries/blueprints/plugin-hardening-blueprint.md` (este ciclo)
-  — ADRs D1/D2/D3 com precedente citado nos dois peers.
+  — três decisões de arquitetura com precedente citado nos dois peers.
 - **Interno:** `knowledge-base/discoveries/blueprints/m1-studio-table-stakes-blueprint.md` —
-  arquitetura do plugin (ADR D1: middleware Vite; D2: SPA embarcada).
+  arquitetura do plugin (middleware Vite; SPA embarcada no pacote).
 - **Interno:** `knowledge-base/audits/studio-code-review-2026-08-04/` — os 6 findings-alvo com
   `file:line` e reprodução.
 - **Externo (lido, não copiado):** genkit `js/core/src/reflection.ts:359-363` (branch de
@@ -120,7 +125,7 @@ troca um crash observável por um mistério silencioso, o que `rules/error-handl
 classifica como o pior modo de falha ("erro engolido").
 
 **Rationale:** `rules/error-handling.md` § 2 (fail-clear: mensagem específica com contexto) +
-precedente do genkit (blueprint § Q1). Custo aceito: o corpo pode ficar com JSON concatenado a
+precedente do genkit (blueprint § Q1, primeira decisão). Custo aceito: o corpo pode ficar com JSON concatenado a
 um payload parcial — um corpo malformado **com erro descrito** é diagnosticável; um socket que
 morre calado não é.
 
@@ -151,7 +156,7 @@ dentro do Vite do **host**; impor um framework é custo dele. Rung 4 da parsimon
 o que já está instalado) e rung 1 (isto precisa existir? não).
 
 **Rationale:** `rules/parsimony-ladder.md`; blueprint § Q6 (o padrão do genkit sobrevive sem
-framework, o do mastra não).
+framework, o do mastra não). Precedente registrado na terceira decisão do blueprint.
 
 ### A4 — `scanStudioAgents` degrada por diretório, não por processo
 
@@ -180,11 +185,11 @@ reflection já expõe (EC-9 do M1).
 
 ## Unresolved Questions
 
-1. **Logar server-side na última linha de defesa (`index.ts:126`)?** O finding #55 (low) aponta
-   que o handler nunca loga. Fica **fora deste plano** — o M6 é sobre não morrer; observabilidade
-   do dev server é escopo do M8 (triagem dos low). Registrado para não parecer esquecido.
-2. **`sendJson` sobre resposta comprometida deve logar?** Decidido em A1 que apenas retorna.
-   Se surgir caso real de sucesso pós-commit, revisitar — hoje seria especulação (YAGNI).
+- Logar server-side na última linha de defesa (`index.ts:126`)? O finding #55 (low) aponta
+  que o handler nunca loga. Fica **fora deste plano** — o M6 é sobre não morrer; observabilidade
+  do dev server é escopo do M8 (triagem dos low). Registrado para não parecer esquecido.
+- Deve `sendJson` logar quando a resposta já está comprometida? Decidido em A1 que apenas retorna.
+  Se surgir caso real de sucesso pós-commit, revisitar — hoje seria especulação (YAGNI).
 
 ## Dependencies
 
@@ -265,9 +270,9 @@ exercitado. A mudança é aditiva no comportamento: o caminho não-comprometido 
 servidor real mas cada caso é sequencial.
 
 #### Acceptance Criteria
-- `npx vitest run plugin/http.test.ts` verde com ≥ 4 testes.
-- `npx vitest run --coverage` mostra `plugin/http.ts` com **100% de branch** (hoje 50%).
-- Nenhuma alteração de comportamento no caminho não-comprometido (os 3 consumidores seguem verdes).
+- `npx vitest run plugin/http.test.ts` retorna exit code 0 com >= 5 testes passando.
+- `npx vitest run --coverage` reporta coverage >= 100 de branch em `plugin/http.ts` (hoje 50).
+- Caminho não-comprometido inalterado: `npx vitest run plugin/` retorna exit code 0 com os 36 testes atuais dos 3 consumidores verdes.
 
 #### DoD (Definition of Done)
 - `npx vitest run` — 119 testes anteriores + os novos, todos verdes.
@@ -312,8 +317,8 @@ anterior e não é tocada — os testes dela seguem sendo a rede de proteção (
 (none — single-threaded) — leitura síncrona por request, sem estado compartilhado.
 
 #### Acceptance Criteria
-- O teste novo falha antes da inversão e passa depois.
-- Os 15 testes existentes de `static-serve.test.ts` seguem verdes (R1).
+- `npx vitest run plugin/static-serve.test.ts` falha antes da inversão e retorna exit code 0 depois.
+- Os 15 testes existentes de `static-serve.test.ts` seguem verdes: `npx vitest run plugin/static-serve.test.ts` reporta `15 passed` no mínimo.
 
 #### DoD
 - `npx vitest run plugin/` verde.
@@ -356,7 +361,7 @@ para não trocar um falso-negativo por outro.
 (none — single-threaded)
 
 #### Acceptance Criteria
-- Contagem de testes verdes ≥ 119 + novos; nenhum teste anterior removido ou enfraquecido.
+- `npx vitest run` reporta contagem >= 119 testes passando e exit code 0; nenhum teste anterior removido (diff de `git diff --stat` não mostra linhas de teste deletadas).
 
 #### DoD
 - `npx vitest run` verde.
@@ -405,8 +410,8 @@ o contrato: reservado → rota → 404 tipado; SPA só depois.
 (none — single-threaded)
 
 #### Acceptance Criteria
-- Ambos os paths devolvem `404` + `application/json` com `error.code === "NOT_FOUND"`.
-- A SPA continua servida para `/_studio/builder` e para deep-links sem extensão.
+- Ambos os paths devolvem status 404 e `content-type: application/json`, e `expect(body.error.code).toBe("NOT_FOUND")` passa para os dois.
+- A SPA continua servida: requisição a `/_studio/builder` retorna status 200 com `content-type: text/html`.
 
 #### DoD
 - `npx vitest run plugin/index.test.ts` verde; integração verde.
@@ -450,8 +455,8 @@ espírito do agent com `error` que a reflection já expõe.
 (none — single-threaded) — varredura síncrona.
 
 #### Acceptance Criteria
-- O teste novo falha antes e passa depois; os 5 testes atuais seguem verdes.
-- O diretório pulado é **visível** (não engolido em silêncio).
+- `npx vitest run plugin/agent-scan.test.ts` falha antes da correção e retorna exit code 0 depois, com os 5 testes atuais entre os aprovados.
+- O diretório pulado emite `console.warn` contendo o caminho e o `code` do erro; o teste assevera a chamada via spy (`expect(warnSpy).toHaveBeenCalled()`).
 
 #### DoD
 - `npx vitest run plugin/agent-scan.test.ts` verde.
@@ -502,11 +507,20 @@ a mudança é aditiva: a mensagem fica melhor, o shape do que a UI lê não muda
 (none — single-threaded) — `fetch` sequencial por chamada.
 
 #### Acceptance Criteria
-- Erro lançado contém o `code` do servidor quando o envelope existe.
-- Corpo malformado não lança `SyntaxError` para a UI.
+- O erro lançado contém o `code` do servidor: `expect(err.code).toBe("NOT_FOUND")` passa quando o envelope existe.
+- Corpo malformado não propaga `SyntaxError`: `await expect(ds.listAgents()).rejects.toThrow(/responded 500/)` passa com corpo não-JSON.
 
 #### DoD
 - `npx vitest run src/data/reflection-datasource.test.ts` verde.
+
+## Accepted Risks (caveats do gate)
+
+- **`symbol_fab_unverifiable_typescript` (cap 89).** O detector de fabricação de símbolo do
+  `/code-quality` não conseguiu verificar alguns pacotes npm com escopo (`@theokit/*`,
+  `@usetheo/*`) — resposta ambígua do registry, esperado para pacotes privados/workspace sem
+  rede. **Não é achado sobre este plano**: é limitação do ambiente de verificação. O veredito
+  fica `SHIPPABLE_WITH_CAVEATS` (89) em vez de `SHIPPABLE`, e o caveat viaja explícito até o PR
+  em vez de ser silenciado.
 
 ## Coverage Matrix
 
