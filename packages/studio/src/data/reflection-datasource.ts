@@ -85,12 +85,23 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
     return (await res.json()) as T;
   }
 
-  // INVARIANTE (review F-arch-9): a delegação por spread `...opts.fallback` só é correta
-  // porque o fallback é um objeto de closures stateless (o FixtureDataSource). Um adapter
-  // futuro baseado em classe com métodos `this`-bound quebraria silenciosamente sob o
-  // spread — nesse caso, trocar por delegação explícita (this.fallback.método(...)).
+  // M8 T3.1: delegação EXPLÍCITA, método a método, no lugar de `...opts.fallback`.
+  // Precedente: o `Registry` do genkit delega cada operação ao `parent` (lookupAction,
+  // lookupPlugin, lookupValue, lookupSchema) e nunca espalha o objeto-pai.
+  //
+  // O ganho é de COMPILAÇÃO, com um limite que vale nomear (review F-arch-3): o compilador
+  // cobra MEMBRO ausente (TS2741) — com o spread, um método novo em `StudioDataSource` caía
+  // silenciosamente no fixture e só falhava em runtime. Ele NÃO cobra aridade: uma delegação
+  // que esquece um argumento compila limpo. Por isso os dois métodos que levam argumento têm
+  // teste de forwarding em `reflection-datasource.test.ts`.
+  // Isto também dispensa o invariante que o spread exigia documentar — que ele só era correto
+  // porque o fallback é um objeto de closures stateless.
+  const { fallback } = opts;
   return {
-    ...opts.fallback,
+    listBuilderSessions: () => fallback.listBuilderSessions(),
+    getBuilderSession: (sessionId) => fallback.getBuilderSession(sessionId),
+    startBuilderSession: (prompt, targetAgentId) =>
+      fallback.startBuilderSession(prompt, targetAgentId),
 
     async listAgents(): Promise<AgentSummary[]> {
       const { items } = await getJson<{ items: ReflectionAgentPayload[] }>("/agents", "listAgents");

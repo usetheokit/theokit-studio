@@ -158,6 +158,21 @@ describe("serveStudio (T2.2)", () => {
     }
   });
 
+  // M8 T2.1: o ramo `safe.kind === "forbidden"` do caminho de ASSET (static-serve.ts:150-153)
+  // não tinha teste. Ele só é alcançado quando `isKnownAsset` é VERDADEIRO — ou seja, extensão
+  // conhecida — e o caminho ainda assim escapa de spaDir. Os traversals do teste acima usam
+  // `.txt`, que não é asset conhecido, e caem noutro ramo.
+  it("test_traversal_with_known_extension_is_forbidden", async () => {
+    const state = await serve("/_studio/assets/../../../etc/passwd.js");
+    expect(state.statusCode).toBe(403);
+    const body = JSON.parse(state.body);
+    expect(body.error.code).toBe("FORBIDDEN");
+    // Review F-tests-8: os DOIS ramos forbidden emitem 403 + FORBIDDEN; só a mensagem separa o
+    // caminho de asset (:151) do caminho de índice (:139). Sem esta linha, forçar
+    // `isKnownAsset = false` deixava o teste verde com o ramo errado.
+    expect(body.error.message).toBe("asset path escapes the studio root");
+  });
+
   it("test_null_byte_and_malformed_percent_rejected_400", async () => {
     const nullByte = await serve("/_studio/assets/app.js%00.png");
     expect(nullByte.statusCode).toBe(400);

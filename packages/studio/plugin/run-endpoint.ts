@@ -134,70 +134,91 @@ const NDJSON_HEADERS = {
 };
 
 /** Trata o run com defesas na fronteira; erros SEMPRE viram envelope/linha tipada. */
+/** Envelope de recusa: status + code + mensagem, do jeito que a fronteira já responde. */
+type RunRefusal = { kind: "refused"; status: number; code: string; message: string };
+
+/** Contexto executável de um run: tudo que o streaming precisa, já validado. */
+type RunContext = {
+  kind: "ready";
+  body: NonNullable<ReturnType<typeof parseRunBody>>;
+  apiKey: string;
+  compiled: ReturnType<typeof compileAgentModule>;
+};
+
+/**
+ * Resolve a requisição num contexto executável, ou na razão pela qual ela é recusada.
+ *
+ * M8 T3.2: os oito guards viviam inline em `handleAgentRun`, que media CCN 20. A extração
+ * nomeia um conceito real — "validar e resolver o pedido antes de gastar token do provider" —
+ * e não uma fatia arbitrária: a ordem dos guards É o contrato (rota antes de método, origem
+ * antes de ler o body), e agora ela mora num lugar só.
+ */
+async function resolveRunRequest(
+  pathname: string,
+  req: IncomingMessage,
+  deps: RunEndpointDeps,
+): Promise<RunRefusal | RunContext> {
+  const match = matchRunPath(pathname);
+  if (match === null) {
+    return refuse(404, "NOT_FOUND", `no studio api route matches ${pathname}`);
+  }
+  if (match.kind === "malformed") {
+    return refuse(400, "BAD_REQUEST", "malformed percent-encoding in agent name");
+  }
+  const name = match.name;
+  if (req.method !== "POST") {
+    return refuse(405, "METHOD_NOT_ALLOWED", `use POST for ${pathname}`);
+  }
+  // Origem ANTES de qualquer trabalho (ler body, carregar agent, criar stream):
+  // um run gasta tokens reais do provider do usuário.
+  if (!isSameOrigin(req)) {
+    return refuse(403, "ORIGIN_FORBIDDEN", "cross-origin agent runs are not allowed");
+  }
+  const body = parseRunBody(await readBody(req));
+  if (body === null) {
+    return refuse(
+      400,
+      "BAD_REQUEST",
+      "request body must be JSON with a non-empty `message` string",
+    );
+  }
+  const node = scanStudioAgents(deps.projectRoot, deps.agentsDir).find((n) => n.name === name);
+  if (!node) {
+    return refuse(404, "AGENT_NOT_FOUND", `no agent named "${name}" in the project`);
+  }
+  const apiKey = resolveApiKey(deps.env ?? process.env);
+  if (apiKey === undefined) {
+    return refuse(
+      424,
+      "PROVIDER_KEY_MISSING",
+      `no provider API key found — set one of ${PROVIDER_ENV_PRIORITY.join(", ")} in the dev server environment`,
+    );
+  }
+  try {
+    const mod = await deps.load(node.filePath);
+    const compiled = compileAgentModule(mod, relative(deps.projectRoot, node.filePath));
+    return { kind: "ready", body, apiKey, compiled };
+  } catch (error) {
+    return refuse(422, "AGENT_INVALID", error instanceof Error ? error.message : String(error));
+  }
+}
+
+function refuse(status: number, code: string, message: string): RunRefusal {
+  return { kind: "refused", status, code, message };
+}
+
 export async function handleAgentRun(
   pathname: string,
   req: IncomingMessage,
   res: ServerResponse,
   deps: RunEndpointDeps,
 ): Promise<void> {
-  const match = matchRunPath(pathname);
-  if (match === null) {
-    sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio api route matches ${pathname}`);
+  const resolved = await resolveRunRequest(pathname, req, deps);
+  if (resolved.kind === "refused") {
+    sendErrorEnvelope(res, resolved.status, resolved.code, resolved.message);
     return;
   }
-  if (match.kind === "malformed") {
-    sendErrorEnvelope(res, 400, "BAD_REQUEST", "malformed percent-encoding in agent name");
-    return;
-  }
-  const name = match.name;
-  if (req.method !== "POST") {
-    sendErrorEnvelope(res, 405, "METHOD_NOT_ALLOWED", `use POST for ${pathname}`);
-    return;
-  }
-  // Origem ANTES de qualquer trabalho (ler body, carregar agent, criar stream):
-  // um run gasta tokens reais do provider do usuário.
-  if (!isSameOrigin(req)) {
-    sendErrorEnvelope(res, 403, "ORIGIN_FORBIDDEN", "cross-origin agent runs are not allowed");
-    return;
-  }
-  const body = parseRunBody(await readBody(req));
-  if (body === null) {
-    sendErrorEnvelope(
-      res,
-      400,
-      "BAD_REQUEST",
-      "request body must be JSON with a non-empty `message` string",
-    );
-    return;
-  }
-  const node = scanStudioAgents(deps.projectRoot, deps.agentsDir).find((n) => n.name === name);
-  if (!node) {
-    sendErrorEnvelope(res, 404, "AGENT_NOT_FOUND", `no agent named "${name}" in the project`);
-    return;
-  }
-  const apiKey = resolveApiKey(deps.env ?? process.env);
-  if (apiKey === undefined) {
-    sendErrorEnvelope(
-      res,
-      424,
-      "PROVIDER_KEY_MISSING",
-      `no provider API key found — set one of ${PROVIDER_ENV_PRIORITY.join(", ")} in the dev server environment`,
-    );
-    return;
-  }
-  let compiled: ReturnType<typeof compileAgentModule>;
-  try {
-    const mod = await deps.load(node.filePath);
-    compiled = compileAgentModule(mod, relative(deps.projectRoot, node.filePath));
-  } catch (error) {
-    sendErrorEnvelope(
-      res,
-      422,
-      "AGENT_INVALID",
-      error instanceof Error ? error.message : String(error),
-    );
-    return;
-  }
+  const { body, apiKey, compiled } = resolved;
 
   const controller = new AbortController();
   req.on("close", () => {

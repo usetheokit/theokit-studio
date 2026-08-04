@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import { createFixtureDataSource } from "./data/fixture-datasource";
 import { metrics } from "./data/metrics";
 import { mount } from "./main";
 
@@ -62,13 +63,53 @@ describe("mount (composition root — basename wiring)", () => {
       basePath: "/_studio",
     });
     try {
-      // Rótulo honesto da origem dos dados + wiring pilar (c): métrica da reflection
-      // observada não-zero (o adapter live foi de fato o escolhido pelo root).
+      // M8 T1.1: a ÚNICA asserção que separa os dois ramos do ternário é o dado que só a
+      // reflection produz. As duas asserções anteriores eram satisfeitas pelos DOIS ramos —
+      // o rótulo vem de buildRoutes({ live }), que lê o booleano direto, e o contador
+      // datasource_calls_total.listAgents é incrementado tanto pelo fixture quanto pela
+      // reflection. Reproduzido: invertendo o ternário, a suíte devolvia 3 passed.
+      const liveAgent = await screen.findByText("live-agent");
+      expect(liveAgent).toBeTruthy();
+      // O rótulo e a métrica continuam asseverados — não provam a escolha, mas travam
+      // regressões próprias (rótulo honesto e wiring pilar c).
       expect(await screen.findByText(/live reflection/i)).toBeTruthy();
       expect(metrics.snapshot().datasource_calls_total?.listAgents).toBeGreaterThanOrEqual(1);
     } finally {
       cleanup();
       globalThis.fetch = realFetch;
     }
+  });
+
+  // Review F-tests-1: eu tinha armado UM lado do ternário. Sem este teste, o mutante
+  // `const live = true` passava a suíte inteira — os testes de modo fixtures asseveravam só
+  // `builder-surface`, que renderiza nos DOIS ramos. Era o mesmo defeito do milestone,
+  // espelhado: o nome do teste ficou honesto e a outra metade da linha 20 seguiu nua.
+  it("test_composition_root_selects_fixtures_when_mode_is_absent", async () => {
+    const cleanup = mountAt("/_studio/builder", { scenario: "default", basePath: "/_studio" });
+    try {
+      // Dado que SÓ o fixture produz — a reflection devolveria o que o stub de fetch mandasse,
+      // e aqui não há stub: em modo live o fetch relativo rejeita e a lista fica vazia.
+      const fixtureAgent = await screen.findByText("Support Agent");
+      expect(fixtureAgent).toBeTruthy();
+      // E o rótulo de origem tem de dizer fixtures, não live.
+      expect(screen.queryByText(/live reflection/i)).toBeNull();
+    } finally {
+      cleanup();
+    }
+  });
+
+  // EC-1 + review F-tests-6: a asserção discriminante só funciona enquanto "live-agent" não
+  // existir em NENHUMA superfície de fixture que a página renderiza. A primeira versão olhava
+  // só para os agents; as sessões do builder vêm do fallback mesmo em modo live
+  // (reflection-datasource.ts delega listBuilderSessions), então um título de sessão com esse
+  // nome devolveria o teste ao estado oco sem esta trava perceber.
+  it("the_discriminating_name_is_absent_from_every_rendered_fixture", async () => {
+    const fx = createFixtureDataSource({ scenario: "default" });
+    const rendered = [
+      ...(await fx.listAgents()).map((a) => a.name),
+      ...(await fx.listSkills()).map((s) => s.name),
+      ...(await fx.listBuilderSessions()).map((s) => s.title),
+    ];
+    expect(rendered).not.toContain("live-agent");
   });
 });

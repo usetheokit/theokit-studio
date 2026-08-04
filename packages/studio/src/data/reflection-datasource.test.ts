@@ -29,6 +29,40 @@ beforeEach(() => {
   metrics.reset();
 });
 
+// M8 T3.1: trava de COMPORTAMENTO durante a troca de mecanismo (spread -> delegação
+// explícita). Este teste passa antes e depois de propósito — a prova da mudança é de
+// COMPILAÇÃO (remover uma delegação vira erro TS2741), registrada no log do milestone.
+describe("delegação ao fallback (T3.1)", () => {
+  it("delegates_unimplemented_methods_to_the_fallback", async () => {
+    const listBuilderSessions = vi.fn().mockResolvedValue([]);
+    const fallback = { ...createFixtureDataSource({ scenario: "default" }), listBuilderSessions };
+    const ds = createReflectionDataSource({ fallback });
+    await ds.listBuilderSessions();
+    expect(listBuilderSessions).toHaveBeenCalledTimes(1);
+  });
+
+  // Review F-arch-3: o compilador cobra MEMBRO ausente (TS2741), mas NÃO cobra aridade —
+  // `(prompt) => fallback.startBuilderSession(prompt)` compila e perde o targetAgentId em
+  // silêncio, virando `agentId: undefined` em toda sessão criada no modo live. Os dois métodos
+  // delegados que levam argumento precisam de teste; o teste acima só cobre o que não leva.
+  it("forwards_every_argument_of_the_delegated_methods", async () => {
+    const getBuilderSession = vi.fn().mockResolvedValue({ id: "s-1" });
+    const startBuilderSession = vi.fn().mockResolvedValue({ id: "s-2" });
+    const fallback = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      getBuilderSession,
+      startBuilderSession,
+    };
+    const ds = createReflectionDataSource({ fallback });
+
+    await ds.getBuilderSession("s-1");
+    expect(getBuilderSession).toHaveBeenCalledWith("s-1");
+
+    await ds.startBuilderSession("build me a thing", "support-agent");
+    expect(startBuilderSession).toHaveBeenCalledWith("build me a thing", "support-agent");
+  });
+});
+
 describe("createReflectionDataSource (T3.1)", () => {
   it("test_list_agents_maps_reflection_payload_to_agent_summary", async () => {
     const ds = makeDs({

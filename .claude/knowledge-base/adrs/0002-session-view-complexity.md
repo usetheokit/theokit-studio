@@ -1,0 +1,111 @@
+# ADR 0002 — `SessionView` permanece acima do limite de complexidade
+
+**Date:** 2026-08-04
+**Status:** Accepted
+**Milestone:** M8 — Qualidade da suíte e manutenibilidade
+**Escopo:** `packages/studio/src/pages/builder/session-view.tsx`
+
+## Contexto
+
+O DoD do M8 exige que `handleAgentRun` (CC=18) e `SessionView` (CC=16) fiquem abaixo de 15,
+"medidos pela mesma regra ESLint `complexity` com `variant: "classic"` usada na auditoria — ou
+ADR registrando por que permanecem".
+
+`handleAgentRun` foi resolvido: a cadeia de oito guards virou `resolveRunRequest`, e a medição por
+`lizard` caiu de **CCN 20 → 10** (`resolveRunRequest` mede 12). Nenhum teste mudou de resultado.
+
+`SessionView` é outro caso, por duas razões.
+
+## Problema 1 — a métrica da auditoria não é reproduzível com o ferramental do projeto
+
+O projeto usa **Biome**, não ESLint. O número CC=16 veio da regra ESLint `complexity` com
+`variant: "classic"`, executada pelo auditor externo. Rodando `lizard` (a ferramenta de
+complexidade disponível aqui):
+
+```
+$ lizard src/pages/builder/session-view.tsx    # saída PRÉ-extração de handleSplitterKey
+      6      1     23      3       6 SessionView@61-66
+     12      2     69      1      17 startResize@85-101
+       8      2     40      1       8 handleSubmit@103-110
+      10      3     54      1      11 (anonymous)@229-239
+```
+
+**Correção após a review (F-arch-4): esta saída não é uma métrica concorrente — é um parser que
+falhou.** `SessionView` vai da linha 66 à 284 (218 linhas) e tem **um** parâmetro destruturado;
+`lizard` reporta 6 linhas e 3 parâmetros, terminando na linha 66. Ele não entrou no corpo do
+componente. Apresentar "nenhuma função passa de CCN 3" como tranquilizador seria derivar
+segurança de uma medição que não mediu o alvo.
+
+O que resta de verdadeiro é o ponto conceitual, e ele se sustenta sem o `lizard`: a regra do
+ESLint conta os ternários e `&&` do markup, que é onde a densidade deste arquivo vive.
+
+Reproduzir o número da auditoria exigiria instalar ESLint — o que o **ADR A2 do plano do M8
+rejeita**, com base no blueprint (decisão 2): a config de lint compartilhada do mastra tem 324
+linhas e **zero** regras numéricas de complexidade; nenhum dos dois peers do nicho enforça o
+número.
+
+## Problema 2 — a densidade é de markup, não de decisão
+
+**16 dos 19** condicionais do `SessionView` são de renderização: mostrar ou não o painel de
+review, destacar o arquivo selecionado, colapsar o work log, exibir o composer de follow-up. Cada
+um é uma decisão de **uma linha, local, sem estado compartilhado**. É o formato que JSX tem para
+condicional; extrair cada um para um componente nomeado produziria uma dúzia de componentes de uma
+linha cujo único propósito seria baixar um contador.
+
+**Três não são markup** (F-arch-4), e a review estava certa em separá-los:
+
+- `:134` e `:148` — `setMinimized((m) => (m === "chat" ? "none" : "chat"))` e o par do painel:
+  transições de estado, não renderização.
+- `:237-247` — o `onKeyDown` inline do separador: dez linhas, dois ramos, dois `preventDefault`,
+  chamando `clampPct`. É a função mais densa do arquivo pela própria medição do `lizard`
+  (`(anonymous)@229-239`, CCN 3), e é lógica imperativa.
+
+O terceiro **tinha** conceito a nomear, e o arquivo já estabelecia a convenção (`startResize`,
+`handleSubmit`, `clampPct`). **Foi extraído** como `handleSplitterKey` — não um componente de uma
+linha, uma função nomeada ao lado das suas irmãs. Ficar só com a nota seria escolher a saída fácil
+depois que a review mostrou que a premissa estava larga demais.
+
+Isso é exatamente o que `rules/parsimony-ladder.md` rung 1 proíbe ao contrário: criar código que
+não precisa existir. E o AC do T3.2 exige que "toda função extraída nomeie um conceito do
+domínio" — para os 16 condicionais de markup, não há conceito a nomear.
+
+## Decisão
+
+`SessionView` **permanece** como está no que diz respeito ao markup: os 16 condicionais de
+renderização não são extraídos. A única extração feita é `handleSplitterKey`, que não é markup.
+
+## Consequências
+
+**Aceitas:**
+
+- O arquivo tem 284 linhas e um componente com muito markup condicional. Ler o `SessionView`
+  inteiro exige rolar.
+- Não temos, e continuamos sem ter, uma medida automática de complexidade de componente React.
+
+**Mitigações:**
+
+- O componente é coberto por `builder.test.tsx`, incluindo os caminhos de review, work log e
+  follow-up — a densidade que resta é de renderização e está exercitada.
+- `handleSplitterKey` saiu do JSX e é exercitado pelos dois testes do splitter (direção e limite),
+  medindo CCN 3 como função nomeada.
+- Se o `SessionView` ganhar **lógica** (não markup), a decisão se reabre: este ADR cobre densidade
+  de JSX, não densidade de decisão de negócio.
+
+## Alternativas rejeitadas
+
+1. **Instalar ESLint só para medir.** Rejeitada pelo ADR A2 do plano: nenhum peer do nicho enforça
+   o número, e introduzir um segundo linter para produzir uma métrica que não vira gate é custo sem
+   contrapartida.
+2. **Extrair os condicionais de JSX em subcomponentes.** Rejeitada: produz componentes de uma linha
+   sem conceito de domínio, o que a AC do T3.2 explicitamente proíbe e a escada de parcimônia
+   nomeia como anti-pattern.
+3. **Ligar a regra `complexity` do Biome com teto 15.** Rejeitada pelo ADR A2 — a auditoria mediu
+   duas funções acima, amostra pequena demais para justificar uma regra global sobre código que
+   ninguém revisou.
+
+## Honestidade sobre o que este ADR não resolve
+
+Este ADR registra uma decisão, não um veredito de qualidade. `SessionView` **pode** estar denso
+demais — só não temos, com o ferramental que escolhemos manter, um número que sustente ou refute
+isso, e a inspeção manual diz que a densidade é de markup. Se alguém trouxer uma medição que
+distinga markup de decisão, a decisão se reabre.
