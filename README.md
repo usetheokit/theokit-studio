@@ -24,6 +24,20 @@ They are not deprecated-but-working: they do not exist in this package. If you w
 
 Whether any of those surfaces returns to the roadmap is an open product decision — see [`ROADMAP.md`](./ROADMAP.md).
 
+## Host-facing API
+
+The `@theokit/studio/plugin` export mounts three HTTP resources that the **host** consumes — not the Studio SPA. They are part of the package's contract and are kept deliberately, even though nothing in this repository calls them:
+
+| Resource | Method | Response | Pinned by |
+|---|---|---|---|
+| `/_studio/api/tools` | `GET` | `200` `application/json`, `{ items: [...] }` — tools aggregated from the live registry | integration test |
+| `/_studio/api/workflows` | `GET` | `200` `application/json`, `{ items: [...] }` — workflows aggregated from the live registry | integration test |
+| `/_studio/api/agents/{name}/run` | `POST` | `200` NDJSON stream of typed run events | streaming happy path only — status/method contract lands in M8 |
+
+Both aggregates are recomputed per request from the same compilation the reflection endpoint uses, so they follow hot-reload and are never cached.
+
+`/_studio/api/agents`, `/_studio/api/skills` and `/_studio/api/health` are also served, and the SPA does consume those.
+
 > **Status: pre-release.** Studio is for development and debugging. Multi-tenant, production dashboards are the domain of Theo Cloud (pre-release).
 
 ## Design

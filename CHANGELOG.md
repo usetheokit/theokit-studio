@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- README documenta `/_studio/api/tools`, `/_studio/api/workflows` e `POST /_studio/api/agents/{name}/run` como API host-facing: são consumidos por quem monta o Studio, não pela interface, e por isso permanecem mesmo sem consumidor neste repositório. Os dois agregados agora têm status e content-type fixados por teste de integração (#M7)
 
 ### Changed
 - Definition of done de M1, M2 e M3 reconciliado com o escopo entregue: M1 fica exercitável (5 critérios reescritos em torno do Agent Builder), M2 e M3 ficam registrados como cancelados com data e razão em vez de exigir telas que não existem (#M7)
