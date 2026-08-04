@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scenario: "offline"` deixa de ser um valor de configuração aceito. Ele passava pela validação e não fazia nada — nenhum código o distinguia de `"default"`. Agora é rejeitado como qualquer valor inválido: aviso no console nomeando o valor e queda para `"default"` (#M7)
 
 ### Fixed
+- Um carregamento bem-sucedido depois de um que falhou agora limpa o alerta de erro em vez de deixá-lo na tela ao lado dos itens novos (#M7)
+- O aviso de `scenario` inválido passa a nomear os valores aceitos (`expected "default" | "empty"`), não apenas o valor recusado — quem tinha `"offline"` configurado precisa saber para o que migrar (#M7)
 - O verificador de wiring do kit (`check_wiring.py`) classifica arquivo de teste por convenção de sufixo (`*.test.ts`, `*_test.py`, `mock` como token) e por diretório de apoio, em vez de procurar a substring no nome. Nomes de produção legítimos como `fixture-datasource.ts`, `latest-run.ts` e `event-inspector.ts` deixam de ser descartados, e um helper em `src/test-helpers/` deixa de contar como caller de produção — este último fazia o gate falhar *aberto*, reportando código morto como vivo (#M7)
 
 ### Security

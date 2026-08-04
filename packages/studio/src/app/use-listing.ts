@@ -21,6 +21,9 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
       .then((list) => {
         if (!ignore) {
           setItems(list);
+          // Um load que dá certo depois de um que falhou tem de apagar o alerta; sem isto o
+          // banner de erro fica na tela ao lado dos itens novos (review F-arch-9).
+          setLoadError(null);
         }
       })
       .catch((error: unknown) => {

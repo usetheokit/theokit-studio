@@ -54,7 +54,9 @@ export function parseStudioConfig(raw: unknown): StudioConfig {
     if (typeof input.scenario === "string" && VALID_SCENARIOS.has(input.scenario)) {
       scenario = input.scenario as StudioConfig["scenario"];
     } else {
-      warnings.push(`invalid scenario ${JSON.stringify(input.scenario)}`);
+      warnings.push(
+        `invalid scenario ${JSON.stringify(input.scenario)} (expected ${[...VALID_SCENARIOS].map((s) => `"${s}"`).join(" | ")})`,
+      );
     }
   }
 
