@@ -178,19 +178,12 @@ contrato e de tratamento de erro na fronteira HTTP do plugin — a superfície p
 
 **Definition of done:**
 
-- [ ] `sendErrorEnvelope` e `sendJson` (`plugin/http.ts:13,20`) verificam `res.headersSent`, e o
-      branch de asset (`plugin/static-serve.ts:154`) lê o arquivo **antes** de comprometer o head.
-      Regressão provada por um teste que falha antes da correção.
-- [ ] Existe `plugin/http.test.ts` exercitando o helper sobre uma resposta já comprometida, e os
-      três fakes (`static-serve.test.ts:48`, `run-endpoint.test.ts:47`, `index.test.ts:51`) expõem
-      `headersSent` — hoje o guard corrigido não seria assertável sem reescrevê-los.
-- [ ] `/_studio/svc/{lens,memory,rag}/*` responde envelope 404 tipado em vez de HTML da SPA, com a
-      mesma resposta independentemente da extensão da URL (`plugin/index.ts:98`).
-- [ ] `scanStudioAgents` (`plugin/agent-scan.ts:35`) trata diretório ilegível sem derrubar a
-      reflection inteira, com caso negativo coberto por teste.
-- [ ] `ReflectionDataSource` propaga o envelope tipado do servidor em vez de `Error` genérico
-      (`src/data/reflection-datasource.ts:39`).
-- [ ] Suíte verde e cobertura de branch de `plugin/http.ts` sai de 50% para 100%.
+- [ ] `sendErrorEnvelope` e `sendJson` (`plugin/http.ts:13,20`) verificam `res.headersSent`, e o branch de asset (`plugin/static-serve.ts:154`) lê o arquivo ANTES de comprometer o head — regressão provada por um teste que falha antes da correção e passa depois.
+- [ ] Existe `plugin/http.test.ts` exercitando o helper sobre uma resposta já comprometida, e os três fakes (`static-serve.test.ts:48`, `run-endpoint.test.ts:47`, `index.test.ts:51`) expõem `headersSent` — hoje o guard corrigido não seria assertável sem reescrevê-los.
+- [ ] `/_studio/svc/{lens,memory,rag}/*` responde envelope 404 tipado em vez de HTML da SPA, com a mesma resposta independentemente da extensão da URL (`plugin/index.ts:98`).
+- [ ] `scanStudioAgents` (`plugin/agent-scan.ts:35`) trata diretório ilegível sem derrubar a reflection inteira, com caso negativo coberto por teste.
+- [ ] `ReflectionDataSource` propaga o envelope de erro tipado do servidor em vez de `Error` genérico (`src/data/reflection-datasource.ts:39`).
+- [ ] Suíte verde e cobertura de branch de `plugin/http.ts` sai de 50% para 100%, medida por `npx vitest run --coverage`.
 
 **Dependencies:** none — o código auditado já está em `main` desde `v0.3.0`; nada bloqueia.
 
@@ -222,19 +215,12 @@ hoje — uma única tela — e remover o resíduo deixado pelo corte de 20 telas
 
 **Definition of done:**
 
-- [ ] README (hero, tabela de features e a promessa de degradação graciosa) descreve o Agent Builder
-      como superfície única; nenhuma menção a playground, traces, memory ou knowledge como entregues
-      (`README.md:5,11-14,23`).
-- [ ] DoD de M1, M2 e M3 reconciliado com o escopo entregue: nenhum bullet exige tela removida. Cada
-      bullet é reescrito, ou o milestone é marcado cancelado com razão datada conforme o protocolo de
-      revisão do roadmap-template.
-- [ ] `scenario:"offline"` removido de `FixtureScenario` e `VALID_SCENARIOS`, ou passa a ter efeito
-      observável — hoje é aceito na fronteira e silenciosamente ignorado (`src/bootstrap.ts:13`).
-- [ ] `CounterName` contém apenas contadores emitidos em produção; `reload()`/`version` e o warrant
-      falso de lint em `src/app/use-listing.ts:20,40` removidos ou corrigidos.
-- [ ] Decisão registrada sobre `/_studio/api/{tools,workflows}` e o run endpoint: ou documentados
-      como API host-facing no README do pacote, ou removidos (`plugin/index.ts:79`).
-- [ ] `npm run check`, typecheck e suíte verdes; nenhum finding de completude aberto sem justificativa.
+- [ ] README (hero, tabela de features e a promessa de degradação graciosa) descreve o Agent Builder como superfície única; nenhuma menção a playground, traces, memory ou knowledge como entregues (`README.md:5,11-14,23`).
+- [ ] DoD de M1, M2 e M3 reconciliado com o escopo entregue E reescrito em bullets de uma única linha (a quebra em múltiplas linhas trunca o critério nos extratores) — nenhum bullet exige tela removida; cada milestone é reescrito ou cancelado com razão datada.
+- [ ] `scenario:"offline"` removido de `FixtureScenario` e `VALID_SCENARIOS`, ou passa a ter efeito observável — hoje é aceito na fronteira e silenciosamente ignorado (`src/bootstrap.ts:13`).
+- [ ] `CounterName` contém apenas contadores emitidos em produção; `reload()`/`version` e o warrant falso de lint em `src/app/use-listing.ts:20,40` removidos ou corrigidos.
+- [ ] Decisão registrada sobre `/_studio/api/{tools,workflows}` e o run endpoint: documentados como API host-facing no README do pacote, ou removidos (`plugin/index.ts:79`).
+- [ ] `npm run check`, `npm run typecheck` e a suíte verdes; nenhum finding de completude aberto sem justificativa registrada.
 
 **Dependencies:** none — toca `src/*` e documentação, disjunto de M6.
 
@@ -265,20 +251,13 @@ densidade de decisão onde ela é real — sem refatorar por estética.
 
 **Definition of done:**
 
-- [ ] `test_composition_root_selects_hybrid_in_live_mode` volta a falhar quando o ternário de
-      `src/main.tsx:20` é invertido; a prova é executada e registrada no log do milestone.
-- [ ] Guards hoje descobertos ganham teste: 405 não-POST (`plugin/run-endpoint.ts:154`), 403 do
-      branch de asset com extensão conhecida (`plugin/static-serve.ts:145`), e os dois caminhos de
-      erro de escrita do builder (`src/pages/builder/index.tsx:198,210`).
-- [ ] `handleAgentRun` (CC=18) e `SessionView` (CC=16) abaixo de 15, medidos pela mesma regra ESLint
-      `complexity` com `variant: "classic"` — ou ADR registrando por que permanecem.
-- [ ] Spread `{...opts.fallback}` substituído por delegações explícitas
-      (`src/data/reflection-datasource.ts:50`), tornando visível em tempo de compilação o que hoje
-      só falha em runtime.
-- [ ] Os dois testes multi-comportamento divididos (`builder.test.tsx:57,215`) e as asserções em CSS
-      literal trocadas por direção e limite.
-- [ ] Os 32 findings `low` triados: cada um FIXED ou com razão registrada para adiar.
-- [ ] Cobertura de branch não regride abaixo dos 89,46% medidos nesta auditoria.
+- [ ] `test_composition_root_selects_hybrid_in_live_mode` volta a FALHAR quando o ternário de `src/main.tsx:20` é invertido; a prova é executada e registrada no log do milestone.
+- [ ] Guards hoje descobertos ganham teste: 405 não-POST (`plugin/run-endpoint.ts:154`), 403 do branch de asset com extensão conhecida (`plugin/static-serve.ts:145`) e os dois caminhos de erro de escrita do builder (`src/pages/builder/index.tsx:198,210`).
+- [ ] `handleAgentRun` (CC=18) e `SessionView` (CC=16) abaixo de 15, medidos pela mesma regra ESLint `complexity` com `variant: "classic"` usada na auditoria — ou ADR registrando por que permanecem.
+- [ ] Spread `{...opts.fallback}` substituído por delegações explícitas (`src/data/reflection-datasource.ts:50`), tornando visível em tempo de compilação o que hoje só falha em runtime.
+- [ ] Os dois testes multi-comportamento divididos (`builder.test.tsx:57,215`) e as asserções em CSS literal trocadas por direção e limite.
+- [ ] Os 32 findings `low` da auditoria triados: cada um FIXED ou com razão registrada para adiar.
+- [ ] Cobertura de branch não regride abaixo dos 89,46% medidos na auditoria.
 
 **Dependencies:** M7 — ambos editam `src/pages/builder/index.tsx` e `session-view.tsx`; M7 remove
 código morto de lá que M8 refatoraria à toa.
