@@ -184,7 +184,7 @@ outros projetos montam. A correção é de ~10 minutos; o que custa é o teste q
 
 ---
 
-### M7 — [ ] Reconciliação de documentação e superfície morta
+### M7 — [x] Reconciliação de documentação e superfície morta
 
 > Added 2026-08-04 by `/roadmap-feature` (slug: `docs-dead-surface-reconciliation`).
 > Evidence: `code-review-output/code-review.db` — findings #1, #12, #2, #3, #4, #5, #7, #8.

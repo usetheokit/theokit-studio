@@ -139,6 +139,28 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(body).toMatchObject({ items: expect.any(Array) });
   });
 
+  // M8 T2.1: o guard de 405 (run-endpoint.ts:153-156) era o ÚNICO dos oito guards de
+  // handleAgentRun sem teste — medido por cobertura antes da refatoração do T3.2. Ele protege o
+  // endpoint que gasta tokens reais do provider do usuário.
+  it("test_run_endpoint_rejects_non_post_with_405", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`);
+    expect(res.status).toBe(405);
+    const body = await res.json();
+    expect(body).toMatchObject({ error: { code: "METHOD_NOT_ALLOWED" } });
+  });
+
+  // Review F-xval-4: este teste NÃO prova ordem de guard — o path não casa `matchRunPath`, então
+  // o dispatcher responde no ramo de namespace reservado (plugin/index.ts:121) e `handleAgentRun`
+  // nunca é chamado. A trava de ordem real vive em `run-endpoint.test.ts`, no nível unitário.
+  // O que este teste protege de fato é o 404 tipado do namespace reservado — vale manter, com o
+  // nome honesto.
+  it("test_reserved_api_namespace_returns_typed_404", async () => {
+    const res = await fetch(`${baseUrl}/_studio/api/definitely-not-a-run-route`);
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body).toMatchObject({ error: { code: "NOT_FOUND" } });
+  });
+
   it("test_run_endpoint_streams_ndjson_over_real_http", async () => {
     // T1.4: POST run com sessionId + parse NDJSON incremental sobre HTTP real.
     const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {

@@ -12,6 +12,21 @@ function renderBuilder() {
   );
 }
 
+function renderBuilderWith(overrides: Record<string, unknown>) {
+  const ds = { ...createFixtureDataSource({ scenario: "default" }), ...overrides };
+  render(
+    <DataSourceProvider value={ds as never}>
+      <AgentBuilderPage />
+    </DataSourceProvider>,
+  );
+}
+
+async function submitPrompt(text: string) {
+  await screen.findByText("What should we build?");
+  await userEvent.type(screen.getByRole("textbox", { name: /build instructions/i }), text);
+  await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+}
+
 async function openPinnedSession() {
   const sessions = await screen.findAllByTestId("builder-session");
   const refine = sessions.find((s) => s.textContent?.includes("Refine Support Agent tone"));
@@ -54,30 +69,52 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByText("What should we build?")).toBeTruthy();
   });
 
-  it("session_opens_with_worklog_edited_files_and_review_panel", async () => {
+  // M8 T4.1: o teste original somava quatro comportamentos ("worklog and edited files and
+  // review panel"). Precedente do genkit: quando um comportamento tem duas condições, viram
+  // dois testes cujos nomes diferem na condição — não um teste com dois blocos de asserção.
+  // Um teste multi-comportamento falha sem dizer qual comportamento quebrou.
+  it("session_work_log_expands_on_click", async () => {
     renderBuilder();
     await openPinnedSession();
-    // Work log expansível.
     const workToggle = screen.getByRole("button", { name: /worked for 2m 30s/i });
     expect(workToggle.getAttribute("aria-expanded")).toBe("false");
     await userEvent.click(workToggle);
     const log = screen.getByTestId("builder-worklog");
     expect(log.textContent).toContain("Rewrote the instructions");
-    // Card "Edited 2 files" com contadores agregados e por arquivo.
+  });
+
+  it("session_edited_files_card_shows_both_counter_levels", async () => {
+    renderBuilder();
+    await openPinnedSession();
     const card = screen.getByTestId("builder-edited-files");
     expect(card.textContent).toContain("Edited 2 files");
     expect(card.textContent).toContain("+6");
     expect(card.textContent).toContain("-3");
     expect(card.textContent).toContain("prompts/support-tone.md");
-    // Undo é fake door honesto; Review é real (abre o painel de diffs).
+  });
+
+  // Undo é fake door honesto — desabilitado, não silenciosamente inerte.
+  it("session_undo_is_disabled", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const card = screen.getByTestId("builder-edited-files");
     const undo = within(card).getByRole("button", { name: /undo/i }) as HTMLButtonElement;
     expect(undo.disabled).toBe(true);
-    // Default à direita: painel de DETALHES (Branch details + Artifacts).
+  });
+
+  it("session_opens_with_details_panel_by_default", async () => {
+    renderBuilder();
+    await openPinnedSession();
     const details = screen.getByTestId("builder-details");
     expect(details.textContent).toContain("Branch details");
     expect(details.textContent).toContain("Pull request status unavailable");
     expect(screen.getAllByTestId("builder-artifact-item").length).toBe(2);
-    // Abrir o Review pelo botão do card.
+  });
+
+  it("review_button_opens_the_diff_panel", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const card = screen.getByTestId("builder-edited-files");
     await userEvent.click(within(card).getByRole("button", { name: /^review$/i }));
     const review = await screen.findByTestId("builder-review");
     expect(review.textContent).toContain("Unstaged");
@@ -129,22 +166,57 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByTestId("builder-details")).toBeTruthy();
   });
 
-  it("chat_width_is_resizable_via_separator_keyboard", async () => {
+  // M8 T4.1 (finding #80): as asserções eram larguras literais ("54%", "46%", "50%"), o que
+  // acoplava o teste ao passo do teclado e à largura inicial — mudar o passo de 4 para 5 quebrava
+  // um teste de acessibilidade sem que nada de acessível tivesse quebrado. Agora assevera
+  // DIREÇÃO (esquerda encolhe, direita cresce) e LIMITE (o clamp inferior), que é o contrato.
+  const widthOf = (el: HTMLElement) => Number.parseFloat(el.style.width);
+
+  it("arrow_keys_resize_the_chat_pane_in_the_pressed_direction", async () => {
     renderBuilder();
     await openPinnedSession();
     const separator = screen.getByRole("separator", { name: /resize chat/i });
     const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
-    expect(chatPane.style.width).toBe("54%");
-    // Setas redimensionam (acessível sem mouse); clamp em 25–75.
+    const initial = widthOf(chatPane);
+    // Review F-tests-4: a reescrita perdeu esta asserção. A razão inicial é decisão de produto,
+    // separada do PASSO do teclado — desacoplar do passo não exigia largar o default.
+    expect(initial).toBe(54);
+    expect(separator.getAttribute("aria-valuenow")).toBe("54");
     separator.focus();
+
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
-    expect(chatPane.style.width).toBe("46%");
+    const afterShrink = widthOf(chatPane);
+    expect(afterShrink).toBeLessThan(initial);
+
     await userEvent.keyboard("{ArrowRight}");
-    expect(chatPane.style.width).toBe("50%");
-    for (let i = 0; i < 20; i++) {
+    expect(widthOf(chatPane)).toBeGreaterThan(afterShrink);
+  });
+
+  // Review F-tests-5: `clampPct` tem DOIS limites e só o inferior tinha teste. Um mutante
+  // `Math.min(75, …)` -> `Math.min(100, …)` sobrevivia.
+  it("chat_pane_width_clamps_at_the_upper_bound", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const separator = screen.getByRole("separator", { name: /resize chat/i });
+    const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
+    separator.focus();
+    for (let i = 0; i < 30; i++) {
+      await userEvent.keyboard("{ArrowRight}");
+    }
+    expect(widthOf(chatPane)).toBe(75);
+    expect(separator.getAttribute("aria-valuenow")).toBe("75");
+  });
+
+  it("chat_pane_width_clamps_at_the_lower_bound", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const separator = screen.getByRole("separator", { name: /resize chat/i });
+    const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
+    separator.focus();
+    for (let i = 0; i < 30; i++) {
       await userEvent.keyboard("{ArrowLeft}");
     }
-    expect(chatPane.style.width).toBe("25%");
+    expect(widthOf(chatPane)).toBe(25);
     expect(separator.getAttribute("aria-valuenow")).toBe("25");
   });
 
@@ -212,27 +284,41 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(filtered[0]?.textContent).toContain("triage");
   });
 
-  it("composer_has_reference_anatomy_actions_row_and_project_row", async () => {
+  // M8 T4.1: o teste original somava quatro comportamentos independentes do composer.
+  it("composer_fake_door_actions_are_disabled", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    // Linha de ações dentro do composer: + (fake door), approval mode, esforço, mic, seta.
     const attach = screen.getByRole("button", { name: /add attachment/i }) as HTMLButtonElement;
     expect(attach.disabled).toBe(true);
     const mic = screen.getByRole("button", { name: /voice input/i }) as HTMLButtonElement;
     expect(mic.disabled).toBe(true);
-    // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui:
-    // dropdown-menu, não combobox — seletor ajustado, comportamento idêntico).
+  });
+
+  // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui: dropdown-menu,
+  // não combobox — seletor ajustado, comportamento idêntico).
+  it("composer_approval_mode_selection_persists_in_the_control", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("button", { name: /approval mode/i }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Auto-approve edits" }));
-    expect(screen.getByRole("button", { name: /approval mode/i }).textContent).toContain(
-      "Auto-approve edits",
-    );
-    // Model picker refinado: nome amigável + esforço num só controle.
+    const control = screen.getByRole("button", { name: /approval mode/i });
+    expect(control.textContent).toContain("Auto-approve edits");
+  });
+
+  it("composer_model_picker_shows_name_with_effort", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     const picker = screen.getByRole("button", { name: /model picker/i });
     expect(picker.textContent).toContain("Fable 5");
     expect(picker.textContent).toContain("Medium");
-    await userEvent.click(picker);
-    // Painel com modelos (nome + descrição + id mono) e esforço.
+  });
+
+  // Review F-tests-9: modelo e esforço são dois menus e dois estados independentes
+  // (setModel/setEffort). Este nome era meu e ainda carregava "_and_".
+  it("composer_model_picker_applies_the_selected_model", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
+    await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
     const sonnet = await screen.findByRole("menuitemradio", { name: /sonnet 4\.6/i });
     expect(sonnet.textContent).toContain("Fast and balanced");
     expect(sonnet.textContent).toContain("claude-sonnet-4-6");
@@ -240,10 +326,19 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain(
       "Sonnet 4.6",
     );
+  });
+
+  it("composer_effort_selection_applies_to_the_picker", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("button", { name: /model picker/i }));
     await userEvent.click(await screen.findByRole("menuitemradio", { name: "High" }));
     expect(screen.getByRole("button", { name: /model picker/i }).textContent).toContain("High");
-    // Linha do projeto ABAIXO do composer.
+  });
+
+  it("project_row_lists_the_new_project_option", async () => {
+    renderBuilder();
+    await screen.findByText("What should we build?");
     await userEvent.click(screen.getByRole("combobox", { name: /^project$/i }));
     const options = await screen.findAllByRole("option");
     expect(options.map((o) => o.textContent)).toContain("New project");
@@ -260,6 +355,82 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
       </DataSourceProvider>,
     );
     expect((await screen.findByRole("alert")).textContent).toContain("builder backend down");
+  });
+
+  // M8 T2.2: os caminhos de ERRO de escrita não tinham teste. O de listagem tinha
+  // (datasource_rejection_surfaces_as_visible_alert, logo acima), mas a fronteira que importa
+  // aqui é a de escrita: um erro tipado tem de virar estado visível, nunca unhandled rejection
+  // (rules/error-handling.md § 2). O M7 encontrou um bug real nesta mesma classe de fronteira.
+  it("start_session_rejection_surfaces_as_visible_error", async () => {
+    renderBuilderWith({
+      startBuilderSession: () => Promise.reject(new Error("disk is full")),
+    });
+    await submitPrompt("Create a billing reconciliation agent");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("disk is full");
+  });
+
+  // Review F-xval-2: o ROADMAP nomeia DOIS caminhos (index.tsx:198 e :210) e eu só tinha coberto
+  // o segundo. O :198 é o guard de prompt vazio — um early return silencioso, não um erro
+  // visível: submeter em branco não pode iniciar sessão nem chamar o datasource.
+  it("blank_prompt_does_not_start_a_session", async () => {
+    const startBuilderSession = vi.fn();
+    renderBuilderWith({ startBuilderSession });
+    await screen.findByText("What should we build?");
+    await userEvent.type(screen.getByRole("textbox", { name: /build instructions/i }), "   ");
+    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+    expect(startBuilderSession).not.toHaveBeenCalled();
+  });
+
+  // Review F-r2-9: o `.catch` de `openById` (index.tsx:192) é o irmão de LEITURA do caminho de
+  // escrita que o DoD nomeia — mesma superfície `role="alert"`, zero cobertura.
+  it("open_session_rejection_surfaces_as_visible_error", async () => {
+    renderBuilderWith({
+      getBuilderSession: () => Promise.reject(new Error("session vanished")),
+    });
+    const sessions = await screen.findAllByTestId("builder-session");
+    const first = sessions[0];
+    if (!first) throw new Error("no session in the sidebar");
+    await userEvent.click(first);
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("session vanished");
+  });
+
+  // Review F-r2-9: o ramo `target !== "new"` do ternário de index.tsx:204 nunca era exercitado —
+  // iniciar sessão contra um agente existente não tinha teste ponta a ponta.
+  it("start_session_forwards_the_selected_target_agent", async () => {
+    const startBuilderSession = vi.fn().mockResolvedValue({
+      id: "draft-1",
+      title: "t",
+      lastActivity: "now",
+      pinned: false,
+      workedFor: "1s",
+      workLog: [],
+      messages: [],
+      files: [],
+    });
+    renderBuilderWith({ startBuilderSession });
+    await screen.findByText("What should we build?");
+    await userEvent.click(screen.getByRole("combobox", { name: /target agent/i }));
+    await userEvent.click(await screen.findByRole("option", { name: /support agent/i }));
+    await userEvent.type(
+      screen.getByRole("textbox", { name: /build instructions/i }),
+      "tune the tone",
+    );
+    await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+    const [, targetArg] = startBuilderSession.mock.calls[0] ?? [];
+    expect(targetArg).not.toBeUndefined();
+  });
+
+  // EC-6: o ramo `String(error)` para rejeição não-Error — exatamente o que o M7 encontrou
+  // descoberto no useListing.
+  it("start_session_non_error_rejection_surfaces_as_string", async () => {
+    renderBuilderWith({
+      startBuilderSession: () => Promise.reject("boom"),
+    });
+    await submitPrompt("Create a billing reconciliation agent");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("boom");
   });
 
   it("empty_scenario_shows_no_sessions_in_sidebar", async () => {
