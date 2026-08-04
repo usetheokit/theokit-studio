@@ -1,26 +1,28 @@
 # TheoKit Studio
 
-**The dev UI your agent stack already deserves — backed by the real services you'll ship with.**
+**Describe an agent in plain language and get a working agent file back — inside the dev server you're already running.**
 
-TheoKit Studio is the local development UI for the [TheoKit](https://github.com/usetheodev) open agent stack: a chat playground, typed event-stream inspector, trace explorer, memory browser, and knowledge (RAG) inspector — embedded in the `theokit dev` server, the way Mastra Studio and Genkit Dev UI work.
+TheoKit Studio is the local development UI for the [TheoKit](https://github.com/usetheodev) open agent stack. It mounts into `theokit dev` at `/_studio`, same origin, and today ships **one surface**: the Agent Builder.
 
-The difference: Studio is not ephemeral dev-state. It runs on the same production-grade, Apache-2.0 data services you deploy with:
+| Studio surface | What you get |
+|---|---|
+| Agent Builder | A guided session that turns a prompt into an agent definition, with the skills discovered from your live registry — no manifest files |
 
-| Studio surface | Backed by | What you get |
-|---|---|---|
-| Traces | [theo-lens](https://github.com/usetheodev/theo-lens) (OTLP-native) | Durable traces, cost analytics, session replay, evals |
-| Memory | [theo-memory](https://github.com/usetheodev/theo-memory) | Scoped memories, temporal knowledge graph |
-| Knowledge | [theo-rag](https://github.com/usetheodev/theo-rag) | Collections browser, retrieval playground with real scores |
-| Playground / Events | `@theokit/sdk` reflection + `Run.stream()` | Live typed agent events, no manifest files |
-
-Everything survives hot-reloads and restarts, because it lives in Postgres — one instance, brought up with a single command:
+The agent list and the skill list come from the running `@theokit/sdk` registry through a reflection endpoint, so what you see is what your process actually has loaded — it survives hot-reload because it is re-read per request, never cached.
 
 ```bash
-theokit studio up   # docker compose: postgres (pgvector) + theo-memory + theo-lens + theo-rag
 theokit dev         # your app + Studio, one port, same origin
 ```
 
-Studio degrades gracefully: without Docker, the playground and event inspector still work; service-backed tabs simply point you at `theokit studio up`.
+Docker is not required for the Agent Builder.
+
+## Scope — what was removed
+
+Studio previously advertised a chat playground, a typed event-stream inspector, a trace explorer, a memory browser and a knowledge (RAG) inspector. **All five were removed in `74a96c6`**, along with 20 screens, when Studio was refocused on the Agent Builder as its single surface.
+
+They are not deprecated-but-working: they do not exist in this package. If you were relying on them, pin `v0.3.0`. The data services those tabs read from are separate projects and are unaffected by this change — see the [TheoKit organisation](https://github.com/usetheodev).
+
+Whether any of those surfaces returns to the roadmap is an open product decision — see [`ROADMAP.md`](./ROADMAP.md).
 
 > **Status: pre-release.** Studio is for development and debugging. Multi-tenant, production dashboards are the domain of Theo Cloud (pre-release).
 

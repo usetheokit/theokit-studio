@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- README descreve o Agent Builder como a única superfície entregue e declara, com o SHA do commit que a causou, que playground, traces, memory e knowledge foram removidos — quem precisa dessas telas deve fixar `v0.3.0` (#M7)
 
 ### Deprecated
 
