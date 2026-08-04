@@ -167,7 +167,7 @@ treat as upstream contributions, not local forks.
 
 ---
 
-### M6 — [ ] Plugin hardening (blockers da code review)
+### M6 — [x] Plugin hardening (blockers da code review)
 
 > Added 2026-08-04 by `/roadmap-feature` (slug: `plugin-hardening`). See CHANGELOG `[Unreleased] § Added`.
 > Evidence: `code-review-output/code-review.db` — findings #46, #47, #68, plus the contract and
