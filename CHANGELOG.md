@@ -10,14 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.6.0] - 2026-08-04
+
+### Changed
 - O redimensionamento do painel do Builder passa a ter teste dos dois limites, não só do inferior; e a validação de prompt em branco, que impedia iniciar uma sessão vazia, ganha teste (#M8)
 - O tratamento de teclado do divisor de painéis do Builder saiu de dentro do JSX para uma função nomeada — era a lógica mais densa do arquivo, escondida no meio do markup (#M8)
 - A cadeia de validação do endpoint de execução de agente foi extraída para uma função própria: a ordem dos oito guards (rota, método, origem, corpo, agente, chave de provider) passa a viver num lugar só, e a complexidade da função de execução cai de 20 para 10 sem mudar comportamento (#M8)
 - O adapter de dados "live" passa a delegar explicitamente ao fallback de fixtures em vez de espalhá-lo. Um método novo no contrato de dados agora quebra a compilação em vez de cair silenciosamente no fixture em tempo de execução (#M8)
 
-### Deprecated
-
-### Removed
 
 ### Fixed
 - Os testes do redimensionamento do painel deixam de asseverar larguras em CSS literal e passam a asseverar direção e limite: mudar o passo do teclado não quebra mais um teste de acessibilidade sem que nada de acessível tenha quebrado (#M8)
@@ -25,8 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Os dois caminhos de erro ao iniciar uma sessão de build passam a ter teste: uma falha do datasource vira alerta visível na tela, tanto quando o erro é tipado quanto quando não é (#M8)
 - Dois guards de segurança do plugin passam a ter teste: recusar método diferente de POST no endpoint de execução de agente (que gasta tokens reais do provider) e recusar caminho de asset com extensão conhecida que escapa do diretório da SPA (#M8)
 - O teste que verificava a escolha do modo de dados do Studio voltou a poder falhar: ele afirmava checar que o modo "live" usa a reflection real, mas passava mesmo com a lógica invertida. Agora assevera um dado que só o caminho real produz (#M8)
-
-### Security
 
 ## [0.5.0] - 2026-08-04
 
