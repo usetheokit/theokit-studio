@@ -50,26 +50,46 @@ criado.
 - **Pilar (c):** o plano não declara métrica de runtime para nenhuma task. A poda do T3.1 *melhora*
   o pilar (c) do projeto: os contadores que restam são os que de fato observam algo.
 
-## Bug encontrado e corrigido na própria ferramenta
+## Bug na própria ferramenta — e o conserto errado que a review pegou
 
-`check_wiring.py` reportou `FixtureScenario` como símbolo morto. Era **falso positivo**: o filtro
-de pilar (a) descartava qualquer arquivo cujo *basename* contivesse `fixture`, e
-`fixture-datasource.ts` é código de produção — a implementação de `StudioDataSource` que serve
-dados roteirizados, não um fixture de teste.
+`check_wiring.py` reportou `FixtureScenario` como símbolo morto. Falso positivo real: o filtro de
+pilar (a) descartava qualquer arquivo cujo *basename* contivesse `fixture`, e
+`fixture-datasource.ts` é produção — a implementação de `StudioDataSource` que serve dados
+roteirizados.
 
-Correção: `test` / `spec` / `mock` seguem casando no basename (são convenções de sufixo
-inequívocas); `fixture` passa a ser sinal de **diretório** — arquivos sob `fixtures/` continuam
-excluídos, um arquivo de produção que menciona fixtures no nome não é mais.
+**A primeira correção estava errada, e a review provou.** Ela demoveu `fixture` a segmento de
+caminho, o que quebrou nas duas direções:
 
-Verificado nas duas direções:
+- passou a excluir `packages/studio/src/data/fixtures/registry.ts`, que é produção e é importado
+  por `fixture-datasource.ts` (novo falso FAIL);
+- passou a **contar** `src/test-helpers/*.ts` como caller de produção (**falso PASS**) — um hard
+  gate falhando *aberto*, que é estritamente pior: falso FAIL é barulhento e alguém investiga;
+  falso PASS é silencioso e licencia código morto.
 
-| Sonda | Antes | Depois | Correto? |
-|---|---|---|---|
-| `FixtureScenario` (produção, em `fixture-datasource.ts`) | FAIL | **PASS** | sim |
-| `lookupOrder` (existe só em `tests/fixtures/demo-project/`) | FAIL | **FAIL** | sim |
+E a causa-raiz continuava viva: o problema nunca foi a palavra `fixture` na lista — é **casar
+substring no basename**. `latest-run.ts` contém "test"; `event-inspector.ts` contém "spec".
 
-É o quarto bug real encontrado nas ferramentas do próprio kit ao usá-las (três em
-`check_wiring.py` e um em `run_discover_plan_score.py` durante o M6).
+**A causa de processo é que eu pulei o teste de regressão** (`rules/testing.md` § 3), num commit
+cuja mensagem se gabava de ter achado um bug. `.claude/skills/implement/tests/test_check_wiring.py`
+já existia. Seis casos teriam pego isto antes de nascer — e foram exatamente esses seis que
+escrevi depois, com 3 falhando contra o código anterior.
+
+Correção final: dois sinais, porque são duas perguntas. Convenção de **sufixo** no nome
+(`*.test.ts`, `*_test.py`, `mock` como token delimitado) e **diretório** de apoio (`tests/`,
+`spec/`, `test-*/`). `fixtures` sai de vez — `src/data/fixtures/` entra no bundle, e uma pasta
+`fixtures` sob raiz de teste já é excluída pelo `--exclude-dir` do grep.
+
+| Sonda | Original | 1ª correção | Final | Correto? |
+|---|---|---|---|---|
+| `fixture-datasource.ts` (produção) | FAIL | PASS | **PASS** | sim |
+| `src/data/fixtures/registry.ts` (produção) | PASS | **FAIL** | **PASS** | sim |
+| `src/test-helpers/builders.ts` (apoio) | FAIL | **PASS** | **FAIL** | sim |
+| `latest-run.ts` / `event-inspector.ts` (produção) | FAIL | FAIL | **PASS** | sim |
+| símbolo só em `tests/fixtures/` | FAIL | FAIL | **FAIL** | sim |
+
+Quatro bugs reais encontrados nas ferramentas do kit ao usá-las (três em `check_wiring.py`, um em
+`run_discover_plan_score.py` durante o M6) — e um quinto, meu, introduzido ao consertar o
+terceiro.
 
 ## Divergências do plano — declaradas
 
@@ -118,7 +138,16 @@ Verificado nas duas direções:
 | `CounterName` com os 5 nomes | `metrics` | **RED** ✅ (estado pré-T3.1) |
 | `useListing` devolvendo `reload` | `use-listing` | **RED** ✅ (estado pré-T3.2) |
 
-Mutante do T4.1 revertido com `git restore`; árvore verificada limpa.
+Rodada 2 — mutações aplicadas e revertidas para provar as correções da review:
+
+| Mutação | Suíte | Resultado |
+|---|---|---|
+| `useEffect(..., [ds])` → `[]` | `use-listing` | **RED** ✅ (mata o refetch; antes da review nenhum teste travava a lista de deps) |
+| `CounterName` ganha `health_errors_total` sem emissor | `metrics` | **RED** ✅ (o oráculo antigo, com literal, passaria) |
+| README volta ao hero "get a working agent file back" | `readme-contract` | **RED** ✅ |
+| `check_wiring`: os 3 casos da tabela acima | `pytest` | **RED** ✅ contra o código anterior |
+
+Todos os mutantes revertidos; árvore verificada limpa a cada rodada.
 
 ## Coverage Matrix — DoD do ROADMAP § M7
 
