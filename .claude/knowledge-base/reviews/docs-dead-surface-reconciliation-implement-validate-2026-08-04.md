@@ -29,7 +29,7 @@
 - Total tasks: 6
 - Verification: independent recheck of `check_wiring.py`
 - Symbols derived from diff: 27
-- Symbols independently resolved: 17
+- Symbols independently resolved: 16
 - Pillar (a) fails (uncalled symbols): 0
 - Self-reported pillar (a) pass (claim, audited): 0
 
