@@ -241,21 +241,13 @@ def _scan_blueprint_refs(
     prose: str, line_index: list[int], project_root: Path
 ) -> list[tuple[Citation, bool]]:
     out: list[tuple[Citation, bool]] = []
-    # Both layouts, mirroring _resolve_rule_file: standalone (knowledge-base/ at root)
-    # and plugin-install (.claude/knowledge-base/).
-    candidate_dirs = (
-        project_root / "knowledge-base" / "discoveries" / "blueprints",
-        project_root / ".claude" / "knowledge-base" / "discoveries" / "blueprints",
-    )
+    blueprints_dir = project_root / "knowledge-base" / "discoveries" / "blueprints"
     available = []
-    for blueprints_dir in candidate_dirs:
-        if blueprints_dir.exists():
-            try:
-                available.extend(
-                    p for p in blueprints_dir.iterdir() if p.is_file() and p.suffix == ".md"
-                )
-            except OSError:
-                pass
+    if blueprints_dir.exists():
+        try:
+            available = [p for p in blueprints_dir.iterdir() if p.is_file() and p.suffix == ".md"]
+        except OSError:
+            available = []
     for m in _BLUEPRINT_REF_RE.finditer(prose):
         section = m.group(1) or m.group(2)
         raw = m.group(0)

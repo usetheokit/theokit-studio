@@ -11,6 +11,8 @@
     "dev": "pnpm --filter @theokit/studio dev",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
+    "test:coverage": "pnpm -r run test:coverage",
+    "lint": "biome check .",
     "typecheck": "pnpm -r run typecheck",
     "check": "biome check .",
     "check:fix": "biome check --write .",
@@ -23,5 +25,16 @@
     "@changesets/cli": "^2.31.0",
     "@types/node": "^22.10.0",
     "typescript": "^5.8.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@2": ">=2.1.4",
+      "brace-expansion@5": ">=5.0.9",
+      "postcss": ">=8.5.23",
+      "esbuild": ">=0.28.1"
+    }
+  },
+  "_comments": {
+    "pnpm.overrides": "Correção de CVEs em dependências TRANSITIVAS, apuradas por osv-scanner em 2026-08-04 (relatório: .claude/knowledge-base/audits/plugin-hardening-deps-audit-2026-08-04.md). brace-expansion: GHSA-mh99-v99m-4gvg + GHSA-rgw5-rvv9-x895 (HIGH, DoS por expansão ilimitada) — as duas majors coexistem na árvore e cada uma recebe o mínimo corrigido da sua linha. postcss: GHSA-fxqj-rqcc-2cmp (MODERATE, leitura de arquivo via sourceMappingURL). esbuild: GHSA-g7r4-m6w7-qqqr (LOW, dev server no Windows). Remover um override só depois que o pai correspondente subir a versão sozinho."
   }
 }

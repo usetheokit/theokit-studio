@@ -1,106 +1,37 @@
 import { EmptyState } from "@usetheo/ui";
-import type { ReactElement } from "react";
 import type { RouteObject } from "react-router";
 import { redirect } from "react-router";
 import { AgentBuilderPage } from "../pages/builder";
-import {
-  DatasetsPage,
-  EvaluationOverviewPage,
-  ExperimentsPage,
-  ScorersPage,
-} from "../pages/evaluation";
-import { EventsPage } from "../pages/events";
-import { KnowledgePage } from "../pages/knowledge";
-import { LogsPage } from "../pages/logs";
-import { McpServersPage } from "../pages/mcp-servers";
-import { MemoryPage } from "../pages/memory";
-import { MetricsPage } from "../pages/metrics";
-import { PlannedSurfacePage } from "../pages/planned";
-import { PlaygroundPage } from "../pages/playground";
-import { ProcessorsPage } from "../pages/processors";
-import { PromptsPage } from "../pages/prompts";
-import { RequestContextPage } from "../pages/request-context";
-import { SettingsPage } from "../pages/settings";
-import { ToolsPage } from "../pages/tools";
-import { TracesPage } from "../pages/traces";
-import { WorkflowsPage } from "../pages/workflows";
-import { WorkspacesPage } from "../pages/workspaces";
-import { SURFACES } from "./nav-items";
 import { RouteError } from "./route-error";
-import { Shell, SurfacePlaceholder } from "./shell";
 
 function NotFound() {
   return (
     <EmptyState
       title="Page not found"
-      description="This route does not exist in Studio."
+      description="Studio serves the Agent Builder only."
       data-testid="not-found"
     />
   );
 }
 
-// Páginas reais deste M5; toda surface fora deste mapa renderiza o placeholder
-// honesto (PlannedSurfacePage) — IA Mastra-parity, dogfood 2026-07-14.
-const IMPLEMENTED_PAGES: Record<string, ReactElement> = {
-  "/agents": <PlaygroundPage />,
-  "/builder": <AgentBuilderPage />,
-  "/prompts": <PromptsPage />,
-  "/workflows": <WorkflowsPage />,
-  "/processors": <ProcessorsPage />,
-  "/mcp-servers": <McpServersPage />,
-  "/tools": <ToolsPage />,
-  "/workspaces": <WorkspacesPage />,
-  "/request-context": <RequestContextPage />,
-  "/evaluation": <EvaluationOverviewPage />,
-  "/evaluation/scorers": <ScorersPage />,
-  "/evaluation/datasets": <DatasetsPage />,
-  "/evaluation/experiments": <ExperimentsPage />,
-  "/observability/events": <EventsPage />,
-  "/observability/metrics": <MetricsPage />,
-  "/observability/traces": <TracesPage />,
-  "/observability/logs": <LogsPage />,
-  "/memory/memories": <MemoryPage />,
-  "/knowledge/collections": <KnowledgePage />,
-  "/settings": <SettingsPage />,
-};
-
-// Redirects de compat: paths pré-drill-down continuam funcionando (deep links).
-const LEGACY_REDIRECTS: Record<string, string> = {
-  playground: "/agents",
-  events: "/observability/events",
-  traces: "/observability/traces",
-};
-
-export function buildRoutes(
-  extraChildren: RouteObject[] = [],
-  opts: { live?: boolean } = {},
-): RouteObject[] {
+// Superfície única: o Agent Builder em tela cheia. A raiz redireciona para ela e
+// qualquer outro path cai no NotFound — não há mais shell nem navegação lateral.
+export function buildRoutes(opts: { live?: boolean } = {}): RouteObject[] {
   return [
     {
       path: "/",
-      element: <Shell live={opts.live ?? false} />,
-      hydrateFallbackElement: <SurfacePlaceholder title="Loading" />,
-      children: [
-        { index: true, loader: () => redirect("/agents"), element: null },
-        ...Object.entries(LEGACY_REDIRECTS).map(
-          ([from, to]): RouteObject => ({
-            path: from,
-            loader: () => redirect(to),
-            element: null,
-          }),
-        ),
-        ...SURFACES.map(
-          (s): RouteObject => ({
-            path: s.path.slice(1),
-            element: IMPLEMENTED_PAGES[s.path] ?? <PlannedSurfacePage path={s.path} />,
-            errorElement: <RouteError />,
-            handle: { label: s.label },
-          }),
-        ),
-        ...extraChildren.map((r) => ({ errorElement: <RouteError />, ...r })),
-        { path: "*", element: <NotFound /> },
-      ],
+      loader: () => redirect("/builder"),
+      element: null,
+      // O redirect resolve no primeiro tick; o fallback evita a tela branca (e o warning
+      // de hidratação sem HydrateFallback) enquanto o loader roda.
+      hydrateFallbackElement: <div aria-busy="true" />,
     },
+    {
+      path: "/builder",
+      element: <AgentBuilderPage live={opts.live ?? false} />,
+      errorElement: <RouteError />,
+    },
+    { path: "*", element: <NotFound /> },
   ];
 }
 

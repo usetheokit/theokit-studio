@@ -122,7 +122,12 @@ export async function serveStudio(
   // Raiz e paths sem extensão conhecida são deep-links da SPA — nunca passam no
   // safeJoin de asset (join(spaDir, "") não teria o prefixo spaDir+sep → 403 falso).
   const ext = extname(rel);
-  const isKnownAsset = rel.length > 0 && ext in CONTENT_TYPES;
+  // `.html` NÃO é asset: servi-lo cru entregaria o index SEM o config injetado, e o bootstrap
+  // (src/bootstrap.ts) cai em fixtures quando `window.__STUDIO_CONFIG__` está ausente — ou seja,
+  // /_studio e /_studio/index.html bootariam PRODUTOS DIFERENTES. É a mesma divergência por
+  // extensão que este milestone existe para eliminar, no path mais adivinhável de todos
+  // (review F-dom-api-1). Todo HTML passa pelo fallback que injeta o config.
+  const isKnownAsset = rel.length > 0 && ext in CONTENT_TYPES && ext !== ".html";
   if (!isKnownAsset) {
     // Valida o path mesmo assim (null byte / encoding) antes do fallback.
     const check = safeJoin(opts.spaDir, rel.length === 0 ? "index.html" : rel);
@@ -150,7 +155,23 @@ export async function serveStudio(
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio asset at ${pathname}`);
     return;
   }
+  // LER ANTES DE COMPROMETER O HEAD (M6 T1.2). existsSync + statSync passarem NÃO garante
+  // leitura: EACCES é determinístico num arquivo sem permissão. Comprometer o 200 antes
+  // deixava a resposta truncada e o throw subia até o .catch() do dispatcher, matando o
+  // processo. `serveIndexWithConfig` (:85→:98) já lia antes — este era o único fora do padrão.
+  let content: Buffer;
+  try {
+    content = readFileSync(safe.path);
+  } catch (error) {
+    sendErrorEnvelope(
+      res,
+      500,
+      "ASSET_READ_FAILED",
+      `could not read studio asset at ${pathname}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+    return;
+  }
   if (res.writableEnded || res.destroyed) return;
   res.writeHead(200, { "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream" });
-  res.end(readFileSync(safe.path));
+  res.end(content);
 }

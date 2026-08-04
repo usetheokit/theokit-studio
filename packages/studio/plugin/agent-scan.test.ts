@@ -1,8 +1,11 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { scanStudioAgents } from "./agent-scan";
+
+// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+const SKIP_IF_ROOT = process.getuid?.() === 0;
 
 // Contrato: espelho fiel de ../theokit/packages/theo/src/server/scan/agent-scan.ts
 // (convenção LOCKED; ADR D3 do plano — o FONTE é a autoridade, verificado 2026-07-15):
@@ -58,6 +61,33 @@ describe("scanStudioAgents — contrato da convenção theokit (T1.2)", () => {
       writeFileSync(join(tmp, "core/agents/billing.ts"), "export default {}");
       expect(scanStudioAgents(tmp, "core/agents").map((n) => n.name)).toEqual(["billing"]);
     } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("varredura resiliente a diretório ilegível (M6 T3.1)", () => {
+  it.skipIf(SKIP_IF_ROOT)("unreadable_subdirectory_is_skipped_not_fatal", () => {
+    // scanStudioAgents tem DOIS consumidores (reflection-api.ts:85, run-endpoint.ts:173):
+    // um EACCES numa subpasta derrubava a reflection inteira E o run com 500.
+    const tmp = mkdtempSync(join(tmpdir(), "studio-scan-eacces-"));
+    const agents = join(tmp, "agents");
+    mkdirSync(join(agents, "locked"), { recursive: true });
+    writeFileSync(join(agents, "support.ts"), "export default {}");
+    writeFileSync(join(agents, "locked", "hidden.ts"), "export default {}");
+    chmodSync(join(agents, "locked"), 0o000);
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    try {
+      const names = scanStudioAgents(tmp).map((n) => n.name);
+
+      // Degrada por diretório: o que é legível continua sendo servido.
+      expect(names).toContain("support");
+      // E o pulo é VISÍVEL — engolir em silêncio é proibido (error-handling.md § 2).
+      expect(warnSpy).toHaveBeenCalled();
+    } finally {
+      warnSpy.mockRestore();
+      chmodSync(join(agents, "locked"), 0o755);
       rmSync(tmp, { recursive: true, force: true });
     }
   });

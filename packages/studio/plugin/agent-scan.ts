@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { type Dirent, existsSync, readdirSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 
 /**
@@ -32,7 +32,19 @@ export interface AgentFileNode {
 }
 
 function walk(dir: string, visit: (absPath: string) => void): void {
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+  // Degrada POR DIRETÓRIO (M6 ADR A4): scanStudioAgents tem dois consumidores
+  // (reflection-api.ts, run-endpoint.ts), então um EACCES numa subpasta derrubava a
+  // reflection inteira E o run. O diretório ilegível é pulado — e o pulo é VISÍVEL,
+  // porque engolir o erro em silêncio é proibido (error-handling.md § 2).
+  let entries: Dirent[];
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code ?? "UNKNOWN";
+    console.warn(`theokit-studio: skipping unreadable agents directory ${dir} (${code})`);
+    return;
+  }
+  for (const entry of entries) {
     const abs = join(dir, entry.name);
     if (entry.isDirectory()) {
       walk(abs, visit);

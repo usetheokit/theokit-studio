@@ -13,6 +13,7 @@ import {
   Bug,
   ChevronDown,
   Clock,
+  FlaskConical,
   FolderKanban,
   LayoutTemplate,
   Mic,
@@ -22,8 +23,6 @@ import {
   Wrench,
 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { getSurface } from "../../app/nav-items";
-import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
 import { useDataSource } from "../../data/datasource";
 import type { BuilderMessage, BuilderSessionDetail } from "../../data/types";
@@ -36,8 +35,6 @@ const MODELS = [
   { id: "claude-sonnet-4-6", name: "Sonnet 4.6", blurb: "Fast and balanced" },
   { id: "claude-haiku-4-5", name: "Haiku 4.5", blurb: "Snappy for quick edits" },
 ];
-
-const surface = getSurface("/builder");
 
 // Vistas internas navegáveis da sidebar do builder (estrutura de app de code
 // assistant): home (nova sessão), sessão aberta, e as entradas de navegação.
@@ -147,7 +144,7 @@ function TemplatesView() {
 // + vista ativa. Sessões roteirizadas em fixtures, claramente rotuladas.
 // ---------------------------------------------------------------------------
 
-export function AgentBuilderPage() {
+export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
   const ds = useDataSource();
   const { items: sessions, loadError } = useListing((d) => d.listBuilderSessions());
   const { items: agents } = useListing((d) => d.listAgents());
@@ -255,8 +252,8 @@ export function AgentBuilderPage() {
   };
 
   return (
-    <section className="flex h-full flex-col">
-      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
+    // Superfície única do Studio: ocupa a viewport inteira (não há shell em volta).
+    <section data-testid="builder-surface" className="flex h-screen flex-col bg-background">
       {(loadError || openError) && (
         <p role="alert" className="mx-8 mt-4 text-red-400 text-sm">
           {loadError ?? openError}
@@ -361,6 +358,21 @@ export function AgentBuilderPage() {
               )}
             </ul>
           </section>
+          {/* Rótulo honesto da origem dos dados — herdado do rodapé do shell removido. */}
+          <div className="mt-auto flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
+            <FlaskConical
+              className={`size-3.5 shrink-0 ${live ? "text-emerald-400" : "text-amber-400"}`}
+              aria-hidden
+            />
+            <div className="leading-tight">
+              <span className="block font-medium text-foreground text-xs">
+                {live ? "Live reflection" : "Fixtures mode"}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {live ? "dev server · fixtures where noted" : "simulated data"}
+              </span>
+            </div>
+          </div>
         </aside>
         {view.kind === "session" ? (
           // key: estado interno (rightPane/draft/splitter) zera ao trocar de sessão (F-dom-1)
