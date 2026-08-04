@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Deprecated
 
 ### Removed
+- `scenario: "offline"` deixa de ser um valor de configuração aceito. Ele passava pela validação e não fazia nada — nenhum código o distinguia de `"default"`. Agora é rejeitado como qualquer valor inválido: aviso no console nomeando o valor e queda para `"default"` (#M7)
 
 ### Fixed
 

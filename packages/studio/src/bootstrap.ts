@@ -3,14 +3,20 @@
 import { renderStartupError } from "./startup-error";
 
 export interface StudioConfig {
-  scenario: "default" | "empty" | "offline";
+  /**
+   * M7 T2.1: `"offline"` saiu do union. Era aceito na fronteira e nunca lido — nenhum consumidor
+   * o distinguia de `"default"`. Entrada aceita e ignorada é falha silenciosa
+   * (`rules/error-handling.md` § 2), então agora cai no caminho de valor inválido: warning
+   * nomeando o valor + fallback para `"default"`.
+   */
+  scenario: "default" | "empty";
   /** ausente = fixtures (shape M5 permanece válido; ponto ÚNICO do default nasce em T3.1 no composition root). */
   mode?: "fixtures" | "live";
   /** prefixo onde a SPA está servida (ex.: "/_studio"); normalizado no parse. */
   basePath?: string;
 }
 
-const VALID_SCENARIOS = new Set(["default", "empty", "offline"]);
+const VALID_SCENARIOS = new Set(["default", "empty"]);
 const VALID_MODES = new Set(["fixtures", "live"]);
 
 // Consumo do mode: `config.mode ?? "fixtures"` (helper resolveStudioMode nasce em T3.1
