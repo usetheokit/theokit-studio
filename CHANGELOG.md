@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.4.0] - 2026-08-04
+
+### Added
 - Roadmap amended: added M6 Plugin hardening (blockers da code review)
   (`/roadmap-feature plugin-hardening`)
 - Roadmap amended: added M7 Reconciliação de documentação e superfície morta
@@ -18,12 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
   API do M1 montada na mesma origem (`/_studio/api/*`)
 
-### Security
-- Corrigidas 6 vulnerabilidades em dependências transitivas via `pnpm.overrides`, apuradas por
-  `osv-scanner`: `brace-expansion` (GHSA-mh99-v99m-4gvg e GHSA-rgw5-rvv9-x895, HIGH — negação de
-  serviço por expansão ilimitada), `postcss` (GHSA-fxqj-rqcc-2cmp, MODERATE — leitura de arquivo
-  via `sourceMappingURL`) e `esbuild` (GHSA-g7r4-m6w7-qqqr, LOW — dev server no Windows).
-  Suíte, typecheck e build re-validados verdes após a mudança (#m6)
 
 ### Changed
 - Allowlist de dependências recebe GHSA-qwww-vcr4-c8h2 (`react-router`, HIGH) com sunset em
@@ -57,7 +65,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   quebraria o 0-diff; as props do 1.2.0 (`headerAggregate`/`ctaPlacement`, `submitIcon`/`submitLabel`)
   cobrem header e submit, mas não a lista de arquivos nem a moldura (#builder-ui-migration)
 
-### Deprecated
 
 ### Removed
 - As 20 telas do Studio que não eram o Builder: Agents (playground), Prompts, Workflows,
@@ -73,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   do `@theokit/ui` (mesma anatomia: nome amigável + esforço num só controle) (#builder-ui-migration)
 - `ReviewPanel` / `FileDiff` / `parseDiff` de `builder/review.tsx` — substituídos pelo
   `CodeReviewPanel` do `@theokit/ui` (o `DetailsPanel`, composição do Studio, permanece) (#builder-ui-migration)
+
 
 ### Fixed
 - **O dev server do host não morre mais por causa de um asset ilegível.** O helper de erro do
@@ -101,7 +109,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   edição correspondente do builder ainda não commitada deixava o HEAD importando um módulo
   inexistente); o arquivo volta à versão consistente para o HEAD compilar
 
+
 ### Security
+- Corrigidas 6 vulnerabilidades em dependências transitivas via `pnpm.overrides`, apuradas por
+  `osv-scanner`: `brace-expansion` (GHSA-mh99-v99m-4gvg e GHSA-rgw5-rvv9-x895, HIGH — negação de
+  serviço por expansão ilimitada), `postcss` (GHSA-fxqj-rqcc-2cmp, MODERATE — leitura de arquivo
+  via `sourceMappingURL`) e `esbuild` (GHSA-g7r4-m6w7-qqqr, LOW — dev server no Windows).
+  Suíte, typecheck e build re-validados verdes após a mudança (#m6)
 
 ## [0.3.0] - 2026-07-15
 
