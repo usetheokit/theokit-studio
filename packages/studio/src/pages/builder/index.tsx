@@ -1,3 +1,10 @@
+import {
+  type ApprovalMode,
+  ApprovalModeSelector,
+  IntentSelector,
+  ModelEffortPicker,
+  SessionListItem,
+} from "@theokit/ui";
 import { Button, EmptyState, Select, Textarea } from "@usetheo/ui";
 import {
   ArrowUp,
@@ -6,26 +13,28 @@ import {
   Bug,
   ChevronDown,
   Clock,
+  FlaskConical,
   FolderKanban,
-  Hand,
   LayoutTemplate,
   Mic,
-  Pin,
   Plus,
   Search,
   ShieldCheck,
   Wrench,
 } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import { getSurface } from "../../app/nav-items";
-import { PageHeader } from "../../app/page-header";
 import { useListing } from "../../app/use-listing";
 import { useDataSource } from "../../data/datasource";
 import type { BuilderMessage, BuilderSessionDetail } from "../../data/types";
-import { ModelPicker } from "./model-picker";
 import { SessionView } from "./session-view";
 
-const surface = getSurface("/builder");
+// Model options for the composer's <ModelEffortPicker> (from @theokit/ui).
+const MODELS = [
+  { id: "claude-fable-5", name: "Fable 5", blurb: "Deepest reasoning for complex builds" },
+  { id: "claude-opus-4-8", name: "Opus 4.8", blurb: "Strong all-round builder" },
+  { id: "claude-sonnet-4-6", name: "Sonnet 4.6", blurb: "Fast and balanced" },
+  { id: "claude-haiku-4-5", name: "Haiku 4.5", blurb: "Snappy for quick edits" },
+];
 
 // Vistas internas navegáveis da sidebar do builder (estrutura de app de code
 // assistant): home (nova sessão), sessão aberta, e as entradas de navegação.
@@ -135,14 +144,14 @@ function TemplatesView() {
 // + vista ativa. Sessões roteirizadas em fixtures, claramente rotuladas.
 // ---------------------------------------------------------------------------
 
-export function AgentBuilderPage() {
+export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
   const ds = useDataSource();
   const { items: sessions, loadError } = useListing((d) => d.listBuilderSessions());
   const { items: agents } = useListing((d) => d.listAgents());
   const [target, setTarget] = useState("new");
   const [prompt, setPrompt] = useState("");
   // Config local da sessão (real — nada executa em fixtures, mas a escolha é do usuário).
-  const [approval, setApproval] = useState("ask");
+  const [approval, setApproval] = useState<ApprovalMode>("ask");
   const [model, setModel] = useState("claude-fable-5");
   const [effort, setEffort] = useState("Medium");
   const [project, setProject] = useState("demo-workspace");
@@ -243,8 +252,8 @@ export function AgentBuilderPage() {
   };
 
   return (
-    <section className="flex h-full flex-col">
-      <PageHeader icon={surface.icon} title={surface.label} description={surface.description} />
+    // Superfície única do Studio: ocupa a viewport inteira (não há shell em volta).
+    <section data-testid="builder-surface" className="flex h-screen flex-col bg-background">
       {(loadError || openError) && (
         <p role="alert" className="mx-8 mt-4 text-red-400 text-sm">
           {loadError ?? openError}
@@ -306,18 +315,13 @@ export function AgentBuilderPage() {
               <ul className="space-y-0.5">
                 {pinned.map((s) => (
                   <li key={s.id}>
-                    <button
-                      type="button"
+                    <SessionListItem
                       data-testid="builder-session"
+                      title={s.title}
+                      pinned
+                      timestamp={s.lastActivity}
                       onClick={() => openById(s.id)}
-                      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
-                    >
-                      <Pin className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                      <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
-                      <span className="shrink-0 text-muted-foreground text-xs">
-                        {s.lastActivity}
-                      </span>
-                    </button>
+                    />
                   </li>
                 ))}
               </ul>
@@ -341,15 +345,12 @@ export function AgentBuilderPage() {
             <ul className="space-y-0.5">
               {recent.map((s) => (
                 <li key={s.id}>
-                  <button
-                    type="button"
+                  <SessionListItem
                     data-testid="builder-session"
+                    title={s.title}
+                    timestamp={s.lastActivity}
                     onClick={() => openById(s.id)}
-                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/40"
-                  >
-                    <span className="min-w-0 flex-1 truncate text-foreground">{s.title}</span>
-                    <span className="shrink-0 text-muted-foreground text-xs">{s.lastActivity}</span>
-                  </button>
+                  />
                 </li>
               ))}
               {recent.length === 0 && (
@@ -357,6 +358,21 @@ export function AgentBuilderPage() {
               )}
             </ul>
           </section>
+          {/* Rótulo honesto da origem dos dados — herdado do rodapé do shell removido. */}
+          <div className="mt-auto flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
+            <FlaskConical
+              className={`size-3.5 shrink-0 ${live ? "text-emerald-400" : "text-amber-400"}`}
+              aria-hidden
+            />
+            <div className="leading-tight">
+              <span className="block font-medium text-foreground text-xs">
+                {live ? "Live reflection" : "Fixtures mode"}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {live ? "dev server · fixtures where noted" : "simulated data"}
+              </span>
+            </div>
+          </div>
         </aside>
         {view.kind === "session" ? (
           // key: estado interno (rightPane/draft/splitter) zera ao trocar de sessão (F-dom-1)
@@ -373,29 +389,23 @@ export function AgentBuilderPage() {
               <h2 className="text-center font-display font-semibold text-2xl text-foreground tracking-tight">
                 What should we build?
               </h2>
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {BUILD_INTENTS.map((intent) => {
-                  const Icon = intent.icon;
-                  return (
-                    <button
-                      key={intent.id}
-                      type="button"
-                      data-testid="builder-intent"
-                      onClick={() => setPrompt(intent.starter)}
-                      className="flex min-h-24 flex-col justify-between rounded-xl border border-border/40 bg-card/60 p-3 text-left transition-colors hover:border-primary/40"
-                    >
-                      <span
-                        className={`flex size-7 items-center justify-center rounded-lg ${intent.tile}`}
-                      >
-                        <Icon className="size-4" aria-hidden />
-                      </span>
-                      <span className="mt-3 font-medium text-foreground text-xs leading-snug">
-                        {intent.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <IntentSelector
+                layout="tiles"
+                value=""
+                className="mt-6"
+                options={BUILD_INTENTS.map((intent) => ({
+                  id: intent.id,
+                  label: intent.label,
+                  icon: intent.icon,
+                  tileClassName: intent.tile,
+                }))}
+                onChange={(id) => {
+                  const intent = BUILD_INTENTS.find((i) => i.id === id);
+                  if (intent) {
+                    setPrompt(intent.starter);
+                  }
+                }}
+              />
               <form onSubmit={startSession} className="mt-6">
                 {/* Anatomia do composer (referência): texto → linha de ações → linha do projeto */}
                 <div className="relative rounded-2xl border border-border/60 bg-card p-3 shadow-black/20 shadow-lg transition-colors focus-within:border-primary/50">
@@ -417,28 +427,13 @@ export function AgentBuilderPage() {
                     >
                       <Plus className="size-4" aria-hidden />
                     </button>
-                    <span className="flex items-center gap-1 text-muted-foreground text-xs">
-                      <Hand className="size-3.5" aria-hidden />
-                      <Select value={approval} onValueChange={setApproval}>
-                        <Select.Trigger
-                          aria-label="Approval mode"
-                          size="sm"
-                          className="h-6 border-0 bg-transparent px-1 text-xs shadow-none"
-                        >
-                          <Select.Value />
-                        </Select.Trigger>
-                        <Select.Content>
-                          <Select.Item value="ask">Ask for approval</Select.Item>
-                          <Select.Item value="auto-edits">Auto-approve edits</Select.Item>
-                          <Select.Item value="readonly">Read-only</Select.Item>
-                        </Select.Content>
-                      </Select>
-                    </span>
+                    <ApprovalModeSelector value={approval} onChange={setApproval} />
                     <span className="ml-auto flex items-center gap-1.5">
-                      <ModelPicker
+                      <ModelEffortPicker
+                        models={MODELS}
                         model={model}
-                        effort={effort}
                         onModelChange={setModel}
+                        effort={effort}
                         onEffortChange={setEffort}
                       />
                       <button

@@ -14,10 +14,7 @@ import "./index.css";
 export function mount(rootEl: HTMLElement, config: StudioConfig): void {
   // Ponto ÚNICO do default de mode (obrigação T2.1) — nenhum outro arquivo lê config.mode.
   const live = config.mode === "live";
-  const fixtures = createFixtureDataSource({
-    scenario: config.scenario,
-    streamDelayMs: 40,
-  });
+  const fixtures = createFixtureDataSource({ scenario: config.scenario });
   // D5: live = reflection para agents/tools/skills/workflows/run/health; resto delega
   // ao fixture (rotulado). Fixtures mode = comportamento M5 intacto.
   const dataSource = live ? createReflectionDataSource({ fallback: fixtures }) : fixtures;
@@ -26,7 +23,7 @@ export function mount(rootEl: HTMLElement, config: StudioConfig): void {
     snapshot: () => metrics.snapshot(),
   };
   // SPA servida sob prefixo (M1): rotas resolvem relativo ao basename injetado pelo host.
-  const router = createBrowserRouter(buildRoutes([], { live }), {
+  const router = createBrowserRouter(buildRoutes({ live }), {
     basename: config.basePath ?? "/",
   });
   createRoot(rootEl).render(

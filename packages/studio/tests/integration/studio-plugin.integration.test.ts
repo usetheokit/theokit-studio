@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
@@ -12,8 +12,10 @@ import {
 } from "../../plugin/reflection-api";
 import { resolveSpaDir } from "../../plugin/static-serve";
 import { createFixtureDataSource } from "../../src/data/fixture-datasource";
-import { createReflectionDataSource, parseNdjson } from "../../src/data/reflection-datasource";
-import type { StudioEvent } from "../../src/data/types";
+import { createReflectionDataSource } from "../../src/data/reflection-datasource";
+
+// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+const SKIP_IF_ROOT = process.getuid?.() === 0;
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -147,7 +149,7 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
 
   it("test_spa_served_with_injected_config_over_real_http", async () => {
     // T2.2: fallback SPA + asset sobre HTTP real, com o config injetado no HTML.
-    const page = await fetch(`${baseUrl}/_studio/agents`);
+    const page = await fetch(`${baseUrl}/_studio/builder`);
     expect(page.status).toBe(200);
     const html = await page.text();
     expect(html).toContain("window.__STUDIO_CONFIG__");
@@ -162,33 +164,55 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
   });
 
   it("test_reflection_datasource_against_the_real_server", async () => {
-    // O loop COMPLETO do M1: ReflectionDataSource (SPA, react-free) → HTTP real →
-    // plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código que o
-    // browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    // O loop do M1 que a SPA ainda percorre: ReflectionDataSource (react-free) → HTTP
+    // real → plugin → ssrLoadModule → compileAgentModule. O adapter é o mesmo código
+    // que o browser roda; aqui exercitado na fronteira real (testing.md § 2).
+    // (O contrato NDJSON do run endpoint segue coberto em
+    // test_run_endpoint_streams_ndjson_over_real_http — a SPA reduzida ao Agent Builder
+    // não consome mais o stream.)
     const ds = createReflectionDataSource({
       fallback: createFixtureDataSource({ scenario: "default" }),
       baseUrl,
       fetchImpl: fetch,
     });
+
     const agents = await ds.listAgents();
     expect(agents.map((a) => a.id)).toContain("support");
     expect(agents.find((a) => a.id === "nested")?.description).toContain("failed to load");
-    const events: StudioEvent[] = [];
-    for await (const e of ds.runAgent("support", "ping de integração")) events.push(e);
-    // streamFactory do server ecoa a mensagem — mapeada para o vocabulário da UI.
-    expect(events).toEqual([{ type: "text-delta", text: "echo: ping de integração" }]);
-    // E o corpo NDJSON cru parseia com o MESMO parser do adapter (paridade nominal).
-    const raw = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "raw" }),
-    });
-    async function* chunks() {
-      yield new TextEncoder().encode(await raw.text());
+    expect((await ds.listSkills()).map((s) => s.name)).toEqual(["demo-skill"]);
+  });
+
+  it("test_reserved_svc_namespace_returns_404_over_real_http", async () => {
+    // M6 T2.1 sobre HTTP REAL (review F-wire-3: o comportamento novo só tinha teste de
+    // módulo). O bug era dependente de extensão — as duas formas precisam responder igual.
+    const noExt = await fetch(`${baseUrl}/_studio/svc/rag/v1/query`);
+    const withExt = await fetch(`${baseUrl}/_studio/svc/rag/v1/index.json`);
+
+    expect(noExt.status).toBe(404);
+    expect(withExt.status).toBe(404);
+    expect(noExt.headers.get("content-type")).toBe(withExt.headers.get("content-type"));
+    expect(((await noExt.json()) as { error: { code: string } }).error.code).toBe("NOT_FOUND");
+    // EC-3: a forma sem barra final também é reservada.
+    expect((await fetch(`${baseUrl}/_studio/svc`)).status).toBe(404);
+  });
+
+  it.skipIf(SKIP_IF_ROOT)("test_unreadable_asset_does_not_kill_the_dev_server", async () => {
+    // A cadeia que o M6 existe para matar, reproduzida no nível em que ela matava o
+    // processo: asset ilegível -> EACCES -> envelope de erro -> servidor SEGUE VIVO.
+    const locked = join(spaTmp, "assets", "locked.css");
+    writeFileSync(locked, "body{}");
+    chmodSync(locked, 0o000);
+    try {
+      const failed = await fetch(`${baseUrl}/_studio/assets/locked.css`);
+      expect(failed.status).not.toBe(200);
+
+      // A prova de vida: a requisição SEGUINTE ainda é atendida.
+      const alive = await fetch(`${baseUrl}/_studio/api/health`);
+      expect(alive.status).toBe(200);
+    } finally {
+      chmodSync(locked, 0o644);
+      rmSync(locked, { force: true });
     }
-    const kinds: string[] = [];
-    for await (const line of parseNdjson(chunks())) kinds.push(String(line.kind));
-    expect(kinds).toEqual(["message", "done"]);
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

@@ -47,6 +47,10 @@ function makeRes(): FakeRes {
     get writableEnded() {
       return state.ended;
     },
+    // M6 EC-2: headersSent explícito (não `undefined` implícito), refletindo writeHead.
+    get headersSent() {
+      return state.statusCode !== undefined;
+    },
   } as unknown as ServerResponse;
   return state;
 }

@@ -8,9 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Script `dev` na raiz do monorepo — `npm run dev` (ou `pnpm dev`) sobe o TheoKit Studio
-  (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
-  API do M1 montada na mesma origem (`/_studio/api/*`)
 
 ### Changed
 
@@ -21,6 +18,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 ### Security
+
+## [0.4.0] - 2026-08-04
+
+### Added
+- Roadmap amended: added M6 Plugin hardening (blockers da code review)
+  (`/roadmap-feature plugin-hardening`)
+- Roadmap amended: added M7 Reconciliação de documentação e superfície morta
+  (`/roadmap-feature docs-dead-surface-reconciliation`)
+- Roadmap amended: added M8 Qualidade da suíte e manutenibilidade
+  (`/roadmap-feature test-quality-maintainability`)
+- Script `dev` na raiz do monorepo — `npm run dev` (ou `pnpm dev`) sobe o TheoKit Studio
+  (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
+  API do M1 montada na mesma origem (`/_studio/api/*`)
+
+
+### Changed
+- Allowlist de dependências recebe GHSA-qwww-vcr4-c8h2 (`react-router`, HIGH) com sunset em
+  2026-11-02: o CVE é específico do RSC Mode, que esta SPA não usa (verificado por varredura em
+  `packages/studio/src`), e a correção exige bump MAJOR `7.x → 8.x` fora do escopo do M6.
+  Justificativa completa em `knowledge-base/adrs/0001-react-router-rsc-csrf-allowlist.md` (#m6)
+- **BREAKING: o Studio passa a ter uma única interface — o Agent Builder.** A tela abre em
+  tela cheia em `/builder`, a raiz `/` redireciona para ela e qualquer outro endereço
+  responde "Page not found". Quem abria o Studio para o playground, traces, memória ou
+  base de conhecimento deixa de encontrar essas telas (#studio-builder-only)
+- O contrato de dados do Studio (`StudioDataSource`) foi reduzido ao que o Builder consome:
+  agentes, skills e sessões de build. Em `mode: "live"` os agentes e skills continuam vindo
+  da reflection do dev server; as sessões de build seguem em fixtures roteirizados
+  (#studio-builder-only)
+- O rótulo de origem dos dados ("Fixtures mode" / "Live reflection") migrou do rodapé do
+  shell removido para o rodapé da barra lateral do Builder — a informação continua visível
+  em toda a sessão (#studio-builder-only)
+- Builder agora consome componentes do `@theokit/ui` para as superfícies de agente com
+  paridade visual 1:1 (mesma experiência — sem diff perceptível): `ModelEffortPicker`
+  (model picker do composer), `ApprovalModeSelector` (modo de aprovação inline),
+  `CodeReviewPanel` (painel Review com diffs por arquivo + árvore) e `WorkLog` ("Worked
+  for …" expansível). O shell do Builder (form do composer, splitter, roteamento, painel
+  de detalhes) permanece no Studio, orquestrando os componentes da lib (#builder-ui-migration)
+- Builder adota mais dois componentes do `@theokit/ui@1.2.0` com paridade visual 0-diff:
+  `IntentSelector layout="tiles"` no lugar do grid manual de intents (as 4 cores por tile —
+  sky/violet/emerald/amber — preservadas via a nova prop `tileClassName`), e `SessionListItem`
+  nas listas de sessões da sidebar (Pinned + Tasks). Bump `@theokit/ui` para `^1.2.0`.
+  `EditedFilesCard` e os composers (home + follow-up) permanecem no shell do Studio: o
+  `CreatedFilesCard` da lib renderiza cada arquivo como mini-card com ícone (o Studio usa
+  lista simples) e o `ChatComposer` tem `border-t` na action row + sombras próprias — migrar
+  quebraria o 0-diff; as props do 1.2.0 (`headerAggregate`/`ctaPlacement`, `submitIcon`/`submitLabel`)
+  cobrem header e submit, mas não a lista de arquivos nem a moldura (#builder-ui-migration)
+
+
+### Removed
+- As 20 telas do Studio que não eram o Builder: Agents (playground), Prompts, Workflows,
+  Processors, MCP Servers, Tools, Workspaces, Request Context, Evaluation (visão geral,
+  scorers, datasets, experiments), Observability (events, metrics, traces, logs), Memory,
+  Knowledge e Settings — com seus fixtures e testes (#studio-builder-only)
+- A navegação do Studio (barra lateral com drill-down, breadcrumb e cabeçalho de página) e
+  os utilitários que só ela e as telas removidas usavam (#studio-builder-only)
+- O cliente de streaming de execução no lado da SPA: o Studio não executa mais agentes pela
+  interface. O endpoint `/_studio/api/agents/*/run` do plugin `@theokit/studio/plugin`
+  permanece intacto, publicado e coberto pelos próprios testes (#studio-builder-only)
+- `packages/studio/src/pages/builder/model-picker.tsx` — substituído pelo `ModelEffortPicker`
+  do `@theokit/ui` (mesma anatomia: nome amigável + esforço num só controle) (#builder-ui-migration)
+- `ReviewPanel` / `FileDiff` / `parseDiff` de `builder/review.tsx` — substituídos pelo
+  `CodeReviewPanel` do `@theokit/ui` (o `DetailsPanel`, composição do Studio, permanece) (#builder-ui-migration)
+
+
+### Fixed
+- **O dev server do host não morre mais por causa de um asset ilegível.** O helper de erro do
+  plugin (`sendErrorEnvelope`) verificava se a resposta havia terminado, mas não se o cabeçalho
+  já tinha sido enviado; combinado com a leitura do arquivo feita *depois* do `writeHead(200)`,
+  um `EACCES` determinístico virava `ERR_HTTP_HEADERS_SENT` dentro de um `.catch()` e encerrava
+  o processo. Agora o arquivo é lido antes de comprometer o cabeçalho e, quando a resposta já
+  começou, o erro é entregue **no corpo** em vez de a conexão morrer calada (#m6)
+- Uma resposta de sucesso pedida depois que o cabeçalho já foi enviado agora **encerra** a
+  requisição com um aviso, em vez de deixá-la pendurada aberta. A correção anterior trocava o
+  crash ruidoso por um travamento silencioso — o cliente esperava para sempre (#m6)
+- `/_studio/index.html` volta a entregar a mesma página que `/_studio`. Antes, o caminho
+  explícito era servido como arquivo estático cru — sem a configuração injetada — e o Studio
+  bootava em modo fixtures nele enquanto bootava em modo real na raiz: dois produtos diferentes
+  dependendo de como se digitava a URL (#m6)
+- `/_studio/svc/{lens,memory,rag}/*` responde 404 com envelope tipado em vez de devolver o HTML
+  da SPA. O comportamento anterior dependia da extensão da URL: `.../query` devolvia HTML 200 e
+  `.../index.json` devolvia 404 JSON — duas respostas para o mesmo namespace de contrato (#m6)
+- A varredura de agents degrada por diretório: uma subpasta ilegível é pulada com aviso nomeando
+  o caminho, em vez de derrubar a reflection inteira e o endpoint de run junto (#m6)
+- O Studio no browser volta a mostrar o erro real do dev server: o cliente reconstrói o erro a
+  partir do envelope `{error:{code,message}}` que o servidor já enviava e antes era descartado
+  em favor de uma mensagem genérica derivada do status HTTP (#m6)
+- Restaurado `packages/studio/src/pages/builder/model-picker.tsx` que foi removido por
+  engano num commit de release (a deleção estava staged pela sessão paralela M7, mas a
+  edição correspondente do builder ainda não commitada deixava o HEAD importando um módulo
+  inexistente); o arquivo volta à versão consistente para o HEAD compilar
+
+
+### Security
+- Corrigidas 6 vulnerabilidades em dependências transitivas via `pnpm.overrides`, apuradas por
+  `osv-scanner`: `brace-expansion` (GHSA-mh99-v99m-4gvg e GHSA-rgw5-rvv9-x895, HIGH — negação de
+  serviço por expansão ilimitada), `postcss` (GHSA-fxqj-rqcc-2cmp, MODERATE — leitura de arquivo
+  via `sourceMappingURL`) e `esbuild` (GHSA-g7r4-m6w7-qqqr, LOW — dev server no Windows).
+  Suíte, typecheck e build re-validados verdes após a mudança (#m6)
 
 ## [0.3.0] - 2026-07-15
 
