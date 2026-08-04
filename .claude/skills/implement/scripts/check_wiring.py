@@ -117,10 +117,18 @@ def check_pillar_a_static_caller(project_root: Path, symbol: str) -> dict[str, A
         include_globs=["*.ts", "*.tsx", "*.js", "*.mjs", "*.py"],
         exclude_dirs=["node_modules", ".git", "dist", "build", "tests", "test", "__tests__", "spec"],
     )
-    # Exclude files with "test" / "spec" / "fixture" / "mock" in basename
+    # Exclude test files. "test" / "spec" / "mock" in the BASENAME are unambiguous suffix
+    # conventions. "fixture" is NOT: a production module can legitimately be named
+    # `fixture-datasource.ts` (the DataSource that serves scripted data — real production
+    # code), and excluding it by substring reported a live symbol as dead. Fixture-ness is
+    # a DIRECTORY signal, so it is matched on the path instead: anything under a
+    # `fixtures/` folder stays excluded, a production file whose name mentions fixtures
+    # does not.
     production_files = [
-        p for p in matches
-        if not any(t in p.name.lower() for t in ("test", "spec", "fixture", "mock"))
+        p
+        for p in matches
+        if not any(t in p.name.lower() for t in ("test", "spec", "mock"))
+        and not any(part.lower() in ("fixture", "fixtures") for part in p.parts)
     ]
     # Exclude files where the symbol appears ONLY on definition lines (origin, not caller)
     production_callers = [p for p in production_files if not _is_definition_only(p, symbol)]
