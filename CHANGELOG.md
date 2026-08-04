@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `scenario: "offline"` deixa de ser um valor de configuração aceito. Ele passava pela validação e não fazia nada — nenhum código o distinguia de `"default"`. Agora é rejeitado como qualquer valor inválido: aviso no console nomeando o valor e queda para `"default"` (#M7)
 
 ### Fixed
-- O verificador de wiring do kit (`check_wiring.py`) não reporta mais um símbolo vivo como código morto quando ele é usado por um arquivo de produção cujo nome contém "fixture" (o caso concreto: `fixture-datasource.ts`, que é a implementação real de DataSource, não um fixture de teste). A exclusão de fixtures passa a ser por diretório; `test`/`spec`/`mock` seguem valendo pelo nome do arquivo (#M7)
+- O verificador de wiring do kit (`check_wiring.py`) classifica arquivo de teste por convenção de sufixo (`*.test.ts`, `*_test.py`, `mock` como token) e por diretório de apoio, em vez de procurar a substring no nome. Nomes de produção legítimos como `fixture-datasource.ts`, `latest-run.ts` e `event-inspector.ts` deixam de ser descartados, e um helper em `src/test-helpers/` deixa de contar como caller de produção — este último fazia o gate falhar *aberto*, reportando código morto como vivo (#M7)
 
 ### Security
 
