@@ -12,6 +12,21 @@ function renderBuilder() {
   );
 }
 
+function renderBuilderWith(overrides: Record<string, unknown>) {
+  const ds = { ...createFixtureDataSource({ scenario: "default" }), ...overrides };
+  render(
+    <DataSourceProvider value={ds as never}>
+      <AgentBuilderPage />
+    </DataSourceProvider>,
+  );
+}
+
+async function submitPrompt(text: string) {
+  await screen.findByText("What should we build?");
+  await userEvent.type(screen.getByRole("textbox", { name: /build instructions/i }), text);
+  await userEvent.click(screen.getByRole("button", { name: /start build session/i }));
+}
+
 async function openPinnedSession() {
   const sessions = await screen.findAllByTestId("builder-session");
   const refine = sessions.find((s) => s.textContent?.includes("Refine Support Agent tone"));
@@ -260,6 +275,30 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
       </DataSourceProvider>,
     );
     expect((await screen.findByRole("alert")).textContent).toContain("builder backend down");
+  });
+
+  // M8 T2.2: os caminhos de ERRO de escrita não tinham teste. O de listagem tinha
+  // (datasource_rejection_surfaces_as_visible_alert, logo acima), mas a fronteira que importa
+  // aqui é a de escrita: um erro tipado tem de virar estado visível, nunca unhandled rejection
+  // (rules/error-handling.md § 2). O M7 encontrou um bug real nesta mesma classe de fronteira.
+  it("start_session_rejection_surfaces_as_visible_error", async () => {
+    renderBuilderWith({
+      startBuilderSession: () => Promise.reject(new Error("disk is full")),
+    });
+    await submitPrompt("Create a billing reconciliation agent");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("disk is full");
+  });
+
+  // EC-6: o ramo `String(error)` para rejeição não-Error — exatamente o que o M7 encontrou
+  // descoberto no useListing.
+  it("start_session_non_error_rejection_surfaces_as_string", async () => {
+    renderBuilderWith({
+      startBuilderSession: () => Promise.reject("boom"),
+    });
+    await submitPrompt("Create a billing reconciliation agent");
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("boom");
   });
 
   it("empty_scenario_shows_no_sessions_in_sidebar", async () => {
