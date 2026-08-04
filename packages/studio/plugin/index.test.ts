@@ -163,3 +163,42 @@ describe("theokitStudio plugin — dispatcher + health (T1.1)", () => {
     expect((JSON.parse(state.body) as { ok: boolean }).ok).toBe(true);
   });
 });
+
+describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
+  it("svc_namespace_without_route_returns_typed_404_json", async () => {
+    // CLAUDE.md trava /_studio/svc/{lens,memory,rag}/* como proxy. Enquanto não existe,
+    // devolver HTML da SPA numa rota de contrato é defeito de contrato (finding #49).
+    const handler = captureHandler();
+    const { state } = await run(handler, "/_studio/svc/lens/v1/traces");
+
+    expect(state.statusCode).toBe(404);
+    expect(JSON.parse(state.body).error.code).toBe("NOT_FOUND");
+  });
+
+  it("svc_namespace_404_is_extension_independent", async () => {
+    // O bug original: .../query caía na SPA (HTML 200) e .../index.json batia no branch de
+    // extensão conhecida (404 JSON). Mesmo namespace documentado, duas respostas.
+    const handler = captureHandler();
+    const a = await run(handler, "/_studio/svc/rag/v1/query");
+    const b = await run(handler, "/_studio/svc/rag/v1/index.json");
+
+    expect(a.state.statusCode).toBe(b.state.statusCode);
+    expect(a.state.headers["Content-Type"]).toBe(b.state.headers["Content-Type"]);
+  });
+
+  it("bare_svc_path_is_also_reserved", async () => {
+    // EC-3: sem a barra final o prefixo não casava e o bug sobrevivia na borda.
+    const handler = captureHandler();
+    const { state } = await run(handler, "/_studio/svc");
+
+    expect(state.statusCode).toBe(404);
+  });
+
+  it("reserved_namespace_requires_separator", async () => {
+    // EC-7: protege contra a forma insegura startsWith("/_studio/svc") sem separador.
+    const handler = captureHandler();
+    const { state } = await run(handler, "/_studio/svcfoo");
+
+    expect(state.statusCode).not.toBe(404);
+  });
+});

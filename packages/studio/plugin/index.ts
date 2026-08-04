@@ -21,7 +21,12 @@ export interface StudioPluginOptions {
 }
 
 const STUDIO_PREFIX = "/_studio";
-const API_PREFIX = "/_studio/api/";
+/**
+ * Prefixos que a SPA NUNCA atende. `/_studio/svc/*` é travado no CLAUDE.md como proxy
+ * same-origin dos serviços (lens/memory/rag) e ainda não foi implementado — até lá, o
+ * contrato é 404 tipado, não HTML.
+ */
+const RESERVED_API_NAMESPACES = ["/_studio/api", "/_studio/svc"] as const;
 
 // Versão lida via fs com busca dual-layout (SEPA pre-RED T1.1; mesma família do EC-10):
 // source  → plugin/index.ts      → ../package.json
@@ -62,6 +67,17 @@ function loadAgents(ctx: StudioContext) {
   });
 }
 
+/**
+ * True quando o path cai num namespace reservado da API. O separador é obrigatório
+ * (`/_studio/svcfoo` NÃO é reservado — M6 EC-7), e o path exato conta (`/_studio/svc` sem
+ * barra final também é reservado — M6 EC-3). Mesma forma do mastra (`index.ts:429-430`).
+ */
+function isReservedApiNamespace(pathname: string): boolean {
+  return RESERVED_API_NAMESPACES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 async function handleStudioRequest(
   pathname: string,
   req: IncomingMessage,
@@ -95,7 +111,14 @@ async function handleStudioRequest(
     });
     return;
   }
-  if (pathname.startsWith(API_PREFIX)) {
+  // Namespace RESERVADO é decidido ANTES do fallback da SPA (M6 ADR A2). Sem isto, um path
+  // sob um prefixo de contrato caía no serveStudio e a resposta dependia da EXTENSÃO da URL:
+  // /_studio/svc/x/query devolvia HTML 200 e /_studio/svc/x/index.json devolvia 404 JSON —
+  // duas respostas para o mesmo namespace documentado (finding #49).
+  // Precedente: mastra packages/deployer/src/server/index.ts:428-435 exclui o namespace de
+  // API antes do catch-all da SPA; lá ele delega com next() a um router, aqui emitimos o
+  // envelope nós mesmos porque o middleware connect não tem a quem delegar.
+  if (isReservedApiNamespace(pathname)) {
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio api route matches ${pathname}`);
     return;
   }

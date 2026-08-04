@@ -21,6 +21,49 @@ export interface ReflectionDataSourceOptions {
   fetchImpl?: typeof fetch;
 }
 
+/** Erro da reflection que preserva o `code` do envelope do servidor (M6 T4.1). */
+export class ReflectionRequestError extends Error {
+  readonly code: string;
+  readonly status: number;
+  constructor(code: string, message: string, status: number) {
+    super(message);
+    this.name = "ReflectionRequestError";
+    this.code = code;
+    this.status = status;
+  }
+}
+
+/**
+ * Reconstrói um erro TIPADO a partir do envelope `{error:{code,message}}` que o plugin envia.
+ * Antes, o cliente descartava o envelope e montava um `Error` genérico do status — detecção de
+ * offline degradava para comparação de string (finding #48).
+ *
+ * O corpo é lido UMA ÚNICA VEZ como texto (M6 EC-5): o body do `fetch` é um stream de leitura
+ * única, então tentar `res.json()` e cair para `res.text()` no catch lança
+ * `TypeError: body used already` — o caso negativo seria impossível de satisfazer.
+ */
+async function toTypedError(res: Response, path: string): Promise<ReflectionRequestError> {
+  const fallback = `reflection ${path} responded ${res.status} — is the dev server running?`;
+  let raw = "";
+  try {
+    raw = await res.text();
+  } catch {
+    return new ReflectionRequestError("HTTP_ERROR", fallback, res.status);
+  }
+  try {
+    const parsed = JSON.parse(raw) as { error?: { code?: unknown; message?: unknown } };
+    const code = typeof parsed.error?.code === "string" ? parsed.error.code : "HTTP_ERROR";
+    const message =
+      typeof parsed.error?.message === "string"
+        ? `reflection ${path} responded ${res.status}: ${parsed.error.message}`
+        : fallback;
+    return new ReflectionRequestError(code, message, res.status);
+  } catch {
+    // Corpo não-JSON (proxy HTML, resposta vazia) é caso NEGATIVO esperado, não excepcional.
+    return new ReflectionRequestError("HTTP_ERROR", fallback, res.status);
+  }
+}
+
 interface ReflectionAgentPayload {
   name: string;
   filePath: string;
@@ -37,7 +80,7 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
     metrics.increment("datasource_calls_total", method);
     const res = await doFetch(`${base}/_studio/api${path}`);
     if (!res.ok) {
-      throw new Error(`reflection ${path} responded ${res.status} — is the dev server running?`);
+      throw await toTypedError(res, path);
     }
     return (await res.json()) as T;
   }

@@ -98,3 +98,40 @@ describe("createReflectionDataSource (T3.1)", () => {
     expect(metrics.snapshot().datasource_calls_total?.listBuilderSessions).toBe(1);
   });
 });
+
+describe("envelope de erro tipado do servidor (M6 T4.1)", () => {
+  it("reflection_error_envelope_is_propagated_with_code", async () => {
+    // O plugin monta {error:{code,message}} com cuidado e o cliente jogava fora, montando
+    // um Error genérico a partir do status. Detecção de offline degradava para comparação
+    // de string (finding #48). Precedente: GenkitError carrega status + code.
+    const ds = makeDs({
+      "/api/agents": () => jsonResponse({ error: { code: "NOT_FOUND", message: "sem rota" } }, 404),
+    });
+
+    const err = await ds.listAgents().catch((e: unknown) => e);
+
+    expect((err as { code?: string }).code).toBe("NOT_FOUND");
+    expect((err as Error).message).toContain("sem rota");
+  });
+
+  it("non_envelope_error_body_falls_back_to_status_message", async () => {
+    // EC-5: o body do fetch é stream de LEITURA ÚNICA. Tentar res.json() e cair para
+    // res.text() no catch lança "body used already" — o caso negativo seria impossível.
+    const ds = makeDs({
+      "/api/agents": () => new Response("<html>502 Bad Gateway</html>", { status: 502 }),
+    });
+
+    await expect(ds.listAgents()).rejects.toThrow(/responded 502/);
+  });
+
+  it("envelope_without_code_falls_back_to_status_message", async () => {
+    // EC-8: JSON válido, envelope incompleto — não pode lançar SyntaxError.
+    const ds = makeDs({
+      "/api/agents": () => jsonResponse({ error: { message: "só mensagem" } }, 500),
+    });
+
+    const err = await ds.listAgents().catch((e: unknown) => e);
+
+    expect((err as Error).message).toContain("só mensagem");
+  });
+});
