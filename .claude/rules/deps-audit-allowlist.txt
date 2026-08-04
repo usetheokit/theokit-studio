@@ -32,3 +32,5 @@
 
 # Example (commented):
 # npm | lodash | ">=4.0.0,<4.17.21" | GHSA-35jh-r3h4-6jhm | 2026-09-01 | Indirect via test-only dep; not in production bundle. Track upstream fix in github.com/foo/bar#42.
+
+npm | react-router | ">=7.0.0,<8.3.0" | GHSA-qwww-vcr4-c8h2 | 2026-11-02 | RSC Mode CSRF bypass; o RSC Mode NAO e usado nesta SPA (grep por rsc/createStaticHandler/renderToReadableStream em packages/studio/src retorna zero). Fix exige bump MAJOR 7.x->8.x, fora do escopo do M6. ADR: knowledge-base/adrs/0001-react-router-rsc-csrf-allowlist.md

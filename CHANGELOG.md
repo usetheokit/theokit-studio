@@ -18,7 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
   API do M1 montada na mesma origem (`/_studio/api/*`)
 
+### Security
+- Corrigidas 6 vulnerabilidades em dependências transitivas via `pnpm.overrides`, apuradas por
+  `osv-scanner`: `brace-expansion` (GHSA-mh99-v99m-4gvg e GHSA-rgw5-rvv9-x895, HIGH — negação de
+  serviço por expansão ilimitada), `postcss` (GHSA-fxqj-rqcc-2cmp, MODERATE — leitura de arquivo
+  via `sourceMappingURL`) e `esbuild` (GHSA-g7r4-m6w7-qqqr, LOW — dev server no Windows).
+  Suíte, typecheck e build re-validados verdes após a mudança (#m6)
+
 ### Changed
+- Allowlist de dependências recebe GHSA-qwww-vcr4-c8h2 (`react-router`, HIGH) com sunset em
+  2026-11-02: o CVE é específico do RSC Mode, que esta SPA não usa (verificado por varredura em
+  `packages/studio/src`), e a correção exige bump MAJOR `7.x → 8.x` fora do escopo do M6.
+  Justificativa completa em `knowledge-base/adrs/0001-react-router-rsc-csrf-allowlist.md` (#m6)
 - **BREAKING: o Studio passa a ter uma única interface — o Agent Builder.** A tela abre em
   tela cheia em `/builder`, a raiz `/` redireciona para ela e qualquer outro endereço
   responde "Page not found". Quem abria o Studio para o playground, traces, memória ou
