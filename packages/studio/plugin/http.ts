@@ -27,8 +27,17 @@ export function sendErrorEnvelope(
 
 /** Resposta JSON simples com guard de response já encerrado ou comprometido. */
 export function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  // Não há resposta de SUCESSO a dar depois de um head comprometido — só retorna (ADR A1).
-  if (res.writableEnded || res.destroyed || res.headersSent) return;
+  // A ORDEM É O CONTRATO (M6 EC-1), igual ao sendErrorEnvelope.
+  if (res.writableEnded || res.destroyed) return;
+  if (res.headersSent) {
+    // Não há resposta de SUCESSO a dar depois de um head comprometido: o status já foi.
+    // Mas ENCERRAR é obrigatório — apenas retornar deixaria a requisição pendurada aberta,
+    // trocando o crash ruidoso por um hang silencioso (review F-arch-1). Chegar aqui é bug
+    // de chamador, então o aviso é alto em vez de engolido (error-handling.md § 2).
+    console.warn("theokit-studio: sendJson called on an already-committed response — ending it");
+    res.end();
+    return;
+  }
   res.writeHead(status, { "Content-Type": "application/json" });
   res.end(JSON.stringify(body));
 }

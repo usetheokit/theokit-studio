@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
@@ -13,6 +13,9 @@ import {
 import { resolveSpaDir } from "../../plugin/static-serve";
 import { createFixtureDataSource } from "../../src/data/fixture-datasource";
 import { createReflectionDataSource } from "../../src/data/reflection-datasource";
+
+// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+const SKIP_IF_ROOT = process.getuid?.() === 0;
 
 // Integração da fronteira REAL (testing.md § 2): Vite dev server de verdade com o plugin
 // montado — HTTP real, ssrLoadModule real sobre a fixture demo-project, sem mocks.
@@ -177,6 +180,39 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(agents.map((a) => a.id)).toContain("support");
     expect(agents.find((a) => a.id === "nested")?.description).toContain("failed to load");
     expect((await ds.listSkills()).map((s) => s.name)).toEqual(["demo-skill"]);
+  });
+
+  it("test_reserved_svc_namespace_returns_404_over_real_http", async () => {
+    // M6 T2.1 sobre HTTP REAL (review F-wire-3: o comportamento novo só tinha teste de
+    // módulo). O bug era dependente de extensão — as duas formas precisam responder igual.
+    const noExt = await fetch(`${baseUrl}/_studio/svc/rag/v1/query`);
+    const withExt = await fetch(`${baseUrl}/_studio/svc/rag/v1/index.json`);
+
+    expect(noExt.status).toBe(404);
+    expect(withExt.status).toBe(404);
+    expect(noExt.headers.get("content-type")).toBe(withExt.headers.get("content-type"));
+    expect(((await noExt.json()) as { error: { code: string } }).error.code).toBe("NOT_FOUND");
+    // EC-3: a forma sem barra final também é reservada.
+    expect((await fetch(`${baseUrl}/_studio/svc`)).status).toBe(404);
+  });
+
+  it.skipIf(SKIP_IF_ROOT)("test_unreadable_asset_does_not_kill_the_dev_server", async () => {
+    // A cadeia que o M6 existe para matar, reproduzida no nível em que ela matava o
+    // processo: asset ilegível -> EACCES -> envelope de erro -> servidor SEGUE VIVO.
+    const locked = join(spaTmp, "assets", "locked.css");
+    writeFileSync(locked, "body{}");
+    chmodSync(locked, 0o000);
+    try {
+      const failed = await fetch(`${baseUrl}/_studio/assets/locked.css`);
+      expect(failed.status).not.toBe(200);
+
+      // A prova de vida: a requisição SEGUINTE ainda é atendida.
+      const alive = await fetch(`${baseUrl}/_studio/api/health`);
+      expect(alive.status).toBe(200);
+    } finally {
+      chmodSync(locked, 0o644);
+      rmSync(locked, { force: true });
+    }
   });
 
   it("test_http_view_matches_fs_scan_and_direct_call", async () => {

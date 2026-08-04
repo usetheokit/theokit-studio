@@ -74,23 +74,65 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
     expect(body).not.toContain("nunca");
   });
 
-  it("sendErrorEnvelope_does_not_write_when_response_already_ended", async () => {
-    // EC-1 (MUST FIX): comprometida E encerrada ao mesmo tempo. Escrever aqui levantaria
-    // ERR_STREAM_WRITE_AFTER_END — trocaria um crash por outro. A ordem dos predicados é o
-    // contrato: writableEnded/destroyed saem primeiro.
-    let thrown: unknown = null;
-    const { body } = await requestWith((res) => {
-      res.writeHead(200, { "Content-Type": "text/plain" });
-      res.end("fim");
-      try {
-        sendErrorEnvelope(res, 500, "INTERNAL", "tarde demais");
-      } catch (error) {
-        thrown = error;
-      }
-    });
+  it("sendErrorEnvelope_does_not_write_when_response_already_ended", () => {
+    // EC-1 (MUST FIX): comprometida E encerrada ao mesmo tempo. A ORDEM dos predicados é o
+    // contrato — writableEnded/destroyed ANTES de headersSent.
+    //
+    // Fake com spy, não servidor real: a asserção que MATA a mutação (inverter a ordem) é
+    // "end NÃO foi chamado". Com ServerResponse real, o write-after-end vira erro ASSÍNCRONO
+    // do stream — nunca é lançado no try/catch e nunca chega ao corpo, e a review provou que
+    // a versão anterior deste teste sobrevivia à inversão (F-tests-3).
+    const end = vi.fn();
+    const writeHead = vi.fn();
+    const res = {
+      end,
+      writeHead,
+      get writableEnded() {
+        return true;
+      },
+      get destroyed() {
+        return false;
+      },
+      get headersSent() {
+        return true;
+      },
+    } as unknown as ServerResponse;
 
-    expect(thrown).toBeNull();
-    expect(body).toBe("fim");
+    expect(() => sendErrorEnvelope(res, 500, "INTERNAL", "tarde demais")).not.toThrow();
+
+    // Se headersSent for avaliado ANTES de writableEnded, o branch do corpo roda e chama end()
+    // sobre resposta encerrada — ERR_STREAM_WRITE_AFTER_END em produção.
+    expect(end).not.toHaveBeenCalled();
+    expect(writeHead).not.toHaveBeenCalled();
+  });
+
+  it("sendJson_ends_the_response_when_headers_already_sent", () => {
+    // F-arch-1: apenas retornar deixava a requisição pendurada — hang silencioso no lugar do
+    // crash ruidoso. Encerrar é obrigatório; o aviso torna o bug de chamador visível.
+    const end = vi.fn();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const res = {
+      end,
+      writeHead: vi.fn(),
+      get writableEnded() {
+        return false;
+      },
+      get destroyed() {
+        return false;
+      },
+      get headersSent() {
+        return true;
+      },
+    } as unknown as ServerResponse;
+
+    try {
+      sendJson(res, 200, { nunca: "escrito" });
+
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

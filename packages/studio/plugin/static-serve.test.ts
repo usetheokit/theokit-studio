@@ -6,6 +6,9 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveSpaDir, serveStudio } from "./static-serve";
 
+// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+const SKIP_IF_ROOT = process.getuid?.() === 0;
+
 // Static serving da SPA (T2.2): traversal guard (decode 1× → null byte → normalize →
 // prefix), fallback SPA com config injetado e escapado, 503 acionável sem dist.
 // Política de extensão (registrada no log): só extensões CONHECIDAS são assets;
@@ -234,20 +237,23 @@ describe("resolveSpaDir (T2.2)", () => {
 });
 
 describe("asset ilegível não compromete o head (T1.2)", () => {
-  it("asset_read_failure_yields_error_envelope_not_committed_200", async () => {
-    // EACCES é DETERMINÍSTICO depois de existsSync/statSync passarem — não é corrida.
-    // Comprometer o head 200 antes da leitura deixava a resposta 200 truncada e, no
-    // dispatcher, matava o processo (M6 findings #46/#47).
-    const assetPath = join(spaDir, "locked.css");
-    writeFileSync(assetPath, "body{}");
-    chmodSync(assetPath, 0o000);
-    const state = makeRes();
+  it.skipIf(SKIP_IF_ROOT)(
+    "asset_read_failure_yields_error_envelope_not_committed_200",
+    async () => {
+      // EACCES é DETERMINÍSTICO depois de existsSync/statSync passarem — não é corrida.
+      // Comprometer o head 200 antes da leitura deixava a resposta 200 truncada e, no
+      // dispatcher, matava o processo (M6 findings #46/#47).
+      const assetPath = join(spaDir, "locked.css");
+      writeFileSync(assetPath, "body{}");
+      chmodSync(assetPath, 0o000);
+      const state = makeRes();
 
-    await serveStudio("/_studio/locked.css", state.res, { spaDir, config: CONFIG });
+      await serveStudio("/_studio/locked.css", state.res, { spaDir, config: CONFIG });
 
-    expect(state.statusCode).not.toBe(200);
-    expect(JSON.parse(state.body).error.code).toBeDefined();
-  });
+      expect(state.statusCode).not.toBe(200);
+      expect(JSON.parse(state.body).error.code).toBeDefined();
+    },
+  );
 
   it("empty_asset_still_returns_200_with_content_type", async () => {
     // EC-6: 0 byte é asset VÁLIDO; com a leitura antes do head não pode virar falha.

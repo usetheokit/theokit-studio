@@ -4,6 +4,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { scanStudioAgents } from "./agent-scan";
 
+// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+const SKIP_IF_ROOT = process.getuid?.() === 0;
+
 // Contrato: espelho fiel de ../theokit/packages/theo/src/server/scan/agent-scan.ts
 // (convenção LOCKED; ADR D3 do plano — o FONTE é a autoridade, verificado 2026-07-15):
 // extensões .ts/.tsx/.js/.jsx; exclusão de teste /\.(test|spec)$/ sobre o rel SEM extensão;
@@ -64,7 +67,7 @@ describe("scanStudioAgents — contrato da convenção theokit (T1.2)", () => {
 });
 
 describe("varredura resiliente a diretório ilegível (M6 T3.1)", () => {
-  it("unreadable_subdirectory_is_skipped_not_fatal", () => {
+  it.skipIf(SKIP_IF_ROOT)("unreadable_subdirectory_is_skipped_not_fatal", () => {
     // scanStudioAgents tem DOIS consumidores (reflection-api.ts:85, run-endpoint.ts:173):
     // um EACCES numa subpasta derrubava a reflection inteira E o run com 500.
     const tmp = mkdtempSync(join(tmpdir(), "studio-scan-eacces-"));

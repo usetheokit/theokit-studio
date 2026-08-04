@@ -202,3 +202,37 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
     expect(state.statusCode).not.toBe(404);
   });
 });
+
+describe("erro após head comprometido não vira unhandled rejection (M6 T1.3)", () => {
+  it("dispatcher_error_after_committed_head_does_not_reject", async () => {
+    // Este é o teste que a review F-tests-1 flagrou como DECLARADO no plano e nunca escrito.
+    // Sem ele, os getters de headersSent dos três fakes eram inertes (F-tests-2): revertê-los
+    // para literal congelado mantinha a suíte verde, ou seja, o finding #68 estava fechado
+    // só na forma. Aqui o guard é exercitado pelo caminho REAL do dispatcher.
+    const handler = captureHandler();
+    const state = makeRes();
+    const rejections: unknown[] = [];
+    const onRejection = (reason: unknown) => rejections.push(reason);
+    process.on("unhandledRejection", onRejection);
+
+    try {
+      // Compromete o head ANTES de despachar: o handler vai falhar depois disso e cair no
+      // .catch() do middleware, que chama sendErrorEnvelope sobre resposta comprometida.
+      state.res.writeHead(200, { "Content-Type": "text/plain" });
+      expect(state.res.headersSent).toBe(true);
+
+      await new Promise<void>((resolve) => {
+        handler(makeReq("/_studio/api/agents"), state.res, () => resolve());
+        const wait = () => (state.ended ? resolve() : setTimeout(wait, 5));
+        wait();
+      });
+      await new Promise((r) => setTimeout(r, 30));
+
+      expect(rejections).toHaveLength(0);
+      // E o status original permanece: o head já tinha ido, não pode ser reescrito.
+      expect(state.statusCode).toBe(200);
+    } finally {
+      process.off("unhandledRejection", onRejection);
+    }
+  });
+});

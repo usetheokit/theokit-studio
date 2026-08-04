@@ -144,6 +144,19 @@ def check_pillar_a_static_caller(project_root: Path, symbol: str) -> dict[str, A
     }
 
 
+def _display_path(path: Path, project_root: Path) -> str:
+    """Path relativo ao projeto quando possível, absoluto quando não.
+
+    `--deferral-path` chega como o usuário digitou (tipicamente relativo) enquanto
+    `project_root` é absoluto: `Path.relative_to` levanta ValueError nesse caso e derrubava
+    o checker DEPOIS de já ter encontrado o marcador — o deferral válido virava crash.
+    """
+    try:
+        return str(path.resolve().relative_to(project_root.resolve()))
+    except ValueError:
+        return str(path)
+
+
 def check_pillar_b_integration_test(project_root: Path, symbol: str, deferral_path: Path | None) -> dict[str, Any]:
     """Find at least 1 file under tests/integration/ referencing the symbol, OR a symbol-scoped ADR-DEFER marker.
 
@@ -154,6 +167,7 @@ def check_pillar_b_integration_test(project_root: Path, symbol: str, deferral_pa
     a single function/class/type.
     """
     # Check for explicit symbol-scoped deferral marker in implementation contract
+    unbound_marker_note: str | None = None
     if deferral_path and deferral_path.exists():
         text = deferral_path.read_text(encoding="utf-8-sig")
         # Marker shape: <!-- ADR-DEFER-WIRING-B: <symbol>: <reason> -->
@@ -167,21 +181,19 @@ def check_pillar_b_integration_test(project_root: Path, symbol: str, deferral_pa
                 "pillar": "b_integration_test",
                 "status": "DEFER",
                 "reason": f"Explicit ADR-DEFER-WIRING-B marker scoped to '{symbol}' found",
-                "deferred_via": str(deferral_path.relative_to(project_root)),
+                "deferred_via": _display_path(deferral_path, project_root),
             }
-        # Detect bare markers and warn — they no longer count
+        # Markers exist but none names THIS symbol. That is only a failure if the symbol also
+        # has no real integration coverage — so we note it and fall through to the grep below.
+        # Returning here short-circuited the search and made a genuinely-covered symbol FAIL
+        # merely because the document deferred its siblings.
         bare_marker_re = re.compile(r"<!--\s*ADR-DEFER-WIRING-B:", re.IGNORECASE)
         if bare_marker_re.search(text):
-            return {
-                "pillar": "b_integration_test",
-                "status": "FAIL",
-                "reason": (
-                    f"Found ADR-DEFER-WIRING-B marker(s) in {deferral_path.name}, but none "
-                    f"name symbol '{symbol}'. Required format: "
-                    f"<!-- ADR-DEFER-WIRING-B: {symbol}: <reason> -->"
-                ),
-                "recommended_action": "Bind the deferral marker to this specific symbol or add a real integration test.",
-            }
+            unbound_marker_note = (
+                f"Found ADR-DEFER-WIRING-B marker(s) in {deferral_path.name}, but none "
+                f"name symbol '{symbol}'. Required format: "
+                f"<!-- ADR-DEFER-WIRING-B: {symbol}: <reason> -->"
+            )
 
     # Search tests/integration/ for symbol references.
     # Monorepo-aware: in a pnpm/turborepo workspace the suites live at
