@@ -281,19 +281,19 @@ a segunda não encontra a nota; a terceira falha porque `parseFeatureTableSurfac
 
 #### Acceptance criteria
 
-- `parseFeatureTableSurfaces` aplicado ao `README.md` final retorna exatamente `["Agent Builder"]`,
-  verificado por `npx vitest run docs/README.contract.test.ts` exit 0.
-- O `README.md` final contém a string literal `74a96c6` numa frase que declara remoção, verificado
+- [x] `parseFeatureTableSurfaces` aplicado ao `README.md` final retorna exatamente `["Agent Builder"]`,
+  verificado por `npx vitest run tests/docs/readme-contract.test.ts` exit 0.
+- [x] O `README.md` final contém a string literal `74a96c6` numa frase que declara remoção, verificado
   pela segunda asserção do mesmo arquivo.
-- `parseFeatureTableSurfaces` aplicado a um texto sem tabela **lança** erro casando
+- [x] `parseFeatureTableSurfaces` aplicado a um texto sem tabela **lança** erro casando
   `/tabela de features não encontrada/`, verificado pela terceira asserção (EC-1).
-- `grep -c -E 'theo-(lens|memory|rag)' README.md` retorna `0` — nenhuma menção a serviço como
+- [x] `grep -c -E 'theo-(lens|memory|rag)' README.md` retorna `0` — nenhuma menção a serviço como
   superfície entregue sobrevive; substitui o critério de leitura humana (EC-3).
 
 #### DoD
 
-- `npx vitest run docs/README.contract.test.ts` → exit 0, 3 testes passando.
-- `CHANGELOG.md` `[Unreleased] § Changed` com uma linha voltada ao consumidor.
+- [x] `npx vitest run tests/docs/readme-contract.test.ts` → exit 0, 6 testes passando.
+- [x] `CHANGELOG.md` `[Unreleased] § Changed` com uma linha voltada ao consumidor.
 
 ### T1.2 — DoD de M1/M2/M3 reconciliado e em bullets de uma linha
 
@@ -349,17 +349,18 @@ três milestones.
 
 #### Acceptance criteria
 
-- `python3 tests/roadmap_dod_shape_test.py` exit 0: nenhuma linha de continuação nos blocos de DoD
-  de M1, M2 e M3 (EC-2).
-- O número de critérios devolvido por `extract_acceptance_criteria.py --milestone M{1,2,3}` é igual
-  ao número de bullets `- [` do bloco correspondente e ≥ 1 (EC-2).
-- `grep -c '2026-08-04' ROADMAP.md` cresce em exatamente o número de critérios cancelados, e cada
-  bullet cancelado casa `- \[ \].*2026-08-04` — substitui o critério de leitura humana (EC-3).
+- [x] `python3 tests/roadmap_dod_shape_test.py` exit 0: nenhuma linha de continuação no bloco de DoD de
+  NENHUM milestone que o arquivo declara — a lista é descoberta, não fixa (EC-2 + review F-tests-1).
+- [x] O número de critérios devolvido pelo extrator é igual ao número de bullets `- [` do bloco, para
+  todo milestone descoberto, e ≥ 1 (EC-2).
+- [x] `grep -cE '^- \[ \] CANCELADO 2026-08-04' ROADMAP.md` é igual ao número de critérios cancelados
+  (9). Conta só a forma de BULLET: a versão anterior contava qualquer linha com a data e incluía as
+  notas em blockquote, falhando 12 vs 9 (review F-xval-3).
 
 #### DoD
 
-- O script de verificação acima roda com exit 0 para M1, M2 e M3.
-- `CHANGELOG.md` atualizado.
+- [x] O script de verificação acima roda com exit 0 para M1, M2 e M3.
+- [x] `CHANGELOG.md` atualizado.
 
 ## Phase 2: Superfície de configuração
 
@@ -424,17 +425,17 @@ justamente falhar se o estreitamento for feito com um dedo a mais.
 
 #### Acceptance criteria
 
-- `readStudioConfig` com `{"scenario":"offline"}` retorna `config.scenario === "default"` e
+- [x] `readStudioConfig` com `{"scenario":"offline"}` retorna `config.scenario === "default"` e
   `warnings` contendo `invalid scenario "offline"`, verificado por
   `npx vitest run src/bootstrap.test.ts` exit 0.
-- `grep -rn '"offline"' packages/studio/src` retorna apenas ocorrências dentro de arquivos de
-  teste, verificado na execução do gate.
-- `npm run typecheck` exit 0 — prova de que nenhum leitor comparava com o valor removido.
+- [x] `grep -rn '"offline"' packages/studio/src` não retorna nenhuma ocorrência em posição de CÓDIGO:
+  as que restam são comentários documentando a remoção, o que é desejável (review F-xval-4).
+- [x] `npm run typecheck` exit 0 — prova de que nenhum leitor comparava com o valor removido.
 
 #### DoD
 
-- Suíte de `bootstrap.test.ts` verde; `npm run typecheck` limpo.
-- `CHANGELOG.md` `[Unreleased] § Removed` com a linha voltada ao consumidor.
+- [x] Suíte de `bootstrap.test.ts` verde; `npm run typecheck` limpo.
+- [x] `CHANGELOG.md` `[Unreleased] § Removed` com a linha voltada ao consumidor.
 
 ## Phase 3: Superfície morta no código
 
@@ -493,16 +494,16 @@ em `metrics.ts:30` garante) — existe para travar a garantia enquanto o arquivo
 
 #### Acceptance criteria
 
-- `Object.keys(metrics.snapshot())` retorna exatamente `["datasource_calls_total"]`, verificado por
+- [x] `Object.keys(metrics.snapshot())` retorna exatamente `["datasource_calls_total"]`, verificado por
   `npx vitest run src/data/metrics.test.ts` exit 0.
-- `npm run typecheck` exit 0 — prova de que nenhum `increment` referenciava um nome removido.
-- O teste de integração do M6 que assevera `window.__STUDIO_METRICS__` não-vazio continua verde,
+- [x] `npm run typecheck` exit 0 — prova de que nenhum `increment` referenciava um nome removido.
+- [x] O teste de integração do M6 que assevera `window.__STUDIO_METRICS__` não-vazio continua verde,
   verificado na suíte completa.
 
 #### DoD
 
-- Suíte verde; typecheck limpo.
-- `CHANGELOG.md` atualizado.
+- [x] Suíte verde; typecheck limpo.
+- [x] `CHANGELOG.md` atualizado.
 
 ### T3.2 — `reload()`, `version` e o warrant de lint falso removidos
 
@@ -547,16 +548,16 @@ RED esperado: recebe `["items","loadError","reload"]`.
 
 #### Acceptance criteria
 
-- `Object.keys` do retorno de `useListing` é exatamente `["items","loadError"]` (ordem
+- [x] `Object.keys` do retorno de `useListing` é exatamente `["items","loadError"]` (ordem
   irrelevante), verificado por `npx vitest run src/app/use-listing.test.tsx` exit 0.
-- `grep -c "biome-ignore" packages/studio/src/app/use-listing.ts` retorna `0`.
-- `npm run check` (biome) exit 0 com **0 warnings** — prova de que a remoção de `version` não
+- [x] `grep -c "biome-ignore" packages/studio/src/app/use-listing.ts` retorna `0`.
+- [x] `npm run check` (biome) exit 0 com **0 warnings** — prova de que a remoção de `version` não
   reintroduziu a violação de `useExhaustiveDependencies` que a supressão mascarava.
 
 #### DoD
 
-- Suíte verde; `npm run check` limpo sem nenhuma supressão nova.
-- `CHANGELOG.md` atualizado.
+- [x] Suíte verde; `npm run check` limpo sem nenhuma supressão nova.
+- [x] `CHANGELOG.md` atualizado.
 
 ## Phase 4: API host-facing
 
@@ -621,17 +622,17 @@ rede que ainda não existe.
 
 #### Acceptance criteria
 
-- `GET /_studio/api/tools` e `GET /_studio/api/workflows` respondem `200` com content-type JSON e
+- [x] `GET /_studio/api/tools` e `GET /_studio/api/workflows` respondem `200` com content-type JSON e
   corpo casando `{ items: Array }`, verificado por `npx vitest run tests/integration/` exit 0.
-- `grep -c '_studio/api/tools' README.md` ≥ 1 e o mesmo para `_studio/api/workflows` e para o path
+- [x] `grep -c '_studio/api/tools' README.md` ≥ 1 e o mesmo para `_studio/api/workflows` e para o path
   do run endpoint — substitui o critério de leitura humana (EC-3).
-- A seção nova **não** entra na tabela de features do T1.1 — o teste de contrato do README
+- [x] A seção nova **não** entra na tabela de features do T1.1 — o teste de contrato do README
   continua retornando `["Agent Builder"]`, verificado por `npx vitest run docs/`.
 
 #### DoD
 
-- Suíte de integração verde com os 2 testes novos.
-- `CHANGELOG.md` `[Unreleased] § Added` documentando a superfície host-facing.
+- [x] Suíte de integração verde com os 2 testes novos.
+- [x] `CHANGELOG.md` `[Unreleased] § Added` documentando a superfície host-facing.
 
 ## Coverage Matrix
 

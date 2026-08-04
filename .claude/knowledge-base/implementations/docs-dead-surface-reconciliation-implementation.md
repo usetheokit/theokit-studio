@@ -21,15 +21,19 @@ plan: knowledge-base/plans/docs-dead-surface-reconciliation-plan.md
 
 ## Gates
 
+Medidos após a rodada de correções da review (números re-executados, não lembrados — a
+primeira versão desta tabela errava o baseline e a cobertura, review F-xval-7):
+
 | Gate | Resultado |
 |---|---|
-| `npm test` | **155/155** (19 arquivos) — era 149 antes do M7 |
+| `npm test` | **165/165** (19 arquivos) — o baseline pré-M7 era **141**, não 149 |
 | `npm run typecheck` | limpo |
 | `npm run check` (biome) | limpo, 0 warnings, **nenhuma supressão nova** |
 | `npm run build` | vite + tsup, 0 erros |
-| Cobertura de branch global | **89,93%** — piso de 89,46% mantido |
-| `tests/roadmap_dod_shape_test.py` | PASS para M1, M2, M3 |
-| `run_validation.py` | 8 PASS, 0 FAIL, 1 WARN (code-quality `PASS_WITH_CAVEATS`), 1 N/A |
+| Cobertura de branch global | **90,17%** — piso de 89,46% mantido |
+| `tests/roadmap_dod_shape_test.py` | PASS para **M0…M8** (9 milestones, descobertos do arquivo) |
+| `pytest .claude/skills/implement/tests/test_check_wiring.py` | 13/13 |
+| `run_validation.py` | 8 PASS, 0 FAIL, 2 WARN, 1 N/A |
 
 ## Wiring triad
 
@@ -85,7 +89,17 @@ Verificado nas duas direções:
    `{items: [...]}`" nesses endpoints. Estava parcialmente errado: o
    `test_tools_workflows_and_skills_aggregates_over_real_http` já cobria a forma. A lacuna real era
    status e content-type — são essas as asserções novas. Registrado em vez de inflar a entrega.
-6. **O halt-loop do ralph-loop não dirigiu a implementação.** As seis tasks foram conduzidas
+6. **`check_wiring.py` foi editado fora de qualquer task** (review F-xval-9). Está descrito na
+   seção acima e no CHANGELOG, mas faltava nesta lista — que é onde um auditor de "plano vs diff"
+   procura por arquivo tocado fora do plano.
+7. **A API real do parser de config não é a que o plano nomeia** (review F-xval-8). O plano
+   escreveu `readStudioConfig` devolvendo `{config, warnings}`; a produção tem
+   `parseStudioConfig(raw): StudioConfig`, com os warnings agregados num `console.warn`. O
+   comportamento exigido é o mesmo; o nome no plano estava errado.
+8. **O union de `FixtureScenario` mora em `types.ts`, não em `fixture-datasource.ts`** (review
+   F-xval-8). O plano listou o arquivo errado em "Files to edit"; o valor foi removido no arquivo
+   onde o tipo de fato é declarado.
+9. **O halt-loop do ralph-loop não dirigiu a implementação.** As seis tasks foram conduzidas
    diretamente no ciclo RED → GREEN → REFACTOR → COMMIT. Consequência concreta: o
    `.progress-{slug}.json` foi escrito ao final, não a cada iteração, e por isso os gates que o
    leem (`progress_schema`, `checkpoint_consistency`, `wiring_triad`) pularam na primeira execução
