@@ -18,3 +18,6 @@ architect-output/
 .claude/halt-loop-prompts/
 .claude/.compaction-snapshots/
 .claude/knowledge-base/discoveries/.progress-*.json
+
+# loop-code-review working dir (durable artifacts copied to knowledge-base/audits/)
+code-review-output/

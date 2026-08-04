@@ -167,6 +167,140 @@ treat as upstream contributions, not local forks.
 
 ---
 
+### M6 — [ ] Plugin hardening (blockers da code review)
+
+> Added 2026-08-04 by `/roadmap-feature` (slug: `plugin-hardening`). See CHANGELOG `[Unreleased] § Added`.
+> Evidence: `code-review-output/code-review.db` — findings #46, #47, #68, plus the contract and
+> error-handling rows on `plugin/index.ts`, `plugin/agent-scan.ts`, `src/data/reflection-datasource.ts`.
+
+**Objective:** Eliminar o defeito que derruba o dev server do usuário e fechar as lacunas de
+contrato e de tratamento de erro na fronteira HTTP do plugin — a superfície publicada do pacote.
+
+**Definition of done:**
+
+- [ ] `sendErrorEnvelope` e `sendJson` (`plugin/http.ts:13,20`) verificam `res.headersSent`, e o
+      branch de asset (`plugin/static-serve.ts:154`) lê o arquivo **antes** de comprometer o head.
+      Regressão provada por um teste que falha antes da correção.
+- [ ] Existe `plugin/http.test.ts` exercitando o helper sobre uma resposta já comprometida, e os
+      três fakes (`static-serve.test.ts:48`, `run-endpoint.test.ts:47`, `index.test.ts:51`) expõem
+      `headersSent` — hoje o guard corrigido não seria assertável sem reescrevê-los.
+- [ ] `/_studio/svc/{lens,memory,rag}/*` responde envelope 404 tipado em vez de HTML da SPA, com a
+      mesma resposta independentemente da extensão da URL (`plugin/index.ts:98`).
+- [ ] `scanStudioAgents` (`plugin/agent-scan.ts:35`) trata diretório ilegível sem derrubar a
+      reflection inteira, com caso negativo coberto por teste.
+- [ ] `ReflectionDataSource` propaga o envelope tipado do servidor em vez de `Error` genérico
+      (`src/data/reflection-datasource.ts:39`).
+- [ ] Suíte verde e cobertura de branch de `plugin/http.ts` sai de 50% para 100%.
+
+**Dependencies:** none — o código auditado já está em `main` desde `v0.3.0`; nada bloqueia.
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Inverter a ordem read/commit em `serveStudio` pode alterar Content-Type ou cache de assets; a
+   asserção de paridade HTTP == chamada direta == scan do fs (`studio-plugin.integration.test.ts:180`)
+   é a rede que pega isso.
+2. Expor `headersSent` nos três fakes toca harnesses de três arquivos; simplificá-los demais pode
+   mascarar asserções que hoje passam por outro motivo.
+
+**Why now (from grill Q1):**
+
+A cadeia de crash foi reproduzida duas vezes de forma independente (revisor no Node v22.22.2 e o
+gate de qualidade contra o `serveStudio` real, exit code 1). Não é uma corrida rara: `readFileSync`
+lança `EACCES` depois de `existsSync` e `statSync` passarem, então um único asset ilegível derruba o
+dev server em toda requisição. O pacote foi publicado em `v0.3.0` — o defeito está no artefato que
+outros projetos montam. A correção é de ~10 minutos; o que custa é o teste que a torna assertável.
+
+---
+
+### M7 — [ ] Reconciliação de documentação e superfície morta
+
+> Added 2026-08-04 by `/roadmap-feature` (slug: `docs-dead-surface-reconciliation`).
+> Evidence: `code-review-output/code-review.db` — findings #1, #12, #2, #3, #4, #5, #7, #8.
+
+**Objective:** Fazer a documentação e a superfície de configuração descreverem o produto que existe
+hoje — uma única tela — e remover o resíduo deixado pelo corte de 20 telas em `74a96c6`.
+
+**Definition of done:**
+
+- [ ] README (hero, tabela de features e a promessa de degradação graciosa) descreve o Agent Builder
+      como superfície única; nenhuma menção a playground, traces, memory ou knowledge como entregues
+      (`README.md:5,11-14,23`).
+- [ ] DoD de M1, M2 e M3 reconciliado com o escopo entregue: nenhum bullet exige tela removida. Cada
+      bullet é reescrito, ou o milestone é marcado cancelado com razão datada conforme o protocolo de
+      revisão do roadmap-template.
+- [ ] `scenario:"offline"` removido de `FixtureScenario` e `VALID_SCENARIOS`, ou passa a ter efeito
+      observável — hoje é aceito na fronteira e silenciosamente ignorado (`src/bootstrap.ts:13`).
+- [ ] `CounterName` contém apenas contadores emitidos em produção; `reload()`/`version` e o warrant
+      falso de lint em `src/app/use-listing.ts:20,40` removidos ou corrigidos.
+- [ ] Decisão registrada sobre `/_studio/api/{tools,workflows}` e o run endpoint: ou documentados
+      como API host-facing no README do pacote, ou removidos (`plugin/index.ts:79`).
+- [ ] `npm run check`, typecheck e suíte verdes; nenhum finding de completude aberto sem justificativa.
+
+**Dependencies:** none — toca `src/*` e documentação, disjunto de M6.
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Reescrever o DoD de M1/M2/M3 é decisão de produto, não de engenharia. Sem alguém com autoridade
+   para dizer se aquelas telas voltam ou saem do plano, este milestone trava — e enquanto travar,
+   `cycle-acceptance` não consegue aceitar M1, M2 nem M3.
+2. Remover os endpoints sem consumidor pode quebrar um host externo já integrado: o pacote foi
+   publicado em `v0.3.0`, então a ausência de consumidor *neste repo* não prova ausência de consumidor.
+
+**Why now (from grill Q1):**
+
+O README é a porta de entrada do pacote e hoje é falso: a primeira coisa que um adotante tenta —
+abrir o playground — não existe. Pior, os bullets de Definition of done de M1/M2/M3 são lidos
+*verbatim* pelo `cycle-acceptance` como critérios de aceitação, e o refactor os tornou
+inexercitáveis. O roadmap deixou de ser um plano e virou registro de um plano abandonado.
+
+---
+
+### M8 — [ ] Qualidade da suíte e manutenibilidade
+
+> Added 2026-08-04 by `/roadmap-feature` (slug: `test-quality-maintainability`).
+> Evidence: `code-review-output/code-review.db` — findings #64, #66, #69, #70, #74, #16, #17, #15, plus the maturity rows.
+
+**Objective:** Devolver poder discriminante aos testes que o perderam no refactor e reduzir a
+densidade de decisão onde ela é real — sem refatorar por estética.
+
+**Definition of done:**
+
+- [ ] `test_composition_root_selects_hybrid_in_live_mode` volta a falhar quando o ternário de
+      `src/main.tsx:20` é invertido; a prova é executada e registrada no log do milestone.
+- [ ] Guards hoje descobertos ganham teste: 405 não-POST (`plugin/run-endpoint.ts:154`), 403 do
+      branch de asset com extensão conhecida (`plugin/static-serve.ts:145`), e os dois caminhos de
+      erro de escrita do builder (`src/pages/builder/index.tsx:198,210`).
+- [ ] `handleAgentRun` (CC=18) e `SessionView` (CC=16) abaixo de 15, medidos pela mesma regra ESLint
+      `complexity` com `variant: "classic"` — ou ADR registrando por que permanecem.
+- [ ] Spread `{...opts.fallback}` substituído por delegações explícitas
+      (`src/data/reflection-datasource.ts:50`), tornando visível em tempo de compilação o que hoje
+      só falha em runtime.
+- [ ] Os dois testes multi-comportamento divididos (`builder.test.tsx:57,215`) e as asserções em CSS
+      literal trocadas por direção e limite.
+- [ ] Os 32 findings `low` triados: cada um FIXED ou com razão registrada para adiar.
+- [ ] Cobertura de branch não regride abaixo dos 89,46% medidos nesta auditoria.
+
+**Dependencies:** M7 — ambos editam `src/pages/builder/index.tsx` e `session-view.tsx`; M7 remove
+código morto de lá que M8 refatoraria à toa.
+
+**Top risks (new — pre-existing risks documented elsewhere in roadmap):**
+
+1. Reduzir a complexidade de `handleAgentRun` mexe no endpoint de run, a fronteira de rede mais
+   afiada do pacote. Refatorar sem alterar comportamento exige que os casos negativos existam
+   *antes* — o que faz este item depender do trabalho de teste listado acima dele.
+2. Triagem de 32 findings `low` é terreno fértil para bikeshedding (nomes de variável, ternários).
+   Sem timebox declarado, o milestone não fecha.
+
+**Why now (from grill Q1):**
+
+A auditoria encontrou um teste que não pode falhar pelo motivo que o nome afirma — e o avaliador
+provou isso invertendo a lógica de produção e vendo a suíte seguir verde. Um teste assim é pior que
+teste nenhum: ele reporta uma garantia que não existe. Enquanto ele estiver no lugar, qualquer
+refatoração do composition root passa despercebida.
+
+---
+
+
 ## Decisions log
 
 - 2026-07-14 — Studio lives in its **own repo** (`usetheodev/theokit-studio`), consumed by

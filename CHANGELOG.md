@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Roadmap amended: added M6 Plugin hardening (blockers da code review)
+  (`/roadmap-feature plugin-hardening`)
+- Roadmap amended: added M7 Reconciliação de documentação e superfície morta
+  (`/roadmap-feature docs-dead-surface-reconciliation`)
+- Roadmap amended: added M8 Qualidade da suíte e manutenibilidade
+  (`/roadmap-feature test-quality-maintainability`)
 - Script `dev` na raiz do monorepo — `npm run dev` (ou `pnpm dev`) sobe o TheoKit Studio
   (delegando ao pacote `@theokit/studio`) em `http://localhost:5173/`, com a reflection
   API do M1 montada na mesma origem (`/_studio/api/*`)
