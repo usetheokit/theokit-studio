@@ -10,10 +10,10 @@ TheoKit Studio is the local development UI for the [TheoKit](https://github.com/
 
 Two halves, and it matters which is which:
 
-- **Live** — the agent list and the skill list. Both are discovered from your project's `agents/` directory and `.theokit/skills/`, compiled fresh on every request, so they follow hot-reload and never go stale.
-- **Scripted** — the assistant's reply, the work log and the proposed files. These are fixtures. The Builder **does not write anything to disk** and does not call a model. The UI says so on screen, and this README says so here.
+- **Live, when a host mounts Studio in live mode** — the agent list and the skill list are discovered from your project's `agents/` directory and `.theokit/skills/`, compiled fresh on every request, so they follow hot-reload and never go stale.
+- **Scripted, always** — the assistant's reply, the work log and the proposed files are fixtures. The Builder **does not write anything to disk** and does not call a model. The UI says so on screen, and this README says so here.
 
-Turning the scripted half into a real assistant is future scope, not a shipped capability.
+**`pnpm dev` runs both halves from fixtures.** The live agent/skill lists need a host that injects `mode: "live"`, and the only one that exists today is this package's own plugin serving `/_studio` after `pnpm build` — the sidebar badge tells you which mode you are in. Turning the scripted half into a real assistant is future scope, not a shipped capability.
 
 ## Running it
 
@@ -46,14 +46,14 @@ The `@theokit/studio/plugin` export mounts HTTP resources for the **host** that 
 |---|---|---|---|
 | `/_studio/api/tools` | `GET` | `200` `application/json`, `{ items: [...] }` — tools aggregated across the registered agents | integration test |
 | `/_studio/api/workflows` | `GET` | `200` `application/json`, `{ items: [...] }` — **subagents** declared by the registered agents, surfaced under the workflow name. True workflow enumeration is blocked on an SDK gap (`theokit-sdk#123`); a project with real workflows and no subagents gets `{ items: [] }` | integration test |
-| `/_studio/api/agents/{name}/run` | `POST` | `200` NDJSON stream of typed run events. Error envelope before the stream: `403` origin refused, `404` unknown route or agent, `405` non-POST, `422` invalid agent, `424` provider key missing. Requires one of `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` | streaming happy path only — status/method contract lands in M8 |
+| `/_studio/api/agents/{name}/run` | `POST` | `200` NDJSON stream of typed run events. Error envelope before the stream: `400` malformed agent name or invalid body, `403` origin refused, `404` unknown route or agent, `405` non-POST, `422` invalid agent, `424` provider key missing. Requires one of `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` / `OPENROUTER_API_KEY` | streaming happy path only — status/method contract lands in M8 |
 | `/_studio/api/health` | `GET` | `200` `{ ok, studio }` | integration test |
 
 The two aggregates are recomputed per request from the same compilation the reflection endpoint uses, so they follow hot-reload and are never cached.
 
 `/_studio/api/agents` and `/_studio/api/skills` are the two the SPA itself consumes.
 
-The host also injects `window.__STUDIO_CONFIG__`, a JSON object with `scenario` (`"default" | "empty"`), `mode` (`"fixtures" | "live"`) and `basePath`. Unknown or invalid values are reported on the console and fall back to the defaults rather than being silently ignored.
+Studio **accepts** a `window.__STUDIO_CONFIG__` JSON object with `scenario` (`"default" | "empty"`), `mode` (`"fixtures" | "live"`) and `basePath`. The bundled plugin injects only `mode` and `basePath`; `scenario` is there for a hand-written host. Unknown or invalid values are reported on the console — naming both the offending value and the accepted set — and fall back to the defaults rather than being silently ignored.
 
 ## Design
 

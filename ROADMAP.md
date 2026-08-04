@@ -88,77 +88,32 @@ embedding-dim drift if embedder changes after first migration.
 
 **Objective:** The Mastra/Genkit experience inside `theokit dev`: playground + live typed events.
 
-> Escopo reconciliado em 2026-08-04 (M7): dois critérios foram cancelados porque as telas que
-> exigiam saíram em `74a96c6`. O milestone permanece `[ ]` e agora é exercitável.
+> **Escopo reconciliado em 2026-08-04 (M7).** Dois critérios originais foram cancelados porque as
+> telas que exigiam saíram em `74a96c6`. Eles ficam registrados **aqui, fora do bloco de
+> Definition of done**, e não como bullets: o extrator de `cycle-acceptance` lê todo `- [ ]` do
+> bloco como critério, então uma nota de cancelamento ali dentro tornaria o milestone
+> permanentemente `NOT_VALIDATED` — o oposto do que esta reconciliação existe para resolver.
+>
+> - CANCELADO 2026-08-04: "Chat playground against any registered agent; event inspector
+>   rendering `Run.stream()` typed events live (text deltas, tool calls, permissions,
+>   rate-limit, completion)" — a tela foi removida em `74a96c6`; retomada é decisão de produto em
+>   aberto (Q1 do plano `docs-dead-surface-reconciliation`).
+> - CANCELADO 2026-08-04: "Works with Docker absent; service tabs show actionable
+>   "run `theokit studio up`" state" — não existem abas de serviço desde `74a96c6`; a metade que
+>   sobrevive (degradação graciosa) está no último bullet do DoD abaixo.
 
 **Definition of done:**
 - [ ] Reflection endpoint in the dev server exposes the live `@theokit/sdk` registry (agents, tools, skills, workflows) with no manifest file — `GET /_studio/api/agents` responds 200 with an `items` envelope.
 - [ ] Studio SPA (built with current `@theokit/ui`) is served at `/_studio`, same origin as the dev server.
 - [ ] A prompt submitted at `/builder` starts a build session that renders the assistant reply, the work log and the proposed files in the review pane, and the target-agent selector is populated from `GET /_studio/api/agents`. **Escopo honesto (2026-08-04, M7): a resposta do assistente e os arquivos propostos são fixtures roteirizados — o Builder não escreve arquivo em disco. Escrita real é escopo de um milestone futuro, não deste.**
 - [ ] Studio loads and the Agent Builder works with Docker absent — no service dependency on the builder path.
-- [ ] CANCELADO 2026-08-04 (M7): "Chat playground against any registered agent; event inspector rendering `Run.stream()` typed events live" — a tela foi removida em `74a96c6`; retomada é decisão de produto em aberto (Q1 do plano `docs-dead-surface-reconciliation`).
-- [ ] CANCELADO 2026-08-04 (M7): "service tabs show actionable run `theokit studio up` state" — não existem abas de serviço desde `74a96c6`; o critério de degradação graciosa que sobrevive está no bullet 4 acima.
 
 **Dependencies:** none (parallel to M0).
 **Top risks:** dev-server integration surface in `theokit` (Vite plugin vs server route);
 SDK 3.x adoption ahead of the rest of the cluster.
 
-### M2 — [ ] Traces seam (SDK → theo-lens → Studio)
 
-**Objective:** One agent run in the playground produces a durable, inspectable trace.
 
-> **CANCELADO em 2026-08-04 (M7).** A aba Traces saiu em `74a96c6` junto com as outras 19 telas.
-> Os quatro critérios originais dependiam dela e nenhum é exercitável contra o produto atual. O
-> milestone permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto
-> (Q1 do plano `docs-dead-surface-reconciliation`); se voltar, entra como milestone novo com DoD
-> reescrito, não reabrindo este.
-
-**Definition of done:**
-- [ ] CANCELADO 2026-08-04 (M7): "Spike verified: SDK `exporter: otlp` emits OTLP http/json with `gen_ai` semconv that lens maps to typed columns" — sem aba Traces, não há consumidor do spike neste pacote.
-- [ ] CANCELADO 2026-08-04 (M7): "`theokit dev` auto-configures the SDK exporter at the lens endpoint" — a configuração é do `theokit dev`, não do Studio; migra para o repo do CLI se for retomada.
-- [ ] CANCELADO 2026-08-04 (M7): "Traces tab embeds/links lens-web through the same-origin proxy" — a aba foi removida em `74a96c6`.
-- [ ] CANCELADO 2026-08-04 (M7): "Traces survive dev-server hot-reload and restart" — o diferenciador dependia da aba removida.
-
-**Dependencies:** M0, M1.
-**Top risks:** protocol mismatch (protobuf vs http/json); lens `@theokit/ui` 0.18.x vs 1.x drift.
-
-### M3 — [ ] Memory + Knowledge tabs
-
-**Objective:** Inspect what the agent knows and remembers.
-
-> **CANCELADO em 2026-08-04 (M7).** As abas Memory e Knowledge saíram em `74a96c6`. O milestone
-> permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto (Q1 do
-> plano `docs-dead-surface-reconciliation`).
-
-**Definition of done:**
-- [ ] CANCELADO 2026-08-04 (M7): "Memory tab over theo-memory REST: scoped memories, entities, temporal graph view" — a aba foi removida em `74a96c6`.
-- [ ] CANCELADO 2026-08-04 (M7): "Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval playground" — a aba foi removida em `74a96c6`.
-- [ ] CANCELADO 2026-08-04 (M7): "Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path exercised in one example" — sem as abas, não há superfície neste pacote que exercite o binding.
-
-**Dependencies:** M0, M1.
-**Top risks:** memory dashboards overlap with theo-cloud M3 plans — keep Studio dev-only.
-
-### M4 — [ ] Differentiators
-
-**Objective:** The features that made LangGraph "the only real agent IDE" — grounded in lens.
-
-> **Escopo pressupõe superfícies canceladas (nota de 2026-08-04, M7).** Os dois primeiros
-> critérios abaixo são construídos sobre a aba de traces, removida em `74a96c6` e cancelada em
-> M2. Enquanto a decisão de produto sobre o retorno dessas superfícies estiver aberta (Q1 do
-> plano `docs-dead-surface-reconciliation`), M4 não é planejável — o terceiro critério (MCP
-> inspector) é independente e poderia virar milestone próprio.
-
-**Definition of done:**
-- [ ] Run replay surfaced in Studio (lens session replay over persisted traces). **Pressupõe a aba de traces cancelada em M2.**
-- [ ] Evals in the dev UI (lens evaluators; ADK-style "save session as eval case" flow). **Pressupõe a aba de traces cancelada em M2.**
-- [ ] MCP inspector embedded (official Inspector pattern) covering the stack's MCP servers.
-
-**Dependencies:** none — M2 e M3 eram as dependências declaradas e foram **canceladas** em
-2026-08-04 (M7). Mantê-las listadas tornaria M4 permanentemente inelegível no super-loop do
-roadmap (que só seleciona milestone cujas dependências estejam `[x]`), emitindo `ROADMAP_BLOCKED`
-para sempre. M4 depende hoje do que ele mesmo declara no DoD; se as superfícies de trace/memória
-voltarem, a dependência volta com elas.
-**Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.
 
 ### M5 — [x] Studio UX shell (all screens on fixtures, no integration)
 
@@ -330,3 +285,73 @@ convention — this table IS the catalog). Consumed by `/discover-plan` during d
 |---|---|---|---|---|
 | mastra | `mastra-ai/mastra` | Apache-2.0 (⚠ `ee/` dirs under separate commercial license — never port code from `ee/`) | M5, M1 | roadmap-feature (2026-07-14) |
 | genkit | `genkit-ai/genkit` | Apache-2.0 | M5, M1 | roadmap-feature (2026-07-14) |
+
+---
+
+## Milestones retirados do loop (cancelados / bloqueados por decisão de produto)
+
+> **Nota de 2026-08-04 (M7).** Os três blocos abaixo saíram da lista de milestones ativos e foram
+> rebaixados a `####` de propósito. O super-loop de `cycle-roadmap` seleciona milestones por
+> `### M<N> — [ ]` com dependências satisfeitas; enquanto estes ficassem lá, o loop os escolheria
+> e travaria em `MILESTONE_BLOCKED` para sempre, porque nenhum dos seus critérios é exercitável
+> contra o produto atual. O texto original fica **preservado por inteiro** — cancelar não é
+> apagar. Se a decisão de produto trouxer as superfícies de volta, cada um retorna como milestone
+> novo com DoD reescrito, não reabrindo estes.
+>
+> - **M2 e M3** — cancelados: dependiam inteiramente das abas removidas em `74a96c6`.
+> - **M4** — bloqueado, não cancelado: dois dos três critérios pressupõem a aba de traces do M2.
+>   O terceiro (MCP inspector) é independente e pode virar milestone próprio quando for priorizado.
+
+#### M2 — [ ] Traces seam (SDK → theo-lens → Studio)
+
+**Objective:** One agent run in the playground produces a durable, inspectable trace.
+
+> **CANCELADO em 2026-08-04 (M7).** A aba Traces saiu em `74a96c6` junto com as outras 19 telas.
+> Os quatro critérios originais dependiam dela e nenhum é exercitável contra o produto atual. O
+> milestone permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto
+> (Q1 do plano `docs-dead-surface-reconciliation`); se voltar, entra como milestone novo com DoD
+> reescrito, não reabrindo este.
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] CANCELADO 2026-08-04 (M7): "Spike verified: SDK `exporter: otlp` emits OTLP http/json with `gen_ai` semconv that lens maps to typed columns" — sem aba Traces, não há consumidor do spike neste pacote.
+- [ ] CANCELADO 2026-08-04 (M7): "`theokit dev` auto-configures the SDK exporter at the lens endpoint" — a configuração é do `theokit dev`, não do Studio; migra para o repo do CLI se for retomada.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces tab embeds/links lens-web through the same-origin proxy" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces survive dev-server hot-reload and restart" — o diferenciador dependia da aba removida.
+
+**Dependencies:** M0, M1.
+**Top risks:** protocol mismatch (protobuf vs http/json); lens `@theokit/ui` 0.18.x vs 1.x drift.
+
+#### M3 — [ ] Memory + Knowledge tabs
+
+**Objective:** Inspect what the agent knows and remembers.
+
+> **CANCELADO em 2026-08-04 (M7).** As abas Memory e Knowledge saíram em `74a96c6`. O milestone
+> permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto (Q1 do
+> plano `docs-dead-surface-reconciliation`).
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] CANCELADO 2026-08-04 (M7): "Memory tab over theo-memory REST: scoped memories, entities, temporal graph view" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval playground" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path exercised in one example" — sem as abas, não há superfície neste pacote que exercite o binding.
+
+**Dependencies:** M0, M1.
+**Top risks:** memory dashboards overlap with theo-cloud M3 plans — keep Studio dev-only.
+
+#### M4 — [ ] Differentiators
+
+**Objective:** The features that made LangGraph "the only real agent IDE" — grounded in lens.
+
+> **Escopo pressupõe superfícies canceladas (nota de 2026-08-04, M7).** Os dois primeiros
+> critérios abaixo são construídos sobre a aba de traces, removida em `74a96c6` e cancelada em
+> M2. Enquanto a decisão de produto sobre o retorno dessas superfícies estiver aberta (Q1 do
+> plano `docs-dead-surface-reconciliation`), M4 não é planejável — o terceiro critério (MCP
+> inspector) é independente e poderia virar milestone próprio.
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] Run replay surfaced in Studio (lens session replay over persisted traces). **Pressupõe a aba de traces cancelada em M2.**
+- [ ] Evals in the dev UI (lens evaluators; ADK-style "save session as eval case" flow). **Pressupõe a aba de traces cancelada em M2.**
+- [ ] MCP inspector embedded (official Inspector pattern) covering the stack's MCP servers.
+
+**Dependencies (histórico):** M2, M3 — ambos cancelados. Se M4 for retomado, volta como
+milestone novo com dependências reescritas.
+**Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.

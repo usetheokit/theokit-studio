@@ -13,9 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - README reescrito depois da review: o hero prometia "get a working agent file back" e o Builder não escreve arquivo nenhum — a sessão de build é fixture roteirizado. O README agora separa explicitamente o que é ao vivo (lista de agentes e skills) do que é roteirizado (resposta, work log e arquivos propostos), diz que a integração com `theokit dev` ainda não existe, e corrige o conselho de "pin v0.3.0" (o pacote nunca foi publicado) (#M7)
 - Definition of done reconciliado em todos os milestones que o `cycle-acceptance` lê: M1 fica exercitável, M2 e M3 ficam cancelados com data e razão, e M0/M5 saem de bullets multi-linha (que chegavam truncados ao extrator de critérios) para uma linha cada (#M7)
+- M2, M3 e M4 saem da lista de milestones ativos para uma seção própria de retirados: nenhum dos seus critérios é exercitável contra o produto atual, e enquanto estivessem lá o super-loop do roadmap os selecionaria e travaria neles. O texto original fica preservado por inteiro (#M7)
+- As notas de cancelamento de M1 saem de dentro do bloco de Definition of done: o extrator de critérios lê todo `- [ ]` do bloco, então uma nota ali dentro tornava o milestone permanentemente não-validável — o oposto do que a reconciliação existe para resolver (#M7)
 - M4 deixa de declarar dependência de M2 e M3: com os dois cancelados e permanentemente `[ ]`, a dependência tornaria M4 inelegível para sempre no super-loop do roadmap (#M7)
 - Preâmbulo do ROADMAP e invariantes 4 e 5 do `CLAUDE.md` marcados como pré-`74a96c6` / suspensos em vez de continuarem descrevendo as telas removidas (#M7)
-- README descreve o Agent Builder como a única superfície entregue e declara, com o SHA do commit que a causou, que playground, traces, memory e knowledge foram removidos — quem precisa dessas telas deve fixar `v0.3.0` (#M7)
+- README descreve o Agent Builder como a única superfície entregue e declara, com o SHA do commit que a causou, que playground, traces, memory e knowledge foram removidos — quem precisa dessas telas deve fazer checkout da tag `v0.3.0` — o pacote nunca foi publicado, então não há versão a fixar (#M7)
 
 ### Deprecated
 

@@ -65,6 +65,13 @@ describe("contrato do README", () => {
     expect(readme).toMatch(/does not write anything to disk/i);
   });
 
+  // Round 2 F-r2-10: a metade "ao vivo" não é alcançável pelo comando que o README manda rodar.
+  // Duas vezes seguidas a mesma classe de inverdade nasceu neste parágrafo — esta é a trava.
+  it("diz em que modo o comando documentado roda", () => {
+    const readme = readFileSync(README_PATH, "utf8");
+    expect(readme).toMatch(/`pnpm dev` runs both halves from fixtures/i);
+  });
+
   it("não promete que o Builder devolve um arquivo de agente", () => {
     const readme = readFileSync(README_PATH, "utf8");
     expect(readme).not.toMatch(/get a working agent file back/i);

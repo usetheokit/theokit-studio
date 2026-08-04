@@ -11,9 +11,9 @@ Postgres instance, orchestrated by docker compose.
 | npm package | `@theokit/studio` |
 | Repo | `usetheodev/theokit-studio` |
 | CLI surface | `theokit studio up` / `theokit studio down` (thin compose wrapper; lives in `theokit` CLI, implemented against this repo's compose) — **planejado, ainda não existe**; a montagem do Studio no `theokit dev` também está pendente (ver `docs/theokit-dev-integration.md`) |
-| Compose file | `docker-compose.studio.yaml` (this repo is its home) |
+| Compose file | `docker-compose.studio.yaml` (this repo is its home) — **pendente**, o arquivo ainda não existe (M0 aberto) |
 | Postgres image | `pgvector/pgvector:pg16` — ONE instance, THREE databases: `themem`, `theolens`, `therag` |
-| Studio route in dev server | `/_studio` (SPA), `/_studio/api/*` (reflection), `/_studio/svc/{lens,memory,rag}/*` (same-origin proxy) |
+| Studio route in dev server | `/_studio` (SPA), `/_studio/api/*` (reflection), `/_studio/svc/{lens,memory,rag}/*` (same-origin proxy — **pendente**: hoje o namespace responde 404 tipado, nunca HTML) |
 | Default service ports | theo-memory `:8080`, theo-lens `:4318` (OTLP), theo-rag `:8787`, postgres `:5432` — all overridable by env |
 
 ## Architecture invariants (from docs/theokit-studio-arquitetura-proposta.md)
