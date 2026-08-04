@@ -10,13 +10,19 @@ Postgres instance, orchestrated by docker compose.
 |---|---|
 | npm package | `@theokit/studio` |
 | Repo | `usetheodev/theokit-studio` |
-| CLI surface | `theokit studio up` / `theokit studio down` (thin compose wrapper; lives in `theokit` CLI, implemented against this repo's compose) |
+| CLI surface | `theokit studio up` / `theokit studio down` (thin compose wrapper; lives in `theokit` CLI, implemented against this repo's compose) — **planejado, ainda não existe**; a montagem do Studio no `theokit dev` também está pendente (ver `docs/theokit-dev-integration.md`) |
 | Compose file | `docker-compose.studio.yaml` (this repo is its home) |
 | Postgres image | `pgvector/pgvector:pg16` — ONE instance, THREE databases: `themem`, `theolens`, `therag` |
 | Studio route in dev server | `/_studio` (SPA), `/_studio/api/*` (reflection), `/_studio/svc/{lens,memory,rag}/*` (same-origin proxy) |
 | Default service ports | theo-memory `:8080`, theo-lens `:4318` (OTLP), theo-rag `:8787`, postgres `:5432` — all overridable by env |
 
 ## Architecture invariants (from docs/theokit-studio-arquitetura-proposta.md)
+
+> **Reconciliado em 2026-08-04 (M7).** Em `74a96c6` o Studio foi reduzido a uma superfície
+> única (o Agent Builder) e vinte telas saíram. Os invariantes 4 e 5 abaixo descreviam
+> comportamento dessas telas; ficam marcados como **suspensos**, não apagados — voltam a valer
+> se as superfícies de serviço retornarem (decisão de produto em aberto, Q1 do plano
+> `docs-dead-surface-reconciliation`). O que o produto entrega hoje está no README.
 
 1. **Reflection over manifest.** Agent/tool/skill discovery comes from the live `@theokit/sdk`
    registry via a reflection endpoint in `theokit dev` (Genkit/Mastra pattern). No static
@@ -26,11 +32,14 @@ Postgres instance, orchestrated by docker compose.
    Studio requirement.
 3. **One pg instance, three databases.** Each service keeps its own migrations untouched and
    auto-migrates its own database on boot. Never merge them into one database/schema.
-4. **Graceful degradation.** Studio must load and be useful (playground + Run.stream() event
-   inspector) with Docker absent. Service-backed tabs detect offline services and instruct
-   `theokit studio up`. Docker is an amplifier, not a prerequisite.
-5. **Do not rebuild trace UI.** theo-lens owns trace visualization (it already ships 12 screens
-   on `@theokit/ui`). Studio embeds/links lens-web through the proxy.
+4. **Graceful degradation.** Studio must load and be useful with Docker absent — today that
+   means the Agent Builder has no service dependency on its path. Docker is an amplifier, not a
+   prerequisite. *(SUSPENSO desde `74a96c6`, a parte sobre playground + event inspector e sobre
+   abas de serviço detectarem serviço offline: essas telas não existem, e o valor de config
+   `scenario: "offline"` que as servia foi removido em M7.)*
+5. **Do not rebuild trace UI.** theo-lens owns trace visualization. *(SUSPENSO desde
+   `74a96c6`: o Studio não tem aba de traces e não embute lens-web. A metade que continua
+   valendo é a proibição — se a superfície voltar, ela embute, nunca reimplementa.)*
 6. **Dev-only scope.** Studio is single-tenant, auth-off-by-default, "development and debugging
    purposes only" (ADK wording). Multi-tenant production dashboards = Theo Cloud. No GA cloud
    claims (ecosystem honesty rule).

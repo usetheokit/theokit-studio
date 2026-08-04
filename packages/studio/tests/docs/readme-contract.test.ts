@@ -48,10 +48,26 @@ describe("contrato do README", () => {
     expect(readme).toMatch(/removed in `74a96c6`/);
   });
 
-  // AC4: nenhum serviço de dados aparece apresentado como superfície entregue do Studio.
-  it("não cita theo-lens/theo-memory/theo-rag", () => {
+  // AC4: nenhum serviço de dados aparece como LINHA da tabela de superfícies entregues.
+  // Escopado à tabela de propósito (review F-tests-9): uma frase honesta em prosa — "o Studio
+  // não embute theo-lens" — é desejável e não pode virar falha de teste.
+  it("nenhuma linha da tabela de features nomeia um serviço de dados", () => {
+    const surfaces = parseFeatureTableSurfaces(readFileSync(README_PATH, "utf8"));
+    const offenders = surfaces.filter((s) => /theo-(lens|memory|rag)/.test(s));
+    expect(offenders).toEqual([]);
+  });
+
+  // O BLOCKER que a review do M7 pegou: o hero prometia "get a working agent file back", e o
+  // Builder não escreve arquivo nenhum — a sessão inteira é fixture roteirizado. Esta é a trava
+  // contra reintroduzir a promessa.
+  it("declara que a sessão de build é roteirizada e não escreve em disco", () => {
     const readme = readFileSync(README_PATH, "utf8");
-    expect(readme).not.toMatch(/theo-(lens|memory|rag)/);
+    expect(readme).toMatch(/does not write anything to disk/i);
+  });
+
+  it("não promete que o Builder devolve um arquivo de agente", () => {
+    const readme = readFileSync(README_PATH, "utf8");
+    expect(readme).not.toMatch(/get a working agent file back/i);
   });
 
   // EC-1: o parser nunca devolve [] quando não acha o bloco — falha alto e nomeia o bloco.
