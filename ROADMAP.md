@@ -220,7 +220,7 @@ inexercitáveis. O roadmap deixou de ser um plano e virou registro de um plano a
 
 ---
 
-### M8 — [ ] Qualidade da suíte e manutenibilidade
+### M8 — [x] Qualidade da suíte e manutenibilidade
 
 > Added 2026-08-04 by `/roadmap-feature` (slug: `test-quality-maintainability`).
 > Evidence: `code-review-output/code-review.db` — findings #64, #66, #69, #70, #74, #16, #17, #15, plus the maturity rows.
