@@ -123,6 +123,22 @@ describe("theokitStudio on a real Vite dev server (T1.1 integration)", () => {
     expect(directSkills.items).toEqual(skills.items);
   });
 
+  // M7 T4.1: estes dois recursos passam a ser DOCUMENTADOS no README como API host-facing.
+  // A forma (`{items: [...]}`) já era coberta pelo teste acima; o que faltava era fixar o
+  // status e o content-type — documentar uma superfície sem fixar seu contrato só adia a
+  // mentira. O contrato do run endpoint fica para o M8, que já o traz no DoD (EC-4).
+  it.each([
+    "/_studio/api/tools",
+    "/_studio/api/workflows",
+  ])("test_host_facing_%s_responds_200_json_items_envelope", async (path) => {
+    const res = await fetch(`${baseUrl}${path}`);
+    expect(res.status).toBe(200);
+    const contentType = res.headers.get("content-type");
+    expect(contentType).toContain("application/json");
+    const body = await res.json();
+    expect(body).toMatchObject({ items: expect.any(Array) });
+  });
+
   it("test_run_endpoint_streams_ndjson_over_real_http", async () => {
     // T1.4: POST run com sessionId + parse NDJSON incremental sobre HTTP real.
     const res = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {

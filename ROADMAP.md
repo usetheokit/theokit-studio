@@ -4,11 +4,19 @@
 > `docs/studio-deep-research-2026-07-14.md` (verified competitive research). Per-milestone task
 > decomposition is the job of `/to-plan`.
 
+> **Preâmbulo pré-`74a96c6` (nota de 2026-08-04, M7).** As seções Vision, Problem, Scope,
+> Success criteria e North-star abaixo descrevem a intenção de produto de 2026-07-14, quando o
+> Studio tinha cinco superfícies. Em `74a96c6` vinte telas foram removidas e o produto ficou com
+> o Agent Builder apenas; M2 e M3 estão cancelados. **O que o Studio entrega hoje está no
+> README, não aqui.** Reescrever esta seção é decisão de produto em aberto (Q1 do plano
+> `docs-dead-surface-reconciliation`) — o texto fica preservado, e não apagado, porque é o
+> registro de por que os milestones existem.
+
 ## Vision
 
 The local dev UI of the TheoKit stack — Mastra Studio / Genkit Dev UI experience — with a
 differentiator no peer has: **dev/prod parity**. Traces, memories, and knowledge live in the
-same production-grade Apache-2.0 services the user deploys with (theo-lens, theo-memory,
+same Apache-2.0 services the user deploys with (theo-lens, theo-memory,
 theo-rag), on one Postgres, up with one command. Everything survives hot-reloads and restarts —
 the #1 documented pain of LangGraph's dev server.
 
@@ -66,13 +74,11 @@ time-to-first-working-agent).
 theo-rag, healthy.
 
 **Definition of done:**
-- [ ] `docker-compose.studio.yaml`: `pgvector/pgvector:pg16` + init script creating `themem`,
-      `theolens`, `therag` databases; the 3 services pointed at their own database, each
-      auto-migrating on boot; healthchecks wired; `--wait` boot validated end-to-end.
-- [ ] Dev-mode defaults: auth off / single workspace (`THEOLENS_REQUIRE_CREDENTIAL=0`, memory
-      ALPHA mode, rag dev mode); `THEOMEM_EMBEDDER` pinned + documented.
-- [ ] Zero-key boot verified or honestly documented (does rag-api run on the stub embedder?).
-- [ ] Ports overridable by env; no collisions out of the box (8080/4318/8787/5432).
+- [ ] `docker-compose.studio.yaml` declares `pgvector/pgvector:pg16` plus an init script that creates the `themem`, `theolens` and `therag` databases.
+- [ ] Each of the 3 services points at its own database and auto-migrates on boot; healthchecks are wired and a `--wait` boot is validated end-to-end.
+- [ ] Dev-mode defaults are set: auth off / single workspace (`THEOLENS_REQUIRE_CREDENTIAL=0`, memory ALPHA mode, rag dev mode), with `THEOMEM_EMBEDDER` pinned and documented.
+- [ ] Zero-key boot is verified or honestly documented (does rag-api run on the stub embedder?).
+- [ ] Ports are overridable by env with no collisions out of the box (8080/4318/8787/5432).
 
 **Dependencies:** none (foundation).
 **Top risks:** service images not published → build-from-sibling-repo contexts; memory
@@ -82,57 +88,32 @@ embedding-dim drift if embedder changes after first migration.
 
 **Objective:** The Mastra/Genkit experience inside `theokit dev`: playground + live typed events.
 
+> **Escopo reconciliado em 2026-08-04 (M7).** Dois critérios originais foram cancelados porque as
+> telas que exigiam saíram em `74a96c6`. Eles ficam registrados **aqui, fora do bloco de
+> Definition of done**, e não como bullets: o extrator de `cycle-acceptance` lê todo `- [ ]` do
+> bloco como critério, então uma nota de cancelamento ali dentro tornaria o milestone
+> permanentemente `NOT_VALIDATED` — o oposto do que esta reconciliação existe para resolver.
+>
+> - CANCELADO 2026-08-04: "Chat playground against any registered agent; event inspector
+>   rendering `Run.stream()` typed events live (text deltas, tool calls, permissions,
+>   rate-limit, completion)" — a tela foi removida em `74a96c6`; retomada é decisão de produto em
+>   aberto (Q1 do plano `docs-dead-surface-reconciliation`).
+> - CANCELADO 2026-08-04: "Works with Docker absent; service tabs show actionable
+>   "run `theokit studio up`" state" — não existem abas de serviço desde `74a96c6`; a metade que
+>   sobrevive (degradação graciosa) está no último bullet do DoD abaixo.
+
 **Definition of done:**
-- [ ] Reflection endpoint in the dev server exposing the live registry (agents/tools/skills/
-      workflows) from `@theokit/sdk` — no manifest.
-- [ ] Studio SPA (built with current `@theokit/ui`) served at `/_studio`, same origin.
-- [ ] Chat playground against any registered agent; event inspector rendering `Run.stream()`
-      typed events live (text deltas, tool calls, permissions, rate-limit, completion).
-- [ ] Works with Docker absent; service tabs show actionable "run `theokit studio up`" state.
+- [ ] Reflection endpoint in the dev server exposes the live `@theokit/sdk` registry (agents, tools, skills, workflows) with no manifest file — `GET /_studio/api/agents` responds 200 with an `items` envelope.
+- [ ] Studio SPA (built with current `@theokit/ui`) is served at `/_studio`, same origin as the dev server.
+- [ ] A prompt submitted at `/builder` starts a build session that renders the assistant reply, the work log and the proposed files in the review pane, and the target-agent selector is populated from `GET /_studio/api/agents`. **Escopo honesto (2026-08-04, M7): a resposta do assistente e os arquivos propostos são fixtures roteirizados — o Builder não escreve arquivo em disco. Escrita real é escopo de um milestone futuro, não deste.**
+- [ ] Studio loads and the Agent Builder works with Docker absent — no service dependency on the builder path.
 
 **Dependencies:** none (parallel to M0).
 **Top risks:** dev-server integration surface in `theokit` (Vite plugin vs server route);
 SDK 3.x adoption ahead of the rest of the cluster.
 
-### M2 — [ ] Traces seam (SDK → theo-lens → Studio)
 
-**Objective:** One agent run in the playground produces a durable, inspectable trace.
 
-**Definition of done:**
-- [ ] Spike verified: SDK `exporter: "otlp"` emits OTLP **http/json** with `gen_ai` semconv
-      that lens maps to typed columns (model/provider/tokens) — or gap fixed in the SDK.
-- [ ] `theokit dev` auto-configures the SDK exporter at the lens endpoint when the stack is up.
-- [ ] Traces tab embeds/links lens-web through the same-origin proxy; trace tree + cost visible.
-- [ ] Traces survive dev-server hot-reload and restart (the differentiator, demonstrated).
-
-**Dependencies:** M0, M1.
-**Top risks:** protocol mismatch (protobuf vs http/json); lens `@theokit/ui` 0.18.x vs 1.x drift.
-
-### M3 — [ ] Memory + Knowledge tabs
-
-**Objective:** Inspect what the agent knows and remembers.
-
-**Definition of done:**
-- [ ] Memory tab over theo-memory REST: scoped memories, entities, temporal graph view.
-- [ ] Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval
-      playground (query → retrieved chunks with scores/strategy).
-- [ ] Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path
-      (`@usetheo/rag-sdk` or MCP) exercised in one example.
-
-**Dependencies:** M0, M1.
-**Top risks:** memory dashboards overlap with theo-cloud M3 plans — keep Studio dev-only.
-
-### M4 — [ ] Differentiators
-
-**Objective:** The features that made LangGraph "the only real agent IDE" — grounded in lens.
-
-**Definition of done:**
-- [ ] Run replay surfaced in Studio (lens session replay over persisted traces).
-- [ ] Evals in the dev UI (lens evaluators; ADK-style "save session as eval case" flow).
-- [ ] MCP inspector embedded (official Inspector pattern) covering the stack's MCP servers.
-
-**Dependencies:** M2, M3.
-**Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.
 
 ### M5 — [x] Studio UX shell (all screens on fixtures, no integration)
 
@@ -146,18 +127,16 @@ SDK 3.x adoption ahead of the rest of the cluster.
 runnable standalone — so the experience can be seen, iterated, and locked before M0–M3 wire
 real services in.
 
+> **Entregue e depois revertido em parte.** Este milestone foi aceito quando as 5 superfícies
+> existiam. Em `74a96c6` elas foram removidas e o Studio ficou com o Agent Builder apenas. O
+> checkbox permanece `[x]` porque o trabalho *foi* entregue — o registro histórico não se
+> reescreve; o que o produto tem hoje está no README, não aqui. (Nota de 2026-08-04, M7.)
+
 **Definition of done:**
-- [ ] SPA at `packages/studio` built with `@theokit/ui` (current major), running standalone
-      via Vite dev server — no `theokit dev`, no Docker required.
-- [ ] 5 surfaces navigable: Playground (mocked chat), Event Inspector (typed `Run.stream()`
-      fixtures: text deltas, tool calls, permissions, rate-limit, completion), Memory
-      browser, Knowledge/RAG inspector (fake retrieval playground with scores), Traces
-      **placeholder only** (offline state / future lens-web embed — never a mocked trace tree;
-      trace UI stays out of scope, theo-lens owns it).
-- [ ] Data layer behind an interface (DIP): fixtures today; M1/M2/M3 swap in real
-      implementations without touching the screens. Fixtures derived from published
-      `@theokit/sdk` 3.x types — never hand-invented shapes.
-- [ ] Empty/loading/offline states present on every service-backed tab.
+- [ ] SPA at `packages/studio` built with `@theokit/ui` (current major), running standalone via Vite dev server — no `theokit dev` and no Docker required.
+- [ ] 5 surfaces navigable on fixtures: Playground (mocked chat), Event Inspector (typed `Run.stream()` fixtures), Memory browser, Knowledge/RAG inspector, and Traces as a placeholder only. **Superadas em 2026-08-04 (M7): removidas em `74a96c6`; ver README § Scope.**
+- [ ] Data layer behind an interface (DIP), with fixtures derived from published `@theokit/sdk` 3.x types rather than hand-invented shapes, so M1/M2/M3 can swap in real implementations without touching the screens.
+- [ ] Empty/loading/offline states present on every service-backed tab. **Superado em 2026-08-04 (M7): não existem abas de serviço desde `74a96c6`.**
 - [ ] Build + tests + typecheck green in the monorepo.
 
 **Dependencies:** none (parallel to M0/M1; external: `@theokit/ui` 1.x available).
@@ -167,7 +146,7 @@ treat as upstream contributions, not local forks.
 
 ---
 
-### M6 — [ ] Plugin hardening (blockers da code review)
+### M6 — [x] Plugin hardening (blockers da code review)
 
 > Added 2026-08-04 by `/roadmap-feature` (slug: `plugin-hardening`). See CHANGELOG `[Unreleased] § Added`.
 > Evidence: `code-review-output/code-review.db` — findings #46, #47, #68, plus the contract and
@@ -306,3 +285,73 @@ convention — this table IS the catalog). Consumed by `/discover-plan` during d
 |---|---|---|---|---|
 | mastra | `mastra-ai/mastra` | Apache-2.0 (⚠ `ee/` dirs under separate commercial license — never port code from `ee/`) | M5, M1 | roadmap-feature (2026-07-14) |
 | genkit | `genkit-ai/genkit` | Apache-2.0 | M5, M1 | roadmap-feature (2026-07-14) |
+
+---
+
+## Milestones retirados do loop (cancelados / bloqueados por decisão de produto)
+
+> **Nota de 2026-08-04 (M7).** Os três blocos abaixo saíram da lista de milestones ativos e foram
+> rebaixados a `####` de propósito. O super-loop de `cycle-roadmap` seleciona milestones por
+> `### M<N> — [ ]` com dependências satisfeitas; enquanto estes ficassem lá, o loop os escolheria
+> e travaria em `MILESTONE_BLOCKED` para sempre, porque nenhum dos seus critérios é exercitável
+> contra o produto atual. O texto original fica **preservado por inteiro** — cancelar não é
+> apagar. Se a decisão de produto trouxer as superfícies de volta, cada um retorna como milestone
+> novo com DoD reescrito, não reabrindo estes.
+>
+> - **M2 e M3** — cancelados: dependiam inteiramente das abas removidas em `74a96c6`.
+> - **M4** — bloqueado, não cancelado: dois dos três critérios pressupõem a aba de traces do M2.
+>   O terceiro (MCP inspector) é independente e pode virar milestone próprio quando for priorizado.
+
+#### M2 — [ ] Traces seam (SDK → theo-lens → Studio)
+
+**Objective:** One agent run in the playground produces a durable, inspectable trace.
+
+> **CANCELADO em 2026-08-04 (M7).** A aba Traces saiu em `74a96c6` junto com as outras 19 telas.
+> Os quatro critérios originais dependiam dela e nenhum é exercitável contra o produto atual. O
+> milestone permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto
+> (Q1 do plano `docs-dead-surface-reconciliation`); se voltar, entra como milestone novo com DoD
+> reescrito, não reabrindo este.
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] CANCELADO 2026-08-04 (M7): "Spike verified: SDK `exporter: otlp` emits OTLP http/json with `gen_ai` semconv that lens maps to typed columns" — sem aba Traces, não há consumidor do spike neste pacote.
+- [ ] CANCELADO 2026-08-04 (M7): "`theokit dev` auto-configures the SDK exporter at the lens endpoint" — a configuração é do `theokit dev`, não do Studio; migra para o repo do CLI se for retomada.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces tab embeds/links lens-web through the same-origin proxy" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Traces survive dev-server hot-reload and restart" — o diferenciador dependia da aba removida.
+
+**Dependencies:** M0, M1.
+**Top risks:** protocol mismatch (protobuf vs http/json); lens `@theokit/ui` 0.18.x vs 1.x drift.
+
+#### M3 — [ ] Memory + Knowledge tabs
+
+**Objective:** Inspect what the agent knows and remembers.
+
+> **CANCELADO em 2026-08-04 (M7).** As abas Memory e Knowledge saíram em `74a96c6`. O milestone
+> permanece `[ ]` — cancelado não é entregue. Retomá-lo é decisão de produto em aberto (Q1 do
+> plano `docs-dead-surface-reconciliation`).
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] CANCELADO 2026-08-04 (M7): "Memory tab over theo-memory REST: scoped memories, entities, temporal graph view" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Knowledge tab over theo-rag REST: collections/documents/chunks browser + retrieval playground" — a aba foi removida em `74a96c6`.
+- [ ] CANCELADO 2026-08-04 (M7): "Agent-side wiring documented: `@usetheo/memory/theokit` binding + a RAG tool path exercised in one example" — sem as abas, não há superfície neste pacote que exercite o binding.
+
+**Dependencies:** M0, M1.
+**Top risks:** memory dashboards overlap with theo-cloud M3 plans — keep Studio dev-only.
+
+#### M4 — [ ] Differentiators
+
+**Objective:** The features that made LangGraph "the only real agent IDE" — grounded in lens.
+
+> **Escopo pressupõe superfícies canceladas (nota de 2026-08-04, M7).** Os dois primeiros
+> critérios abaixo são construídos sobre a aba de traces, removida em `74a96c6` e cancelada em
+> M2. Enquanto a decisão de produto sobre o retorno dessas superfícies estiver aberta (Q1 do
+> plano `docs-dead-surface-reconciliation`), M4 não é planejável — o terceiro critério (MCP
+> inspector) é independente e poderia virar milestone próprio.
+
+**Definition of done (histórico — não é mais lido como critério de aceitação):**
+- [ ] Run replay surfaced in Studio (lens session replay over persisted traces). **Pressupõe a aba de traces cancelada em M2.**
+- [ ] Evals in the dev UI (lens evaluators; ADK-style "save session as eval case" flow). **Pressupõe a aba de traces cancelada em M2.**
+- [ ] MCP inspector embedded (official Inspector pattern) covering the stack's MCP servers.
+
+**Dependencies (histórico):** M2, M3 — ambos cancelados. Se M4 for retomado, volta como
+milestone novo com dependências reescritas.
+**Top risks:** replay semantics (re-execution vs playback) must be honest — playback first.
