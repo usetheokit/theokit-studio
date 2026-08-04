@@ -89,10 +89,13 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
   // Precedente: o `Registry` do genkit delega cada operação ao `parent` (lookupAction,
   // lookupPlugin, lookupValue, lookupSchema) e nunca espalha o objeto-pai.
   //
-  // O ganho é de COMPILAÇÃO: com o spread, um método novo em `StudioDataSource` caía
-  // silenciosamente no fixture e só falhava em runtime. Agora falta de delegação é erro de
-  // tipo. Isto também dispensa o invariante que o spread exigia documentar — que ele só era
-  // correto porque o fallback é um objeto de closures stateless.
+  // O ganho é de COMPILAÇÃO, com um limite que vale nomear (review F-arch-3): o compilador
+  // cobra MEMBRO ausente (TS2741) — com o spread, um método novo em `StudioDataSource` caía
+  // silenciosamente no fixture e só falhava em runtime. Ele NÃO cobra aridade: uma delegação
+  // que esquece um argumento compila limpo. Por isso os dois métodos que levam argumento têm
+  // teste de forwarding em `reflection-datasource.test.ts`.
+  // Isto também dispensa o invariante que o spread exigia documentar — que ele só era correto
+  // porque o fallback é um objeto de closures stateless.
   const { fallback } = opts;
   return {
     listBuilderSessions: () => fallback.listBuilderSessions(),

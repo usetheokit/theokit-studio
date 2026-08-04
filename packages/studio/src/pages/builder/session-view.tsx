@@ -87,6 +87,21 @@ export function SessionView({
 
   const clampPct = (pct: number) => Math.min(75, Math.max(25, pct));
 
+  // Review F-arch-4: era um onKeyDown inline de dez linhas no meio do JSX — a função mais densa
+  // do arquivo, e lógica imperativa, não markup. Nomeada ao lado de startResize/clampPct, que é
+  // a convenção que o arquivo já estabelece.
+  const handleSplitterKey = (e: React.KeyboardEvent) => {
+    // Acessibilidade: setas redimensionam sem mouse.
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setChatPct((p) => clampPct(p - 4));
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setChatPct((p) => clampPct(p + 4));
+    }
+  };
+
   const startResize = (e: React.PointerEvent) => {
     e.preventDefault();
     const container = paneContainerRef.current;
@@ -234,17 +249,7 @@ export function SessionView({
             aria-valuemax={75}
             tabIndex={0}
             onPointerDown={startResize}
-            onKeyDown={(e) => {
-              // Acessibilidade: setas redimensionam sem mouse.
-              if (e.key === "ArrowLeft") {
-                e.preventDefault();
-                setChatPct((p) => clampPct(p - 4));
-              }
-              if (e.key === "ArrowRight") {
-                e.preventDefault();
-                setChatPct((p) => clampPct(p + 4));
-              }
-            }}
+            onKeyDown={handleSplitterKey}
             className="mx-1.5 w-1.5 shrink-0 cursor-col-resize rounded-full bg-border/40 transition-colors hover:bg-primary/50 focus-visible:bg-primary/60 focus-visible:outline-none"
           />
         )}

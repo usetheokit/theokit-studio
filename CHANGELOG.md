@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- O tratamento de teclado do divisor de painéis do Builder saiu de dentro do JSX para uma função nomeada — era a lógica mais densa do arquivo, escondida no meio do markup (#M8)
 - A cadeia de validação do endpoint de execução de agente foi extraída para uma função própria: a ordem dos oito guards (rota, método, origem, corpo, agente, chave de provider) passa a viver num lugar só, e a complexidade da função de execução cai de 20 para 10 sem mudar comportamento (#M8)
 - O adapter de dados "live" passa a delegar explicitamente ao fallback de fixtures em vez de espalhá-lo. Um método novo no contrato de dados agora quebra a compilação em vez de cair silenciosamente no fixture em tempo de execução (#M8)
 

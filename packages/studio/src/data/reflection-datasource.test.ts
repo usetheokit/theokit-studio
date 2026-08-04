@@ -40,6 +40,27 @@ describe("delegação ao fallback (T3.1)", () => {
     await ds.listBuilderSessions();
     expect(listBuilderSessions).toHaveBeenCalledTimes(1);
   });
+
+  // Review F-arch-3: o compilador cobra MEMBRO ausente (TS2741), mas NÃO cobra aridade —
+  // `(prompt) => fallback.startBuilderSession(prompt)` compila e perde o targetAgentId em
+  // silêncio, virando `agentId: undefined` em toda sessão criada no modo live. Os dois métodos
+  // delegados que levam argumento precisam de teste; o teste acima só cobre o que não leva.
+  it("forwards_every_argument_of_the_delegated_methods", async () => {
+    const getBuilderSession = vi.fn().mockResolvedValue({ id: "s-1" });
+    const startBuilderSession = vi.fn().mockResolvedValue({ id: "s-2" });
+    const fallback = {
+      ...createFixtureDataSource({ scenario: "default" }),
+      getBuilderSession,
+      startBuilderSession,
+    };
+    const ds = createReflectionDataSource({ fallback });
+
+    await ds.getBuilderSession("s-1");
+    expect(getBuilderSession).toHaveBeenCalledWith("s-1");
+
+    await ds.startBuilderSession("build me a thing", "support-agent");
+    expect(startBuilderSession).toHaveBeenCalledWith("build me a thing", "support-agent");
+  });
 });
 
 describe("createReflectionDataSource (T3.1)", () => {

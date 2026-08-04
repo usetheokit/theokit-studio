@@ -30,10 +30,14 @@ $ lizard src/pages/builder/session-view.tsx
       10      3     54      1      11 (anonymous)@229-239
 ```
 
-Nenhuma função do arquivo passa de **CCN 3**. `lizard` atribui CCN 1 ao `SessionView` porque
-conta o corpo da função e não os condicionais dentro do JSX; a regra do ESLint conta os ternários
-e `&&` do markup. São **duas definições diferentes da mesma palavra**, e a diferença não é ruído:
-19 condicionais no JSX contra ~2 no corpo imperativo.
+**Correção após a review (F-arch-4): esta saída não é uma métrica concorrente — é um parser que
+falhou.** `SessionView` vai da linha 66 à 279 (213 linhas) e tem **um** parâmetro destruturado;
+`lizard` reporta 6 linhas e 3 parâmetros, terminando na linha 66. Ele não entrou no corpo do
+componente. Apresentar "nenhuma função passa de CCN 3" como tranquilizador seria derivar
+segurança de uma medição que não mediu o alvo.
+
+O que resta de verdadeiro é o ponto conceitual, e ele se sustenta sem o `lizard`: a regra do
+ESLint conta os ternários e `&&` do markup, que é onde a densidade deste arquivo vive.
 
 Reproduzir o número da auditoria exigiria instalar ESLint — o que o **ADR A2 do plano do M8
 rejeita**, com base no blueprint (decisão 2): a config de lint compartilhada do mastra tem 324
@@ -42,19 +46,33 @@ número.
 
 ## Problema 2 — a densidade é de markup, não de decisão
 
-Os 19 condicionais do `SessionView` são de renderização: mostrar ou não o painel de review,
-destacar o arquivo selecionado, colapsar o work log, exibir o composer de follow-up. Cada um é uma
-decisão de **uma linha, local, sem estado compartilhado**. É o formato que JSX tem para
+**16 dos 19** condicionais do `SessionView` são de renderização: mostrar ou não o painel de
+review, destacar o arquivo selecionado, colapsar o work log, exibir o composer de follow-up. Cada
+um é uma decisão de **uma linha, local, sem estado compartilhado**. É o formato que JSX tem para
 condicional; extrair cada um para um componente nomeado produziria uma dúzia de componentes de uma
 linha cujo único propósito seria baixar um contador.
 
+**Três não são markup** (F-arch-4), e a review estava certa em separá-los:
+
+- `:134` e `:148` — `setMinimized((m) => (m === "chat" ? "none" : "chat"))` e o par do painel:
+  transições de estado, não renderização.
+- `:237-247` — o `onKeyDown` inline do separador: dez linhas, dois ramos, dois `preventDefault`,
+  chamando `clampPct`. É a função mais densa do arquivo pela própria medição do `lizard`
+  (`(anonymous)@229-239`, CCN 3), e é lógica imperativa.
+
+O terceiro **tinha** conceito a nomear, e o arquivo já estabelecia a convenção (`startResize`,
+`handleSubmit`, `clampPct`). **Foi extraído** como `handleSplitterKey` — não um componente de uma
+linha, uma função nomeada ao lado das suas irmãs. Ficar só com a nota seria escolher a saída fácil
+depois que a review mostrou que a premissa estava larga demais.
+
 Isso é exatamente o que `rules/parsimony-ladder.md` rung 1 proíbe ao contrário: criar código que
 não precisa existir. E o AC do T3.2 exige que "toda função extraída nomeie um conceito do
-domínio" — aqui não há conceito a nomear.
+domínio" — para os 16 condicionais de markup, não há conceito a nomear.
 
 ## Decisão
 
-`SessionView` **permanece** como está. Nenhuma extração é feita.
+`SessionView` **permanece** como está no que diz respeito ao markup: os 16 condicionais de
+renderização não são extraídos. A única extração feita é `handleSplitterKey`, que não é markup.
 
 ## Consequências
 
@@ -67,7 +85,9 @@ domínio" — aqui não há conceito a nomear.
 **Mitigações:**
 
 - O componente é coberto por `builder.test.tsx`, incluindo os caminhos de review, work log e
-  follow-up — a densidade é de renderização e está exercitada.
+  follow-up — a densidade que resta é de renderização e está exercitada.
+- `handleSplitterKey` saiu do JSX e é exercitado pelos dois testes do splitter (direção e limite),
+  medindo CCN 3 como função nomeada.
 - Se o `SessionView` ganhar **lógica** (não markup), a decisão se reabre: este ADR cobre densidade
   de JSX, não densidade de decisão de negócio.
 

@@ -271,6 +271,17 @@ describe("handleAgentRun (T1.4)", () => {
     expect(JSON.parse(state.body).error.code).toBe("AGENT_NOT_FOUND");
   });
 
+  // M8 T2.1 / review F-arch-2: a ORDEM dos guards é contrato e só pode ser travada AQUI. O
+  // teste de integração equivalente não serve: o dispatcher pré-checa `matchRunPath`
+  // (plugin/index.ts:105) e responde com 404 + NOT_FOUND + a MESMA mensagem do guard 1, então
+  // a asserção não distingue as duas origens e o guard 1 poderia ser deletado sem ficar RED.
+  it("test_unmatched_route_is_404_even_when_the_method_is_wrong", async () => {
+    const { deps } = makeDeps();
+    const state = await run("/_studio/api/not-a-run-route", makeReq({ method: "GET" }), deps);
+    expect(state.statusCode).toBe(404);
+    expect(JSON.parse(state.body).error.code).toBe("NOT_FOUND");
+  });
+
   it("test_broken_agent_returns_422_with_module_error", async () => {
     const { deps } = makeDeps();
     const state = await run(
