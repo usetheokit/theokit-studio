@@ -166,22 +166,38 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByTestId("builder-details")).toBeTruthy();
   });
 
-  it("chat_width_is_resizable_via_separator_keyboard", async () => {
+  // M8 T4.1 (finding #80): as asserções eram larguras literais ("54%", "46%", "50%"), o que
+  // acoplava o teste ao passo do teclado e à largura inicial — mudar o passo de 4 para 5 quebrava
+  // um teste de acessibilidade sem que nada de acessível tivesse quebrado. Agora assevera
+  // DIREÇÃO (esquerda encolhe, direita cresce) e LIMITE (o clamp inferior), que é o contrato.
+  const widthOf = (el: HTMLElement) => Number.parseFloat(el.style.width);
+
+  it("arrow_keys_resize_the_chat_pane_in_the_pressed_direction", async () => {
     renderBuilder();
     await openPinnedSession();
     const separator = screen.getByRole("separator", { name: /resize chat/i });
     const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
-    expect(chatPane.style.width).toBe("54%");
-    // Setas redimensionam (acessível sem mouse); clamp em 25–75.
+    const initial = widthOf(chatPane);
     separator.focus();
+
     await userEvent.keyboard("{ArrowLeft}{ArrowLeft}");
-    expect(chatPane.style.width).toBe("46%");
+    const afterShrink = widthOf(chatPane);
+    expect(afterShrink).toBeLessThan(initial);
+
     await userEvent.keyboard("{ArrowRight}");
-    expect(chatPane.style.width).toBe("50%");
-    for (let i = 0; i < 20; i++) {
+    expect(widthOf(chatPane)).toBeGreaterThan(afterShrink);
+  });
+
+  it("chat_pane_width_clamps_at_the_lower_bound", async () => {
+    renderBuilder();
+    await openPinnedSession();
+    const separator = screen.getByRole("separator", { name: /resize chat/i });
+    const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
+    separator.focus();
+    for (let i = 0; i < 30; i++) {
       await userEvent.keyboard("{ArrowLeft}");
     }
-    expect(chatPane.style.width).toBe("25%");
+    expect(widthOf(chatPane)).toBe(25);
     expect(separator.getAttribute("aria-valuenow")).toBe("25");
   });
 
