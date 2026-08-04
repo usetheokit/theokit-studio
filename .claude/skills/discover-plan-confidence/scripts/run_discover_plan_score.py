@@ -81,12 +81,32 @@ def _resolve_thresholds(arg: Path | None, plan_path: Path) -> Path:
 
 
 def _parse_thresholds(path: Path) -> dict[str, int]:
+    """Parse verdict bands from the thresholds file.
+
+    Honors the documented `band.<name> = <int>` format (with optional inline `#`
+    comment) and the legacy `NAME | <int>` pipe format. Only `band.*` entries become
+    verdict bands; `soft_cap.*` / `hard_cap.*` lines are thresholds for the checkers
+    and MUST NOT be mistaken for bands.
+
+    Empty result fails closed (INVALID) by design — see test_parse_thresholds.py.
+    """
     bands: dict[str, int] = {}
     for line in path.read_text(encoding="utf-8-sig").splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
-        parts = [p.strip() for p in line.split("|")]
+        if "=" in stripped:
+            key, _, raw_value = stripped.partition("=")
+            key = key.strip()
+            if not key.startswith("band."):
+                continue
+            value = raw_value.split("#", 1)[0].strip()
+            try:
+                bands[key[len("band.") :].strip().upper()] = int(value)
+            except ValueError:
+                continue
+            continue
+        parts = [p.strip() for p in stripped.split("|")]
         if len(parts) >= 2:
             try:
                 bands[parts[0]] = int(parts[1])
