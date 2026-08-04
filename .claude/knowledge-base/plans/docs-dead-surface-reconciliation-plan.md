@@ -479,7 +479,8 @@ it("snapshot não expõe o estado mutável interno", () => {
   metrics.increment("datasource_calls_total", "listAgents");
   const first = metrics.snapshot();
   first.datasource_calls_total.listAgents = 999;
-  expect(metrics.snapshot().datasource_calls_total.listAgents).toBe(1);
+  const second = metrics.snapshot();
+  expect(second.datasource_calls_total.listAgents).toBe(1);
 });
 ```
 
@@ -533,7 +534,8 @@ teste que exercite o refresh, ele cai junto — é teste de comportamento removi
 // packages/studio/src/app/use-listing.test.tsx — RED antes de podar o hook
 it("expõe apenas items e loadError", () => {
   const { result } = renderHook(() => useListing(async () => []), { wrapper });
-  expect(Object.keys(result.current).sort()).toEqual(["items", "loadError"].sort());
+  const keys = Object.keys(result.current).sort();
+  expect(keys).toEqual(["items", "loadError"].sort());
 });
 ```
 
@@ -686,14 +688,6 @@ O único I/O externo tocado é HTTP, no teste de contrato do T4.1 contra o Vite 
 | `readFileSync("README.md")` (T1.1) | Arquivo ausente ou tabela não encontrada | O parser lança erro tipado em vez de retornar `[]` | Teste vermelho com mensagem que diz qual bloco não foi achado — nunca verde por lista vazia |
 
 ## Final Phase: Integration Validation (MANDATORY)
-
-### T5.1 — Validação integrada
-
-#### Concurrency tests
-
-(none — single-threaded)
-
-#### Passos
 
 Rodar, na raiz, na ordem: `npm run check`, `npm run typecheck`, `npm test`,
 `npx vitest run --coverage`, `npm run build`. Todos exit 0. Em seguida
