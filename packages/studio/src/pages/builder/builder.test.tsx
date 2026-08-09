@@ -39,7 +39,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("sidebar_has_app_structure_new_session_search_nav_sections", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    // Ordem estrutural: New session, Search, navegação, Pinned/Projects/Tasks.
+    // Structural order: New session, Search, navigation, Pinned/Projects/Tasks.
     expect(screen.getByRole("button", { name: /new session/i })).toBeTruthy();
     expect(screen.getByRole("searchbox", { name: /search sessions/i })).toBeTruthy();
     const nav = screen.getByRole("navigation", { name: /builder views/i });
@@ -54,12 +54,12 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("nav_entries_navigate_to_their_views", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    // Skills: lista REAL via listSkills (fecha o consumidor que faltava).
+    // Skills: the REAL list via listSkills (closes the consumer that was missing).
     await userEvent.click(screen.getByRole("button", { name: "Skills" }));
     const skills = await screen.findAllByTestId("builder-skill");
     expect(skills.length).toBe(2);
     expect(skills[0]?.textContent).toContain("summarize");
-    // Scheduled e Templates: empty states honestos.
+    // Scheduled and Templates: honest empty states.
     await userEvent.click(screen.getByRole("button", { name: "Scheduled" }));
     expect(await screen.findByTestId("builder-scheduled-view")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Templates" }));
@@ -69,10 +69,10 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(await screen.findByText("What should we build?")).toBeTruthy();
   });
 
-  // M8 T4.1: o teste original somava quatro comportamentos ("worklog and edited files and
-  // review panel"). Precedente do genkit: quando um comportamento tem duas condições, viram
-  // dois testes cujos nomes diferem na condição — não um teste com dois blocos de asserção.
-  // Um teste multi-comportamento falha sem dizer qual comportamento quebrou.
+  // M8 T4.1: the original test summed four behaviours ("worklog and edited files and review
+  // panel"). Precedent from genkit: when one behaviour has two conditions, they become two
+  // tests whose names differ in the condition — not one test with two assertion blocks.
+  // A multi-behaviour test fails without saying which behaviour broke.
   it("session_work_log_expands_on_click", async () => {
     renderBuilder();
     await openPinnedSession();
@@ -93,7 +93,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(card.textContent).toContain("prompts/support-tone.md");
   });
 
-  // Undo é fake door honesto — desabilitado, não silenciosamente inerte.
+  // Undo is an honest fake door — disabled, not silently inert.
   it("session_undo_is_disabled", async () => {
     renderBuilder();
     await openPinnedSession();
@@ -128,12 +128,11 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("review_file_tree_filters_the_diffs", async () => {
     renderBuilder();
     await openPinnedSession();
-    // Abre o Review a partir de "Changes" no painel de detalhes.
+    // Opens the Review from "Changes" in the details panel.
     await userEvent.click(screen.getByRole("button", { name: /changes/i }));
     const review = await screen.findByTestId("builder-review");
-    // Árvore de arquivos do <CodeReviewPanel>: botões cujo title é o caminho
-    // completo (a lib não expõe testid por item — seletor ajustado, comportamento
-    // idêntico ao painel manual anterior).
+    // <CodeReviewPanel>'s file tree: buttons whose title is the full path (the lib exposes no
+    // per-item testid — selector adjusted, behaviour identical to the previous manual panel).
     const treeFiles = within(review)
       .getAllByRole("button")
       .filter((b) => b.getAttribute("title")?.includes("/"));
@@ -144,7 +143,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     const diffs = screen.getAllByTestId("review-file-diff");
     expect(diffs.length).toBe(1);
     expect(diffs[0]?.getAttribute("data-path")).toBe("prompts/support-tone.md");
-    // "All files" restaura os dois diffs.
+    // "All files" restores both diffs.
     await userEvent.click(screen.getByRole("button", { name: /all files/i }));
     expect(screen.getAllByTestId("review-file-diff").length).toBe(2);
   });
@@ -156,20 +155,20 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     const tone = artifacts.find((a) => a.textContent?.includes("support-tone.md"));
     if (!tone) throw new Error("artifact not found");
     await userEvent.click(tone);
-    // Review abre já filtrado no artefato clicado.
+    // The Review opens already filtered on the clicked artifact.
     await screen.findByTestId("builder-review");
     const diffs = screen.getAllByTestId("review-file-diff");
     expect(diffs.length).toBe(1);
     expect(diffs[0]?.getAttribute("data-path")).toBe("prompts/support-tone.md");
-    // Fechar o Review volta ao painel de detalhes.
+    // Closing the Review returns to the details panel.
     await userEvent.click(screen.getByRole("button", { name: /close review/i }));
     expect(await screen.findByTestId("builder-details")).toBeTruthy();
   });
 
-  // M8 T4.1 (finding #80): as asserções eram larguras literais ("54%", "46%", "50%"), o que
-  // acoplava o teste ao passo do teclado e à largura inicial — mudar o passo de 4 para 5 quebrava
-  // um teste de acessibilidade sem que nada de acessível tivesse quebrado. Agora assevera
-  // DIREÇÃO (esquerda encolhe, direita cresce) e LIMITE (o clamp inferior), que é o contrato.
+  // M8 T4.1 (finding #80): the assertions were literal widths ("54%", "46%", "50%"), which
+  // coupled the test to the keyboard step and the initial width — changing the step from 4 to 5
+  // broke an accessibility test without anything accessible having broken. It now asserts
+  // DIRECTION (left shrinks, right grows) and LIMIT (the lower clamp), which is the contract.
   const widthOf = (el: HTMLElement) => Number.parseFloat(el.style.width);
 
   it("arrow_keys_resize_the_chat_pane_in_the_pressed_direction", async () => {
@@ -178,8 +177,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     const separator = screen.getByRole("separator", { name: /resize chat/i });
     const chatPane = screen.getByTestId("builder-chat-pane") as HTMLElement;
     const initial = widthOf(chatPane);
-    // Review F-tests-4: a reescrita perdeu esta asserção. A razão inicial é decisão de produto,
-    // separada do PASSO do teclado — desacoplar do passo não exigia largar o default.
+    // Review F-tests-4: the rewrite lost this assertion. The initial ratio is a product decision,
+    // separate from the keyboard STEP — decoupling from the step did not require dropping the default.
     expect(initial).toBe(54);
     expect(separator.getAttribute("aria-valuenow")).toBe("54");
     separator.focus();
@@ -192,8 +191,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(widthOf(chatPane)).toBeGreaterThan(afterShrink);
   });
 
-  // Review F-tests-5: `clampPct` tem DOIS limites e só o inferior tinha teste. Um mutante
-  // `Math.min(75, …)` -> `Math.min(100, …)` sobrevivia.
+  // Review F-tests-5: `clampPct` has TWO limits and only the lower one had a test. A mutant
+  // `Math.min(75, …)` -> `Math.min(100, …)` survived.
   it("chat_pane_width_clamps_at_the_upper_bound", async () => {
     renderBuilder();
     await openPinnedSession();
@@ -225,7 +224,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     await openPinnedSession();
     expect(screen.getByTestId("builder-details")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: /minimize side panel/i }));
-    // Painel some, chat ocupa 100%, splitter some.
+    // The panel disappears, the chat takes 100%, the splitter disappears.
     expect(screen.queryByTestId("builder-details")).toBeNull();
     expect((screen.getByTestId("builder-chat-pane") as HTMLElement).style.width).toBe("100%");
     expect(screen.queryByRole("separator", { name: /resize chat/i })).toBeNull();
@@ -240,7 +239,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     await userEvent.click(screen.getByRole("button", { name: /minimize chat/i }));
     expect(screen.queryByTestId("builder-chat-pane")).toBeNull();
     expect(screen.getByTestId("builder-details")).toBeTruthy();
-    // Minimizar o painel com o chat escondido troca o lado minimizado — nunca tela vazia.
+    // Minimising the panel while the chat is hidden swaps the minimised side — never a blank screen.
     await userEvent.click(screen.getByRole("button", { name: /minimize side panel/i }));
     expect(screen.getByTestId("builder-chat-pane")).toBeTruthy();
     expect(screen.queryByTestId("builder-details")).toBeNull();
@@ -284,7 +283,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(filtered[0]?.textContent).toContain("triage");
   });
 
-  // M8 T4.1: o teste original somava quatro comportamentos independentes do composer.
+  // M8 T4.1: the original test summed four independent behaviours of the composer.
   it("composer_fake_door_actions_are_disabled", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
@@ -295,7 +294,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   });
 
   // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui: dropdown-menu,
-  // não combobox — seletor ajustado, comportamento idêntico).
+  // not a combobox — selector adjusted, behaviour identical).
   it("composer_approval_mode_selection_persists_in_the_control", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
@@ -313,8 +312,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(picker.textContent).toContain("Medium");
   });
 
-  // Review F-tests-9: modelo e esforço são dois menus e dois estados independentes
-  // (setModel/setEffort). Este nome era meu e ainda carregava "_and_".
+  // Review F-tests-9: model and effort are two menus and two independent states
+  // (setModel/setEffort). This name was mine and still carried "_and_".
   it("composer_model_picker_applies_the_selected_model", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
@@ -357,10 +356,10 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect((await screen.findByRole("alert")).textContent).toContain("builder backend down");
   });
 
-  // M8 T2.2: os caminhos de ERRO de escrita não tinham teste. O de listagem tinha
-  // (datasource_rejection_surfaces_as_visible_alert, logo acima), mas a fronteira que importa
-  // aqui é a de escrita: um erro tipado tem de virar estado visível, nunca unhandled rejection
-  // (rules/error-handling.md § 2). O M7 encontrou um bug real nesta mesma classe de fronteira.
+  // M8 T2.2: the WRITE error paths had no test. The listing one did
+  // (datasource_rejection_surfaces_as_visible_alert, just above), but the boundary that matters
+  // here is the write one: a typed error must become visible state, never an unhandled rejection
+  // (rules/error-handling.md § 2). M7 found a real bug in this same boundary class.
   it("start_session_rejection_surfaces_as_visible_error", async () => {
     renderBuilderWith({
       startBuilderSession: () => Promise.reject(new Error("disk is full")),
@@ -370,9 +369,9 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(alert.textContent).toContain("disk is full");
   });
 
-  // Review F-xval-2: o ROADMAP nomeia DOIS caminhos (index.tsx:198 e :210) e eu só tinha coberto
-  // o segundo. O :198 é o guard de prompt vazio — um early return silencioso, não um erro
-  // visível: submeter em branco não pode iniciar sessão nem chamar o datasource.
+  // Review F-xval-2: the ROADMAP names TWO paths (index.tsx:198 and :210) and only the second
+  // was covered. :198 is the empty-prompt guard — a silent early return, not a visible error:
+  // submitting blank must neither start a session nor call the datasource.
   it("blank_prompt_does_not_start_a_session", async () => {
     const startBuilderSession = vi.fn();
     renderBuilderWith({ startBuilderSession });
@@ -382,8 +381,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(startBuilderSession).not.toHaveBeenCalled();
   });
 
-  // Review F-r2-9: o `.catch` de `openById` (index.tsx:192) é o irmão de LEITURA do caminho de
-  // escrita que o DoD nomeia — mesma superfície `role="alert"`, zero cobertura.
+  // Review F-r2-9: `openById`'s `.catch` (index.tsx:192) is the READ sibling of the write path
+  // the DoD names — same `role="alert"` surface, zero coverage.
   it("open_session_rejection_surfaces_as_visible_error", async () => {
     renderBuilderWith({
       getBuilderSession: () => Promise.reject(new Error("session vanished")),
@@ -396,8 +395,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(alert.textContent).toContain("session vanished");
   });
 
-  // Review F-r2-9: o ramo `target !== "new"` do ternário de index.tsx:204 nunca era exercitado —
-  // iniciar sessão contra um agente existente não tinha teste ponta a ponta.
+  // Review F-r2-9: the `target !== "new"` branch of index.tsx:204's ternary was never exercised —
+  // starting a session against an existing agent had no end-to-end test.
   it("start_session_forwards_the_selected_target_agent", async () => {
     const startBuilderSession = vi.fn().mockResolvedValue({
       id: "draft-1",
@@ -422,8 +421,8 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(targetArg).not.toBeUndefined();
   });
 
-  // EC-6: o ramo `String(error)` para rejeição não-Error — exatamente o que o M7 encontrou
-  // descoberto no useListing.
+  // EC-6: the `String(error)` branch for a non-Error rejection — exactly what M7 found
+  // uncovered in useListing.
   it("start_session_non_error_rejection_surfaces_as_string", async () => {
     renderBuilderWith({
       startBuilderSession: () => Promise.reject("boom"),
@@ -448,7 +447,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     renderBuilder();
     await screen.findByText("What should we build?");
     // <IntentSelector layout="tiles"> de @theokit/ui: botões com aria-pressed, sem
-    // data-testid por tile — seletor ajustado, comportamento idêntico (clique preenche).
+    // data-testid per tile — selector adjusted, behaviour identical (a click fills it in).
     const guardrails = screen.getByRole("button", { name: /guardrails/i });
     await userEvent.click(guardrails);
     const composer = screen.getByRole("textbox", {
