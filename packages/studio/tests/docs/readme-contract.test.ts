@@ -79,7 +79,7 @@ describe("README contract", () => {
 
   // EC-1: the parser never returns [] when it cannot find the block — it fails loud and names it.
   it("parseFeatureTableSurfaces throws naming the block when the table disappears", () => {
-    const call = () => parseFeatureTableSurfaces("# No table\n\ntexto");
+    const call = () => parseFeatureTableSurfaces("# No table\n\ntext");
     expect(call).toThrowError(/feature table not found/);
   });
 });
