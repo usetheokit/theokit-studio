@@ -2,11 +2,11 @@
 import { createServer, type Server, type ServerResponse } from "node:http";
 import { sendErrorEnvelope, sendJson } from "./http";
 
-// T1.1 — o guard de resposta comprometida. Estes testes usam um servidor HTTP REAL porque
-// `res.headersSent` é estado do próprio ServerResponse do Node: um fake que o declara como
-// literal nunca reproduz a transição que causa o crash (finding #68 da auditoria).
+// T1.1 — the committed-response guard. These tests use a REAL HTTP server because
+// `res.headersSent` is state owned by Node's own ServerResponse: a fake declaring it as a
+// literal never reproduces the transition that causes the crash (audit finding #68).
 
-/** Sobe um servidor real, roda `handler` na requisição e devolve status + corpo recebidos. */
+/** Starts a real server, runs `handler` on the request, and returns the status and body. */
 async function requestWith(
   handler: (res: ServerResponse) => void,
 ): Promise<{ status: number; body: string }> {
@@ -16,7 +16,7 @@ async function requestWith(
     await new Promise<void>((resolve) => server?.listen(0, resolve));
     const address = server.address();
     if (!address || typeof address === "string") {
-      throw new Error("servidor de teste não expôs porta");
+      throw new Error("the test server exposed no port");
     }
     const res = await fetch(`http://localhost:${address.port}/`);
     return { status: res.status, body: await res.text() };
@@ -28,21 +28,21 @@ async function requestWith(
   }
 }
 
-describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
+describe("sendErrorEnvelope over an already-committed response (T1.1)", () => {
   it("sendErrorEnvelope_writes_body_when_headers_already_sent", async () => {
     const { body } = await requestWith((res) => {
       res.writeHead(200, { "Content-Type": "text/plain" });
       sendErrorEnvelope(res, 500, "INTERNAL", "boom");
     });
 
-    // Cabeçalho não pode mais mudar, mas o erro TEM de chegar ao cliente (ADR A1).
+    // The header can no longer change, but the error MUST still reach the client (ADR A1).
     expect(body).toContain("INTERNAL");
     expect(body).toContain("boom");
   });
 
   it("sendErrorEnvelope_does_not_throw_when_headers_sent", async () => {
-    // O modo de falha original: writeHead após head comprometido lança
-    // ERR_HTTP_HEADERS_SENT e, dentro do .catch() do dispatcher, mata o processo.
+    // The original failure mode: writeHead after the head is committed throws
+    // ERR_HTTP_HEADERS_SENT and, inside the dispatcher's .catch(), kills the process.
     let thrown: unknown = null;
     await requestWith((res) => {
       res.writeHead(200, { "Content-Type": "text/plain" });
@@ -61,9 +61,9 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
     let thrown: unknown = null;
     const { body } = await requestWith((res) => {
       res.writeHead(200, { "Content-Type": "text/plain" });
-      res.write("parcial");
+      res.write("partial");
       try {
-        sendJson(res, 200, { nunca: "escrito" });
+        sendJson(res, 200, { never: "written" });
       } catch (error) {
         thrown = error;
       }
@@ -71,17 +71,17 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
     });
 
     expect(thrown).toBeNull();
-    expect(body).not.toContain("nunca");
+    expect(body).not.toContain("never");
   });
 
   it("sendErrorEnvelope_does_not_write_when_response_already_ended", () => {
-    // EC-1 (MUST FIX): comprometida E encerrada ao mesmo tempo. A ORDEM dos predicados é o
-    // contrato — writableEnded/destroyed ANTES de headersSent.
+    // EC-1 (MUST FIX): committed AND ended at the same time. The predicates' ORDER is the
+    // contract — writableEnded/destroyed BEFORE headersSent.
     //
-    // Fake com spy, não servidor real: a asserção que MATA a mutação (inverter a ordem) é
-    // "end NÃO foi chamado". Com ServerResponse real, o write-after-end vira erro ASSÍNCRONO
-    // do stream — nunca é lançado no try/catch e nunca chega ao corpo, e a review provou que
-    // a versão anterior deste teste sobrevivia à inversão (F-tests-3).
+    // A spy fake, not a real server: the assertion that KILLS the mutation (swapping the order)
+    // is "end was NOT called". With a real ServerResponse the write-after-end becomes an
+    // ASYNCHRONOUS stream error — never thrown into the try/catch and never reaching the body —
+    // and the review proved the previous version of this test survived the swap (F-tests-3).
     const end = vi.fn();
     const writeHead = vi.fn();
     const res = {
@@ -98,18 +98,18 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
       },
     } as unknown as ServerResponse;
 
-    expect(() => sendErrorEnvelope(res, 500, "INTERNAL", "tarde demais")).not.toThrow();
+    expect(() => sendErrorEnvelope(res, 500, "INTERNAL", "too late")).not.toThrow();
 
-    // Se headersSent for avaliado ANTES de writableEnded, o branch do corpo roda e chama end()
-    // sobre resposta encerrada — ERR_STREAM_WRITE_AFTER_END em produção.
+    // If headersSent is evaluated BEFORE writableEnded, the body branch runs and calls end() on
+    // an ended response — ERR_STREAM_WRITE_AFTER_END in production.
     expect(end).not.toHaveBeenCalled();
     expect(writeHead).not.toHaveBeenCalled();
   });
 
   it("sendJson_does_not_write_when_response_already_ended", () => {
-    // AC6 do M6 exige 100% de branch em http.ts, e a aceitação da v0.4.0 mediu 90%: o guard
-    // `writableEnded || destroyed` do sendJson — adicionado ao corrigir o F-arch-1 da review —
-    // não tinha teste. A ordem também importa aqui: encerrada sai ANTES de comprometida.
+    // M6's AC6 requires 100% branch coverage in http.ts, and the v0.4.0 acceptance measured 90%:
+    // sendJson's `writableEnded || destroyed` guard — added while fixing the review's F-arch-1 —
+    // had no test. Order matters here too: ended is checked BEFORE committed.
     const end = vi.fn();
     const writeHead = vi.fn();
     const res = {
@@ -126,15 +126,15 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
       },
     } as unknown as ServerResponse;
 
-    expect(() => sendJson(res, 200, { nunca: "escrito" })).not.toThrow();
+    expect(() => sendJson(res, 200, { never: "written" })).not.toThrow();
 
     expect(end).not.toHaveBeenCalled();
     expect(writeHead).not.toHaveBeenCalled();
   });
 
   it("sendJson_ends_the_response_when_headers_already_sent", () => {
-    // F-arch-1: apenas retornar deixava a requisição pendurada — hang silencioso no lugar do
-    // crash ruidoso. Encerrar é obrigatório; o aviso torna o bug de chamador visível.
+    // F-arch-1: merely returning left the request hanging — a silent hang in place of a noisy
+    // crash. Ending is mandatory; the warning makes the caller's bug visible.
     const end = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const res = {
@@ -152,7 +152,7 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
     } as unknown as ServerResponse;
 
     try {
-      sendJson(res, 200, { nunca: "escrito" });
+      sendJson(res, 200, { never: "written" });
 
       expect(end).toHaveBeenCalledTimes(1);
       expect(warn).toHaveBeenCalled();
@@ -162,7 +162,7 @@ describe("sendErrorEnvelope sobre resposta já comprometida (T1.1)", () => {
   });
 });
 
-describe("caminho não-comprometido segue intacto (T1.1)", () => {
+describe("the uncommitted path stays intact (T1.1)", () => {
   it("sendErrorEnvelope_sets_status_and_json_when_not_committed", async () => {
     const { status, body } = await requestWith((res) => {
       sendErrorEnvelope(res, 404, "NOT_FOUND", "sem rota");

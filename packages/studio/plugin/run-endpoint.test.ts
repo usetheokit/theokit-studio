@@ -4,10 +4,10 @@ import { join } from "node:path";
 import { Readable } from "node:stream";
 import { handleAgentRun, matchRunPath, type RunStreamInput } from "./run-endpoint";
 
-// Run endpoint (T1.4, ramo degradado do D4 — spike Q1: bridge sem seam de RunEvent,
-// theokit#132): NDJSON {message|done|error}; `run-event` fica RESERVADO no vocabulário
-// (o parser de T3.1 trata o superset). Origem verificada ANTES de ler o body; provider
-// key espelha a convenção do theokit (agent-middleware.ts:231 — apiKey only, first-match).
+// Run endpoint (T1.4, D4's degraded branch — spike Q1: the bridge has no RunEvent seam,
+// theokit#132): NDJSON {message|done|error}; `run-event` stays RESERVED in the vocabulary
+// (T3.1's parser handles the superset). Origin verified BEFORE reading the body; the provider
+// key mirrors theokit's convention (agent-middleware.ts:231 — apiKey only, first match).
 
 const FIXTURE = join(import.meta.dirname, "../tests/fixtures/demo-project");
 const realLoad = (file: string) => import(/* @vite-ignore */ file) as Promise<unknown>;
@@ -47,7 +47,7 @@ function makeRes(): FakeRes {
     get writableEnded() {
       return state.ended;
     },
-    // M6 EC-2: headersSent explícito (não `undefined` implícito), refletindo writeHead.
+    // M6 EC-2: headersSent is explicit (not an implicit `undefined`), mirroring writeHead.
     get headersSent() {
       return state.statusCode !== undefined;
     },
@@ -130,13 +130,13 @@ describe("matchRunPath (T1.4)", () => {
       name: "team/support",
     });
     expect(matchRunPath("/_studio/api/agents/support")).toBeNull();
-    // Percent-encoding malformado → kind discriminado (EC-5: nunca URIError não-tratada).
+    // Malformed percent-encoding → discriminated kind (EC-5: never an unhandled URIError).
     expect(matchRunPath("/_studio/api/agents/%/run")).toEqual({ kind: "malformed" });
   });
 
   it("test_agent_literally_named_malformed_still_resolves", () => {
-    // Regressão (SEPA pre-COMMIT T1.4): sentinel string colidia com o domínio de
-    // nomes válidos — um agent agents/malformed.ts era tratado como erro de encoding.
+    // Regression (SEPA pre-COMMIT T1.4): the sentinel string collided with the domain of
+    // valid names — an agent at agents/malformed.ts was treated as an encoding error.
     expect(matchRunPath("/_studio/api/agents/malformed/run")).toEqual({
       kind: "match",
       name: "malformed",
@@ -156,12 +156,12 @@ describe("handleAgentRun (T1.4)", () => {
     expect(state.headers["Content-Type"]).toBe("application/x-ndjson");
     const lines = parseLines(state.body);
     expect(lines.map((l) => l.kind)).toEqual(["message", "message", "done"]);
-    // Conclusão NORMAL não dispara abort (close pós-end é no-op).
+    // NORMAL completion does not fire abort (a post-end close is a no-op).
     expect(calls[0]?.input.signal.aborted).toBe(false);
   });
 
   it("test_run_stream_contains_no_run_event_lines", async () => {
-    // Lock do contrato degradado (D4/theokit#132): só message|done até o bridge expor o seam.
+    // Locks the degraded contract (D4/theokit#132): only message|done until the bridge exposes the seam.
     const { deps } = makeDeps();
     const state = await run(
       "/_studio/api/agents/support/run",
@@ -179,14 +179,14 @@ describe("handleAgentRun (T1.4)", () => {
       makeReq({ body: JSON.stringify({ message: "hi", sessionId: "sess-42" }) }),
       deps,
     );
-    // sessionId do body preservado (continuidade multi-turn do playground).
+    // The body's sessionId is preserved (the playground's multi-turn continuity).
     expect(calls[0]?.input.sessionId).toBe("sess-42");
     await run(
       "/_studio/api/agents/support/run",
       makeReq({ body: JSON.stringify({ message: "hi" }) }),
       deps,
     );
-    // Ausente → UUID gerado por request.
+    // Absent → a UUID generated per request.
     expect(calls[1]?.input.sessionId).toMatch(/^[0-9a-f-]{36}$/);
   });
 
@@ -200,7 +200,7 @@ describe("handleAgentRun (T1.4)", () => {
     expect(state.statusCode).toBe(403);
     expect(parseLines(state.body)[0]).toBeTruthy();
     expect(JSON.parse(state.body).error.code).toBe("ORIGIN_FORBIDDEN");
-    // ANTES de qualquer trabalho: agent não carregado, stream não criado, body não lido.
+    // BEFORE any work: agent not loaded, stream not created, body not read.
     expect(loadCalls.length).toBe(0);
     expect(calls.length).toBe(0);
     expect(req.bodySubscribed).toBe(false);
@@ -236,7 +236,7 @@ describe("handleAgentRun (T1.4)", () => {
     expect(state.statusCode).toBe(424);
     const err = JSON.parse(state.body).error as { code: string; message: string };
     expect(err.code).toBe("PROVIDER_KEY_MISSING");
-    // Nomeia as 3 vars em ordem de prioridade (paridade com o resolver do theokit).
+    // Names the 3 vars in priority order (parity with theokit's resolver).
     for (const v of ["OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]) {
       expect(err.message).toContain(v);
     }
@@ -271,10 +271,10 @@ describe("handleAgentRun (T1.4)", () => {
     expect(JSON.parse(state.body).error.code).toBe("AGENT_NOT_FOUND");
   });
 
-  // M8 T2.1 / review F-arch-2: a ORDEM dos guards é contrato e só pode ser travada AQUI. O
-  // teste de integração equivalente não serve: o dispatcher pré-checa `matchRunPath`
-  // (plugin/index.ts:105) e responde com 404 + NOT_FOUND + a MESMA mensagem do guard 1, então
-  // a asserção não distingue as duas origens e o guard 1 poderia ser deletado sem ficar RED.
+  // M8 T2.1 / review F-arch-2: the guards' ORDER is a contract and can only be pinned HERE.
+  // The equivalent integration test does not serve: the dispatcher pre-checks `matchRunPath`
+  // (plugin/index.ts:105) and answers 404 + NOT_FOUND + the SAME message as guard 1, so the
+  // assertion cannot tell the two origins apart and guard 1 could be deleted without going RED.
   it("test_unmatched_route_is_404_even_when_the_method_is_wrong", async () => {
     const { deps } = makeDeps();
     const state = await run("/_studio/api/not-a-run-route", makeReq({ method: "GET" }), deps);
@@ -282,10 +282,11 @@ describe("handleAgentRun (T1.4)", () => {
     expect(JSON.parse(state.body).error.code).toBe("NOT_FOUND");
   });
 
-  // Review F-tests-3 / F-xval-3: o guard #2 (percent-encoding malformado) e o #1 (rota que não
-  // casa) NÃO estavam cobertos como RESPOSTA — o teste existente assevera o valor de retorno de
+  // Review F-tests-3 / F-xval-3: guard #2 (malformed percent-encoding) and guard #1 (a route
+  // that does not match) were NOT covered as a RESPONSE — the existing test asserts the return
+  // value of
   // `matchRunPath`, não o envelope HTTP. O #2 é alcançável em produção: `/…/agents/%/run` casa
-  // prefixo e sufixo, então o dispatcher despacha e o guard dispara.
+  // prefix and suffix, so the dispatcher dispatches and the guard fires.
   it("test_malformed_percent_encoding_in_agent_name_rejected_400", async () => {
     const { deps } = makeDeps();
     const state = await run(
@@ -306,7 +307,7 @@ describe("handleAgentRun (T1.4)", () => {
       makeReq({ body: JSON.stringify({ message: "hi" }) }),
       deps,
     );
-    // nested/index.ts exporta não-agent → compile falha → erro tipado, nunca 500 cru.
+    // nested/index.ts exports a non-agent → compile fails → typed error, never a raw 500.
     expect(state.statusCode).toBe(422);
     expect(JSON.parse(state.body).error.code).toBe("AGENT_INVALID");
   });
@@ -326,16 +327,16 @@ describe("handleAgentRun (T1.4)", () => {
     const lines = parseLines(state.body);
     expect(lines.map((l) => l.kind)).toEqual(["message", "error"]);
     expect(JSON.stringify(lines[1])).toContain("provider exploded mid-run");
-    // done NUNCA após error.
+    // done NEVER after an error.
     expect(lines.some((l) => l.kind === "done")).toBe(false);
     expect(state.ended).toBe(true);
   });
 
   it("test_late_write_after_end_is_dropped_by_guard", async () => {
-    // Generator tenta yield após o response encerrar (erro no meio) — guard descarta
-    // sem throw (EC-7: write-after-end nunca derruba o processo).
-    // Barreira determinística (review F-dom-test): o generator espera um gate que o
-    // teste resolve DEPOIS do close — sem race de wall-clock (testing.md § 6).
+    // The generator tries to yield after the response ended (an error mid-way) — the guard
+    // discards without throwing (EC-7: a write-after-end never brings the process down).
+    // Deterministic barrier (review F-dom-test): the generator awaits a gate the test resolves
+    // AFTER the close — no wall-clock race (testing.md § 6).
     let lateYieldReached = false;
     let openGate = () => {};
     const gate = new Promise<void>((resolve) => {
@@ -346,7 +347,7 @@ describe("handleAgentRun (T1.4)", () => {
       streamFactory: async function* (_c, _k, input: RunStreamInput) {
         yield { type: "text-delta", delta: "one" };
         firstChunk.resolve();
-        await gate; // só prossegue quando o teste liberar (após o close)
+        await gate; // proceeds only once the test releases it (after the close)
         if (!input.signal.aborted) lateYieldReached = true;
         yield { type: "text-delta", delta: "late" };
       },
@@ -354,9 +355,9 @@ describe("handleAgentRun (T1.4)", () => {
     const req = makeReq({ body: JSON.stringify({ message: "hi" }) });
     const state = makeRes();
     const done = handleAgentRun("/_studio/api/agents/support/run", req, state.res, deps);
-    await firstChunk.promise; // 1º chunk garantidamente escrito
+    await firstChunk.promise; // the first chunk is guaranteed written
     (req as unknown as Readable).emit("close");
-    openGate(); // libera o generator já com o signal abortado
+    openGate(); // releases the generator with the signal already aborted
     await done;
     expect(lateYieldReached).toBe(false);
     const kinds = parseLines(state.body).map((l) => l.kind);
@@ -364,7 +365,7 @@ describe("handleAgentRun (T1.4)", () => {
   });
 
   it("test_client_disconnect_aborts_the_stream", async () => {
-    // Barreira determinística (review F-dom-test): ordering imposta, não torcida.
+    // Deterministic barrier (review F-dom-test): ordering enforced, not hoped for.
     let finallyRan = false;
     let observedAborted = false;
     let openGate = () => {};
@@ -377,7 +378,7 @@ describe("handleAgentRun (T1.4)", () => {
         try {
           yield { type: "text-delta", delta: "chunk-1" };
           firstChunk.resolve();
-          await gate; // aguarda o teste emitir close + liberar
+          await gate; // waits for the test to emit close and release
           observedAborted = input.signal.aborted;
           yield { type: "text-delta", delta: "chunk-2" };
         } finally {
@@ -392,7 +393,7 @@ describe("handleAgentRun (T1.4)", () => {
     (req as unknown as Readable).emit("close");
     openGate();
     await done;
-    // Cancellation propagation: signal abortado (determinístico), generator finalizado.
+    // Cancellation propagation: signal aborted (deterministically), generator finalised.
     expect(observedAborted).toBe(true);
     expect(finallyRan).toBe(true);
   });
