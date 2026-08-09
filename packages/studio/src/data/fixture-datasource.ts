@@ -26,7 +26,7 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
   const { scenario } = options;
   const isEmpty = scenario === "empty";
 
-  // Ids únicos para sessões de build efêmeras (F-dom-2 do review).
+  // Unique ids for ephemeral build sessions (the review's F-dom-2).
   let draftSessionCounter = 0;
 
   const counted = <T>(method: string, value: T): Promise<T> => {
@@ -47,7 +47,7 @@ export function createFixtureDataSource(options: FixtureDataSourceOptions): Stud
       targetAgentId?: string,
     ): Promise<BuilderSessionDetail> => {
       metrics.increment("datasource_calls_total", "startBuilderSession");
-      // Validação na fronteira (error-handling.md § 2): prompt vazio rejeita tipado.
+      // Boundary validation (error-handling.md § 2): an empty prompt rejects with a typed error.
       const text = prompt.trim();
       if (text.length === 0) {
         return Promise.reject(new BlankBuildPromptError());

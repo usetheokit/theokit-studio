@@ -1,7 +1,7 @@
 import { useRouteError } from "react-router";
 
-// errorElement por rota (D1): crash de página fica confinado ao Outlet — o shell
-// (sidebar/navegação) sobrevive (EC-2).
+// A per-route errorElement (D1): a page crash stays confined to the Outlet — the shell
+// (sidebar/navigation) survives (EC-2).
 export function RouteError() {
   const error = useRouteError();
   const message = error instanceof Error ? error.message : String(error);

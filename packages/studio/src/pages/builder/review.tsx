@@ -3,10 +3,10 @@ import { useEffect, useRef } from "react";
 import type { BuilderArtifactFile } from "../../data/types";
 
 // ---------------------------------------------------------------------------
-// Painel lateral de detalhes da sessão (default à direita): mudanças agregadas,
-// ações de git (fake door honesto) e artefatos produzidos — cada um abre o
-// Review. O painel Review em si é o <CodeReviewPanel> de @theokit/ui; este
-// DetailsPanel é a composição específica do Studio que o orquestra.
+// The session's side details panel (the default on the right): aggregated changes, git
+// actions (an honest fake door) and produced artifacts — each of which opens the Review.
+// The Review panel itself is @theokit/ui's <CodeReviewPanel>; this DetailsPanel is the
+// Studio-specific composition that orchestrates it.
 // ---------------------------------------------------------------------------
 
 export function DetailsPanel({
@@ -16,7 +16,7 @@ export function DetailsPanel({
 }: {
   files: BuilderArtifactFile[];
   onOpenReview: (path: string | null) => void;
-  /** devolve o foco ao painel quando ele volta após fechar o Review (F-dom-3). */
+  /** returns focus to the panel when it comes back after the Review closes (F-dom-3). */
   focusOnMount?: boolean;
 }) {
   const firstActionRef = useRef<HTMLButtonElement>(null);

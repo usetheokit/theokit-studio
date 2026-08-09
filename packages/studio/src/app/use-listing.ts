@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { type StudioDataSource, useDataSource } from "../data/datasource";
 
-// Boilerplate único de carga de listagem (DRY — Regra de 3: Agents/Memory/Knowledge já
-// repetiam o mesmo useEffect com ignore-flag; as telas Mastra-parity seriam a 4ª cópia).
-// Fronteira de página: erro tipado vira estado visível, nunca unhandled rejection.
+// One piece of listing-load boilerplate (DRY — Rule of 3: Agents/Memory/Knowledge already
+// repeated the same useEffect with an ignore flag; the Mastra-parity screens would be the
+// fourth copy). Page boundary: a typed error becomes visible state, never an unhandled
+// rejection.
 export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
   items: T[];
   loadError: string | null;
@@ -21,8 +22,8 @@ export function useListing<T>(load: (ds: StudioDataSource) => Promise<T[]>): {
       .then((list) => {
         if (!ignore) {
           setItems(list);
-          // Um load que dá certo depois de um que falhou tem de apagar o alerta; sem isto o
-          // banner de erro fica na tela ao lado dos itens novos (review F-arch-9).
+          // A load that succeeds after one that failed has to clear the alert; without this the error
+          // banner stays on screen next to the new items (review F-arch-9).
           setLoadError(null);
         }
       })

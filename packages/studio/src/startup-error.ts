@@ -1,5 +1,5 @@
-// Startup error em DOM puro (pré-React) — padrão Mastra (Blueprint §"Corner 3").
-// Se o bundle/router falhar no load, o usuário vê diagnóstico em vez de tela branca.
+// Startup error in plain DOM (pre-React) — the Mastra pattern (Blueprint §"Corner 3").
+// If the bundle/router fails to load, the user sees a diagnostic instead of a blank screen.
 
 export interface StartupErrorOptions {
   mode?: string;

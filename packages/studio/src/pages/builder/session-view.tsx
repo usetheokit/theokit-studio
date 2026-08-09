@@ -239,7 +239,7 @@ export function SessionView({
           </div>
         )}
         {showChat && showPanel && (
-          // biome-ignore lint/a11y/useSemanticElements: splitter interativo vertical — <hr> não suporta drag/teclado
+          // biome-ignore lint/a11y/useSemanticElements: an interactive vertical splitter — <hr> supports neither drag nor keyboard
           <div
             role="separator"
             aria-orientation="vertical"

@@ -57,8 +57,8 @@ export const fixtureBuilderSessions: readonly BuilderSessionSummary[] = Object.f
   },
 ]);
 
-// Detalhes das sessões do builder (transcript + work log + arquivos editados).
-// Simulação claramente rotulada (fixtures mode) — mesma premissa dos runs
+// Details of the builder's sessions (transcript + work log + edited files).
+// A clearly labelled simulation (fixtures mode) — the same premise as the runs
 // roteirizados do playground.
 export const fixtureBuilderSessionDetails: Readonly<Record<string, BuilderSessionDetail>> =
   Object.freeze({
@@ -221,7 +221,7 @@ export const fixtureBuilderSessionDetails: Readonly<Record<string, BuilderSessio
     },
   });
 
-// Resposta roteirizada para sessões novas iniciadas na home do builder.
+// The scripted reply for new sessions started from the builder's home.
 export const BUILDER_SCRIPTED_REPLY: Readonly<BuilderMessage> = Object.freeze({
   role: "assistant",
   text: "Here is a first pass — I scaffolded the agent definition on the right. Tell me what to adjust (tools, guardrails, model) and I will iterate.",

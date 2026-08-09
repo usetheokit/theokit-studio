@@ -1,7 +1,7 @@
 import type { CustomTool } from "@theokit/sdk";
 
-// Tool compartilhada entre agents — vive sob agents/tools/ (subpasta de composição:
-// o scan a exclui, o import funciona). Dogfood da convenção + DRY na fixture.
+// A tool shared between agents — it lives under agents/tools/ (a composition subfolder: the
+// scan excludes it, the import works). Dogfooding the convention + DRY in the fixture.
 export const lookupOrder: CustomTool = {
   name: "lookupOrder",
   description: "Look up an order by id in the demo store",

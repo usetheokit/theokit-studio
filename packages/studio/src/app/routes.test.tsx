@@ -5,8 +5,8 @@ import { DataSourceProvider } from "../data/datasource";
 import { createFixtureDataSource } from "../data/fixture-datasource";
 import { buildRoutes } from "./routes";
 
-// O Studio foi reduzido a uma única superfície: o Agent Builder em tela cheia.
-// Estes testes fixam o contrato de roteamento dessa redução.
+// The Studio was reduced to a single surface: the Agent Builder, full screen.
+// These tests pin the routing contract of that reduction.
 function renderAt(path: string) {
   const router = createMemoryRouter(buildRoutes(), { initialEntries: [path] });
   render(
@@ -16,7 +16,7 @@ function renderAt(path: string) {
   );
 }
 
-describe("routes (Studio reduzido ao Agent Builder)", () => {
+describe("routes (Studio reduced to the Agent Builder)", () => {
   it("root_redirects_to_builder", async () => {
     renderAt("/");
 
@@ -45,7 +45,7 @@ describe("routes (Studio reduzido ao Agent Builder)", () => {
     renderAt("/builder");
     await screen.findByTestId("builder-surface");
 
-    // Tela cheia: sem sidebar de navegação do shell, sem breadcrumb.
+    // Full screen: no shell navigation sidebar, no breadcrumb.
     expect(screen.queryByTestId("studio-smoke")).toBeNull();
     expect(screen.queryByText("dev server")).toBeNull();
   });

@@ -1,2 +1,2 @@
-// Arquivos .test são excluídos do scan (regex do theokit).
+// .test files are excluded from the scan (theokit's regex).
 export default {};
