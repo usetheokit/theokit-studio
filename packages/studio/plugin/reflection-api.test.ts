@@ -129,7 +129,7 @@ describe("aggregateReflection — pura, sem IO (T1.3)", () => {
         name: "triage",
         agent: "billing",
         source: "subagent",
-        note: "subagent declarado no agent (enumeração de instâncias de workflow é gap do SDK — theokit-sdk#123)",
+        note: "subagent declared on the agent (enumerating workflow instances is an SDK gap — theokit-sdk#123)",
       },
     ]);
   });

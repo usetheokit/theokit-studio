@@ -3,9 +3,9 @@ import { compileAgentModule } from "@theokit/agents/bridge";
 import { type AgentFileNode, scanStudioAgents } from "./agent-scan";
 
 /**
- * Reflection de agents (T1.2, ADR D2): scan fs + load injetado (DIP — produção usa
- * `server.ssrLoadModule`, hot-reload grátis; NUNCA cachear entre requests) +
- * `compileAgentModule` público do bridge. Falha de load/compile degrada SÓ o item.
+ * Agent reflection (T1.2, ADR D2): fs scan + injected load (DIP — production uses
+ * `server.ssrLoadModule`, hot reload for free; NEVER cache between requests) + the bridge's
+ * public `compileAgentModule`. A load/compile failure degrades ONLY that item.
  */
 export interface ReflectionTool {
   name: string;
@@ -14,15 +14,15 @@ export interface ReflectionTool {
 
 export interface ReflectionAgent {
   name: string;
-  /** caminho relativo ao project root (estável para exibição; nunca absoluto). */
+  /** path relative to the project root (stable for display; never absolute). */
   filePath: string;
   model?: string;
   tools?: ReflectionTool[];
-  /** nomes de subagents declarados (via @SubAgents; builder agents → []). */
+  /** declared subagent names (via @SubAgents; builder agents → []). */
   subagents?: string[];
   /**
-   * SkillsSettings do SDK preservado como objeto: `enabled` AUSENTE significa
-   * "todas as skills descobertas", não "nenhuma" (distinção que um array achatado perderia).
+   * The SDK's SkillsSettings kept as an object: an ABSENT `enabled` means "every discovered
+   * skill", not "none" (a distinction a flattened array would lose).
    */
   skills?: { enabled?: string[]; autoInject?: boolean };
   error?: string;
@@ -31,9 +31,9 @@ export interface ReflectionAgent {
 export interface ListAgentsDeps {
   projectRoot: string;
   agentsDir?: string;
-  /** carregador do módulo do agent (produção: ssrLoadModule; teste: stub). */
+  /** loader for the agent's module (production: ssrLoadModule; tests: a stub). */
   load: (filePath: string) => Promise<unknown>;
-  /** EC-6: um agent com side-effect travado no import não pode congelar a reflection. */
+  /** EC-6: an agent whose import side effect hangs must not freeze the reflection. */
   loadTimeoutMs?: number;
 }
 
@@ -58,7 +58,7 @@ async function loadWithTimeout(
       }),
     ]);
   } finally {
-    // Timer sempre limpo (SEPA T1.2) — sem handle de 10s vivo por request.
+    // The timer is always cleared (SEPA T1.2) — no 10s handle left alive per request.
     clearTimeout(timer);
   }
 }
@@ -80,7 +80,7 @@ function toReflectionAgent(
   };
 }
 
-/** Enumera os agents do projeto com metadados compilados — o coração da reflection. */
+/** Enumerates the project's agents with compiled metadata — the heart of the reflection. */
 export async function listReflectionAgents(deps: ListAgentsDeps): Promise<ListAgentsResult> {
   const nodes = scanStudioAgents(deps.projectRoot, deps.agentsDir);
   if (nodes.length === 0) {
@@ -97,7 +97,7 @@ export async function listReflectionAgents(deps: ListAgentsDeps): Promise<ListAg
       const mod = await loadWithTimeout(deps.load, node.filePath, timeoutMs);
       items.push(toReflectionAgent(node, deps.projectRoot, compileAgentModule(mod, relPath)));
     } catch (error) {
-      // Degradação por item com a mensagem REAL (fail-clear) — nunca lista vazia silenciosa.
+      // Per-item degradation carrying the REAL message (fail-clear) — never a silent empty list.
       items.push({
         name: node.name,
         filePath: relPath,
@@ -108,10 +108,10 @@ export async function listReflectionAgents(deps: ListAgentsDeps): Promise<ListAg
   return { items };
 }
 
-// ————— Agregados (T1.3) — funções puras testáveis sem IO —————
+// ————— Aggregates (T1.3) — pure functions, testable without IO —————
 
 export interface AggregatedTool extends ReflectionTool {
-  /** quantos agents usam a tool (dedup por name; primeira descrição vence). */
+  /** how many agents use the tool (deduped by name; the first description wins). */
   usedBy: number;
 }
 
@@ -124,9 +124,9 @@ export interface AggregatedWorkflow {
 }
 
 const WORKFLOW_NOTE =
-  "subagent declarado no agent (enumeração de instâncias de workflow é gap do SDK — theokit-sdk#123)";
+  "subagent declared on the agent (enumerating workflow instances is an SDK gap — theokit-sdk#123)";
 
-/** Agrega tools/workflows dos agents compilados. Itens degradados (error) são pulados. */
+/** Aggregates tools/workflows from the compiled agents. Degraded items (error) are skipped. */
 export function aggregateReflection(agents: ReflectionAgent[]): {
   tools: AggregatedTool[];
   workflows: AggregatedWorkflow[];
@@ -171,21 +171,21 @@ export interface ReflectionSkill {
 export interface ListSkillsDeps {
   projectRoot: string;
   /**
-   * discover injetado (DIP): default = discoverSkills do @theokit/sdk/skills sobre a
-   * convenção do ecossistema `<root>/.theokit/skills/<name>/SKILL.md`. discoverSkills
-   * real NUNCA lança (dir ausente → []); o branch degraded cobre discovers injetados.
+   * injected discover (DIP): default = @theokit/sdk/skills' discoverSkills over the ecosystem
+   * convention `<root>/.theokit/skills/<name>/SKILL.md`. The real discoverSkills NEVER throws
+   * (missing dir → []); the degraded branch covers injected discovers.
    */
   discover?: (dir: string) => Promise<ReflectionSkill[]>;
 }
 
 export interface ListSkillsResult {
   items: ReflectionSkill[];
-  /** nomes de skills com frontmatter inválido (puladas — visíveis, nunca silenciosas). */
+  /** names of skills with invalid frontmatter (skipped — visible, never silent). */
   invalid?: string[];
   degraded?: string;
 }
 
-/** Enumera skills da convenção `.theokit/skills` com degradação honesta. */
+/** Enumerates skills from the `.theokit/skills` convention with honest degradation. */
 export async function listReflectionSkills(deps: ListSkillsDeps): Promise<ListSkillsResult> {
   const skillsDir = join(deps.projectRoot, ".theokit/skills");
   try {
@@ -195,7 +195,7 @@ export async function listReflectionSkills(deps: ListSkillsDeps): Promise<ListSk
     const { discoverSkills } = await import("@theokit/sdk/skills");
     const invalid: string[] = [];
     const skills = await discoverSkills(skillsDir, {
-      // Skill malformada é pulada — mas nunca em silêncio (error-handling.md § 2).
+      // A malformed skill is skipped — but never silently (error-handling.md § 2).
       onInvalidSkill: (info: { name: string; code: string; message: string }) =>
         invalid.push(`${info.name}: ${info.code} — ${info.message}`),
     });
