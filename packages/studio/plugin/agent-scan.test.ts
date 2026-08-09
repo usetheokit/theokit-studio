@@ -24,9 +24,9 @@ describe("scanStudioAgents — the theokit convention contract (T1.2)", () => {
 
   it("test_scan_excludes_composition_subfolders_and_tests_but_keeps_flat_files", () => {
     const names = scanStudioAgents(FIXTURE).map((n) => n.name);
-    // tools/ignored.ts está sob diretório de composição → fora.
+    // tools/ignored.ts sits under a composition directory → out.
     expect(names).not.toContain("tools/ignored");
-    // skip.test.ts casa /\.(test|spec)$/ no rel sem extensão → fora.
+    // skip.test.ts matches /\.(test|spec)$/ on the extensionless rel → out.
     expect(names).not.toContain("skip.test");
     expect(names).not.toContain("skip");
     // BUT the flat file "tools.ts" is a valid agent (the exclusion looks at directories only).

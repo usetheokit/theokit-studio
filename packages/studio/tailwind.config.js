@@ -1,6 +1,6 @@
 // The design system's Violet Forge preset (v3-style, loaded in Tailwind v4 via @config in
 // index.css) + a content scan of the DESIGN SYSTEM PACKAGES by their REAL path (.pnpm):
-// o scanner do Tailwind v4 não segue os symlinks do pnpm em node_modules, então sem
+// the Tailwind v4 scanner does not follow pnpm symlinks in node_modules, então sem
 // that, the internal utilities of @usetheo/ui/@theokit/ui emit no CSS (a "bare" UI —
 // dogfood 2026-07-14). realpathSync resolve o symlink para a store do pnpm.
 import fs from "node:fs";

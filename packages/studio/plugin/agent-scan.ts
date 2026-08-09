@@ -54,7 +54,7 @@ function walk(dir: string, visit: (absPath: string) => void): void {
   }
 }
 
-/** Scan da convenção top-level `agents/` (dir configurável, ex.: "core/agents"). */
+/** Scan of the top-level `agents/` convention (directory configurable, ex.: "core/agents"). */
 export function scanStudioAgents(projectRoot: string, agentsDirName = "agents"): AgentFileNode[] {
   const agentsDir = join(projectRoot, agentsDirName);
   if (!existsSync(agentsDir) || !statSync(agentsDir).isDirectory()) {

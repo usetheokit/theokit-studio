@@ -446,7 +446,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
   it("intent_card_click_fills_the_composer_starter", async () => {
     renderBuilder();
     await screen.findByText("What should we build?");
-    // <IntentSelector layout="tiles"> de @theokit/ui: botões com aria-pressed, sem
+    // <IntentSelector layout="tiles"> from @theokit/ui: buttons with aria-pressed, sem
     // data-testid per tile — selector adjusted, behaviour identical (a click fills it in).
     const guardrails = screen.getByRole("button", { name: /guardrails/i });
     await userEvent.click(guardrails);

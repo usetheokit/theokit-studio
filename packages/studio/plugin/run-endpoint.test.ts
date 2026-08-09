@@ -285,7 +285,7 @@ describe("handleAgentRun (T1.4)", () => {
   // Review F-tests-3 / F-xval-3: guard #2 (malformed percent-encoding) and guard #1 (a route
   // that does not match) were NOT covered as a RESPONSE — the existing test asserts the return
   // value of
-  // `matchRunPath`, não o envelope HTTP. O #2 é alcançável em produção: `/…/agents/%/run` casa
+  // `matchRunPath`, not the HTTP envelope. #2 is reachable in production: `/…/agents/%/run` casa
   // prefix and suffix, so the dispatcher dispatches and the guard fires.
   it("test_malformed_percent_encoding_in_agent_name_rejected_400", async () => {
     const { deps } = makeDeps();
