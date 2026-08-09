@@ -12,8 +12,8 @@ function wrapperFor(ds: StudioDataSource) {
 
 const fixtures = () => createFixtureDataSource({ scenario: "default" });
 
-// Sonda para os casos que precisam TROCAR o datasource entre renders (o `wrapper` do
-// renderHook é fixo e não recebe `initialProps`).
+// A probe for the cases that need to SWAP the datasource between renders (renderHook's
+// `wrapper` is fixed and receives no `initialProps`).
 function ListingProbe() {
   const { items, loadError } = useListing((d) => d.listSkills());
   return (
@@ -33,9 +33,9 @@ function Probe({ ds }: { ds: StudioDataSource }) {
 }
 
 describe("useListing", () => {
-  // M7 T3.2: `reload` era devolvido e nenhum dos três call sites em builder/index.tsx o
-  // desestruturava. Ele existia só para incrementar `version`, que existia só para ser
-  // dependência do efeito, que existia só para justificar o `biome-ignore`. Os três caem juntos.
+  // M7 T3.2: `reload` was returned and none of the three call sites in builder/index.tsx
+  // destructured it. It existed only to increment `version`, which existed only to be the
+  // effect's dependency, which existed only to justify the `biome-ignore`. All three fall together.
   it("exposes_only_items_and_load_error", () => {
     const { result } = renderHook(() => useListing(async () => []), {
       wrapper: wrapperFor(fixtures()),
@@ -54,10 +54,10 @@ describe("useListing", () => {
     expect(result.current.loadError).toBeNull();
   });
 
-  // Review F-tests-5: sem isto, o mutante `[ds]` -> `[]` sobrevive à suíte inteira — ou seja,
-  // a lista de dependências que o M7 editou não estava travada por teste nenhum.
-  // `renderHook` não repassa `initialProps` ao wrapper, então a troca de datasource é feita
-  // por uma sonda de componente com `rerender`.
+  // Review F-tests-5: without this, the mutant `[ds]` -> `[]` survives the whole suite — that
+  // is, the dependency list M7 edited was pinned by no test at all.
+  // `renderHook` does not forward `initialProps` to the wrapper, so the datasource swap is done
+  // through a component probe with `rerender`.
   it("refetches_when_the_datasource_changes", async () => {
     const skillsFrom = (name: string): StudioDataSource => ({
       ...fixtures(),
@@ -71,9 +71,9 @@ describe("useListing", () => {
     expect(await screen.findByText("items: from-second")).toBeTruthy();
   });
 
-  // Review F-arch-9: um load que dá certo depois de um que falhou tem de limpar o alerta.
-  // Inalcançável enquanto `ds` for estável, mas o CHANGELOG promete que um botão de refresh
-  // "volta em poucas linhas" — e voltaria trazendo este bug junto.
+  // Review F-arch-9: a load that succeeds after one that failed has to clear the alert.
+  // Unreachable while `ds` is stable, but the CHANGELOG promises a refresh button "comes back
+  // in a few lines" — and it would come back bringing this bug with it.
   it("clears_a_previous_load_error_when_a_later_load_succeeds", async () => {
     const failing: StudioDataSource = {
       ...fixtures(),
@@ -92,7 +92,7 @@ describe("useListing", () => {
     expect(screen.getByText("error: none")).toBeTruthy();
   });
 
-  // Review F-tests-8: o branch `String(error)` para rejeição não-Error não tinha teste.
+  // Review F-tests-8: the `String(error)` branch for a non-Error rejection had no test.
   it("surfaces_a_non_error_rejection_as_a_string", async () => {
     const failing: StudioDataSource = {
       ...fixtures(),
@@ -102,7 +102,7 @@ describe("useListing", () => {
     expect(await screen.findByText("error: boom")).toBeTruthy();
   });
 
-  // Fronteira de página: erro tipado vira estado visível, nunca unhandled rejection.
+  // Page boundary: a typed error becomes visible state, never an unhandled rejection.
   it("surfaces_a_rejection_as_load_error_instead_of_throwing", async () => {
     const failing: StudioDataSource = {
       ...fixtures(),
