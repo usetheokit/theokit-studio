@@ -72,13 +72,13 @@ export function SessionView({
 }) {
   const [draft, setDraft] = useState("");
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
-  // Painel direito: detalhes (default, padrão da referência) ou o Review com diffs.
+  // Right panel: details (the default, matching the reference) or the Review with diffs.
   const [rightPane, setRightPane] = useState<"details" | "review">("details");
-  // Foco devolvido ao details quando o Review fecha (F-dom-3 — a11y).
+  // Focus returns to details when the Review closes (F-dom-3 — a11y).
   const [detailsFromClose, setDetailsFromClose] = useState(false);
-  // Largura do chat em % (splitter arrastável entre chat e painel; clamp 25–75).
+  // Chat width in % (draggable splitter between chat and panel; clamped 25–75).
   const [chatPct, setChatPct] = useState(54);
-  // Minimização: no máximo UM lado escondido por vez (nunca tela vazia).
+  // Minimisation: at most ONE side hidden at a time (never a blank screen).
   const [minimized, setMinimized] = useState<"none" | "chat" | "panel">("none");
   const hasPanel = session.files.length > 0;
   const showChat = minimized !== "chat";
@@ -87,11 +87,11 @@ export function SessionView({
 
   const clampPct = (pct: number) => Math.min(75, Math.max(25, pct));
 
-  // Review F-arch-4: era um onKeyDown inline de dez linhas no meio do JSX — a função mais densa
-  // do arquivo, e lógica imperativa, não markup. Nomeada ao lado de startResize/clampPct, que é
-  // a convenção que o arquivo já estabelece.
+  // Review F-arch-4: this was a ten-line inline onKeyDown in the middle of the JSX — the densest
+  // function in the file, and imperative logic rather than markup. Named alongside
+  // startResize/clampPct, which is the convention the file already sets.
   const handleSplitterKey = (e: React.KeyboardEvent) => {
-    // Acessibilidade: setas redimensionam sem mouse.
+    // Accessibility: the arrow keys resize without a mouse.
     if (e.key === "ArrowLeft") {
       e.preventDefault();
       setChatPct((p) => clampPct(p - 4));
