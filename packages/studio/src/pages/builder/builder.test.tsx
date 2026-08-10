@@ -293,7 +293,7 @@ describe("Agent Builder (code-assistant, three-pane)", () => {
     expect(mic.disabled).toBe(true);
   });
 
-  // Approval mode é config local REAL (<ApprovalModeSelector> de @theokit/ui: dropdown-menu,
+  // Approval mode is REAL local config (<ApprovalModeSelector> from @theokit/ui: dropdown-menu,
   // not a combobox — selector adjusted, behaviour identical).
   it("composer_approval_mode_selection_persists_in_the_control", async () => {
     renderBuilder();

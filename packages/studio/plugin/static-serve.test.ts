@@ -238,7 +238,7 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 
   it("test_resolve_spa_dir_works_from_source_layout", () => {
-    // Source: plugin/index.ts → ../dist/spa (dev do próprio Studio pós-build).
+    // Source: plugin/index.ts -> ../dist/spa (Studio's own dev server, post-build).
     // Isolated base: the beforeEach's spa/ at the tmp root must not interfere.
     const base = join(tmp, "pkg");
     mkdirSync(join(base, "plugin"), { recursive: true });
@@ -282,7 +282,7 @@ describe("an unreadable asset does not commit the head (T1.2)", () => {
   });
 });
 
-describe("index.html não é asset cru (review F-dom-api-1)", () => {
+describe("index.html is not served as a raw asset (review F-dom-api-1)", () => {
   it("explicit_index_html_gets_the_injected_config_like_the_root", async () => {
     // /_studio and /_studio/index.html must boot the SAME product: serving the raw html would
     // deliver the index without window.__STUDIO_CONFIG__, and the bootstrap falls to fixtures.

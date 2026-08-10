@@ -183,7 +183,7 @@ export function SessionView({
               {session.messages.map((m, i) =>
                 m.role === "user" ? (
                   <div
-                    // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                    // biome-ignore lint/suspicious/noArrayIndexKey: the transcript is append-only
                     key={i}
                     data-testid="builder-message"
                     className="max-w-[85%] self-end rounded-2xl bg-primary/15 px-4 py-2.5 text-foreground text-sm"
@@ -191,7 +191,7 @@ export function SessionView({
                     {m.text}
                   </div>
                 ) : (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: transcript é append-only
+                  // biome-ignore lint/suspicious/noArrayIndexKey: the transcript is append-only
                   <div key={i} className="flex flex-col gap-2.5">
                     {i === 1 && (
                       <WorkLog
