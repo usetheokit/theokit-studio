@@ -2,9 +2,9 @@ import { createFixtureDataSource } from "./fixture-datasource";
 import { metrics } from "./metrics";
 import { createReflectionDataSource } from "./reflection-datasource";
 
-// ReflectionDataSource (T3.1, ADR D5): adapter live sobre /_studio/api/* decorando o
-// FixtureDataSource. Com o Studio reduzido ao Agent Builder, a reflection cobre agents
-// e skills; as sessões de build seguem no fallback de fixtures (rotuladas na UI).
+// ReflectionDataSource (T3.1, ADR D5): a live adapter over /_studio/api/* decorating the
+// FixtureDataSource. With the Studio reduced to the Agent Builder, the reflection covers
+// agents and skills; build sessions stay on the fixture fallback (labelled in the UI).
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status });
@@ -29,10 +29,10 @@ beforeEach(() => {
   metrics.reset();
 });
 
-// M8 T3.1: trava de COMPORTAMENTO durante a troca de mecanismo (spread -> delegação
-// explícita). Este teste passa antes e depois de propósito — a prova da mudança é de
-// COMPILAÇÃO (remover uma delegação vira erro TS2741), registrada no log do milestone.
-describe("delegação ao fallback (T3.1)", () => {
+// M8 T3.1: a BEHAVIOUR pin across the mechanism swap (spread -> explicit delegation). This
+// test passes before and after on purpose — the proof of the change is at COMPILE time
+// (removing a delegation becomes a TS2741 error), recorded in the milestone's log.
+describe("delegation to the fallback (T3.1)", () => {
   it("delegates_unimplemented_methods_to_the_fallback", async () => {
     const listBuilderSessions = vi.fn().mockResolvedValue([]);
     const fallback = { ...createFixtureDataSource({ scenario: "default" }), listBuilderSessions };
@@ -41,10 +41,10 @@ describe("delegação ao fallback (T3.1)", () => {
     expect(listBuilderSessions).toHaveBeenCalledTimes(1);
   });
 
-  // Review F-arch-3: o compilador cobra MEMBRO ausente (TS2741), mas NÃO cobra aridade —
-  // `(prompt) => fallback.startBuilderSession(prompt)` compila e perde o targetAgentId em
-  // silêncio, virando `agentId: undefined` em toda sessão criada no modo live. Os dois métodos
-  // delegados que levam argumento precisam de teste; o teste acima só cobre o que não leva.
+  // Review F-arch-3: the compiler catches a MISSING MEMBER (TS2741) but does NOT catch arity —
+  // `(prompt) => fallback.startBuilderSession(prompt)` compiles and silently drops targetAgentId,
+  // becoming `agentId: undefined` on every session created in live mode. Both delegated methods
+  // that take an argument need a test; the test above only covers the one that takes none.
   it("forwards_every_argument_of_the_delegated_methods", async () => {
     const getBuilderSession = vi.fn().mockResolvedValue({ id: "s-1" });
     const startBuilderSession = vi.fn().mockResolvedValue({ id: "s-2" });
@@ -128,16 +128,16 @@ describe("createReflectionDataSource (T3.1)", () => {
     const sessions = await ds.listBuilderSessions();
 
     expect(sessions.length).toBeGreaterThan(0);
-    // Métrica contada pelo fallback (uma vez — sem dupla contagem no decorator).
+    // The metric is counted by the fallback (once — no double counting in the decorator).
     expect(metrics.snapshot().datasource_calls_total?.listBuilderSessions).toBe(1);
   });
 });
 
-describe("envelope de erro tipado do servidor (M6 T4.1)", () => {
+describe("the server's typed error envelope (M6 T4.1)", () => {
   it("reflection_error_envelope_is_propagated_with_code", async () => {
-    // O plugin monta {error:{code,message}} com cuidado e o cliente jogava fora, montando
-    // um Error genérico a partir do status. Detecção de offline degradava para comparação
-    // de string (finding #48). Precedente: GenkitError carrega status + code.
+    // The plugin assembles {error:{code,message}} carefully and the client threw it away,
+    // building a generic Error from the status. Offline detection degraded into string
+    // comparison (finding #48). Precedent: GenkitError carries status + code.
     const ds = makeDs({
       "/api/agents": () => jsonResponse({ error: { code: "NOT_FOUND", message: "sem rota" } }, 404),
     });
@@ -149,8 +149,8 @@ describe("envelope de erro tipado do servidor (M6 T4.1)", () => {
   });
 
   it("non_envelope_error_body_falls_back_to_status_message", async () => {
-    // EC-5: o body do fetch é stream de LEITURA ÚNICA. Tentar res.json() e cair para
-    // res.text() no catch lança "body used already" — o caso negativo seria impossível.
+    // EC-5: fetch's body is a SINGLE-READ stream. Trying res.json() and falling back to
+    // res.text() in the catch throws "body used already" — the negative case would be impossible.
     const ds = makeDs({
       "/api/agents": () => new Response("<html>502 Bad Gateway</html>", { status: 502 }),
     });
@@ -159,13 +159,13 @@ describe("envelope de erro tipado do servidor (M6 T4.1)", () => {
   });
 
   it("envelope_without_code_falls_back_to_status_message", async () => {
-    // EC-8: JSON válido, envelope incompleto — não pode lançar SyntaxError.
+    // EC-8: valid JSON, incomplete envelope — it must not throw a SyntaxError.
     const ds = makeDs({
-      "/api/agents": () => jsonResponse({ error: { message: "só mensagem" } }, 500),
+      "/api/agents": () => jsonResponse({ error: { message: "message only" } }, 500),
     });
 
     const err = await ds.listAgents().catch((e: unknown) => e);
 
-    expect((err as Error).message).toContain("só mensagem");
+    expect((err as Error).message).toContain("message only");
   });
 });

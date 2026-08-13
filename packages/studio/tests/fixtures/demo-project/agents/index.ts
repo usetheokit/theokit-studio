@@ -1,2 +1,2 @@
-// index raiz de agents/ é ignorado (nome vazio não roteia).
+// The root index of agents/ is ignored (an empty name does not route).
 export default {};

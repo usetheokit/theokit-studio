@@ -1,18 +1,18 @@
 import { configure } from "@testing-library/react";
 
-// Review F-tests-1: sob a suíte completa em paralelo (cold cache), navegações do router
-// podem exceder o waitFor default de 1s — findBy* falhava de forma intermitente.
-// 5s não custa nada em runs verdes (event-driven) e elimina o flake.
+// Review F-tests-1: under the full suite in parallel (cold cache), router navigations can
+// exceed waitFor's 1s default — findBy* failed intermittently. 5s costs nothing on green
+// runs (they are event-driven) and removes the flake.
 configure({ asyncUtilTimeout: 5000 });
 
-// Cleanup automático do Testing Library é ativado por globals: true (afterEach registrado).
-// CSS.escape não existe no jsdom — loadThemeFonts do @theokit/ui usa em runtime.
+// Testing Library's automatic cleanup is enabled by globals: true (afterEach is registered).
+// CSS.escape does not exist in jsdom — @theokit/ui's loadThemeFonts uses it at runtime.
 if (typeof window !== "undefined" && !window.CSS) {
   Object.defineProperty(window, "CSS", {
     value: { escape: (v: string) => v.replace(/[^a-zA-Z0-9_-]/g, (c) => `\\${c}`) },
   });
 }
-// matchMedia não existe no jsdom — ThemeProvider do design system consulta em runtime.
+// matchMedia does not exist in jsdom — the design system's ThemeProvider queries it at runtime.
 if (typeof window !== "undefined" && !window.matchMedia) {
   window.matchMedia = (query: string): MediaQueryList =>
     ({
@@ -27,7 +27,7 @@ if (typeof window !== "undefined" && !window.matchMedia) {
     }) as MediaQueryList;
 }
 
-// Radix Select (Popper) usa APIs que o jsdom não implementa.
+// Radix Select (Popper) uses APIs jsdom does not implement.
 if (typeof Element !== "undefined") {
   Element.prototype.hasPointerCapture ??= () => false;
   Element.prototype.setPointerCapture ??= () => {};
@@ -35,9 +35,9 @@ if (typeof Element !== "undefined") {
   Element.prototype.scrollIntoView ??= () => {};
 }
 
-// jsdom não tem ResizeObserver; o Radix Slider (painel de params do playground,
-// M7 T3.2) observa o track para posicionar thumbs. Stub no-op determinístico
-// (mesmo padrão do setup da @usetheo/ui).
+// jsdom has no ResizeObserver; the Radix Slider (the playground's params panel, M7 T3.2)
+// observes the track to position its thumbs. A deterministic no-op stub (the same pattern as
+// @usetheo/ui's setup).
 if (typeof globalThis.ResizeObserver === "undefined") {
   globalThis.ResizeObserver = class {
     observe() {}

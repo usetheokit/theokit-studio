@@ -9,26 +9,26 @@ import { handleAgentRun, matchRunPath, type RunStreamFactory } from "./run-endpo
 import { resolveSpaDir, serveStudio } from "./static-serve";
 
 /**
- * `@theokit/studio/plugin` — monta a reflection API (`/_studio/api/*`) e (T2.2) a SPA
- * (`/_studio`) no dev server Vite do host, como connect middleware registrado em
- * `configureServer` (mesmo padrão dos middlewares do theokit dev — plano M1, ADR D1).
+ * `@theokit/studio/plugin` — mounts the reflection API (`/_studio/api/*`) and (T2.2) the SPA
+ * (`/_studio`) onto the host's Vite dev server, as connect middleware registered in
+ * `configureServer` (the same pattern as theokit dev's middlewares — M1 plan, ADR D1).
  */
 export interface StudioPluginOptions {
-  /** diretório dos agents relativo ao project root (convenção theokit: "agents"). */
+  /** the agents directory relative to the project root (theokit convention: "agents"). */
   agentsDir?: string;
-  /** seam de e2e/teste (DIP): substitui streamAgentUIMessages no run endpoint. */
+  /** e2e/test seam (DIP): replaces streamAgentUIMessages in the run endpoint. */
   streamFactory?: RunStreamFactory;
 }
 
 const STUDIO_PREFIX = "/_studio";
 /**
- * Prefixos que a SPA NUNCA atende. `/_studio/svc/*` é travado no CLAUDE.md como proxy
- * same-origin dos serviços (lens/memory/rag) e ainda não foi implementado — até lá, o
- * contrato é 404 tipado, não HTML.
+ * Prefixes the SPA NEVER serves. `/_studio/svc/*` is pinned in CLAUDE.md as the same-origin
+ * proxy for the services (lens/memory/rag) and is not implemented yet — until then, the
+ * contract is a typed 404, not HTML.
  */
 const RESERVED_API_NAMESPACES = ["/_studio/api", "/_studio/svc"] as const;
 
-// Versão lida via fs com busca dual-layout (SEPA pre-RED T1.1; mesma família do EC-10):
+// Version read from the fs with a dual-layout search (SEPA pre-RED T1.1; same family as EC-10):
 // source  → plugin/index.ts      → ../package.json
 // buildado → dist/plugin/index.js → ../../package.json
 function resolveStudioVersion(): string {
@@ -40,7 +40,7 @@ function resolveStudioVersion(): string {
         const parsed = JSON.parse(readFileSync(candidate, "utf8")) as { version?: string };
         if (typeof parsed.version === "string") return parsed.version;
       } catch {
-        // package.json ilegível neste layout — tenta o próximo; fallback honesto abaixo.
+        // package.json unreadable in this layout — try the next; honest fallback below.
       }
     }
   }
@@ -48,7 +48,7 @@ function resolveStudioVersion(): string {
 }
 
 function isStudioPath(pathname: string): boolean {
-  // Prefixo exige "/" ou fim: /_studio e /_studio/... são nossos; /_studioX não.
+  // The prefix requires "/" or end-of-string: /_studio and /_studio/... are ours; /_studioX is not.
   return pathname === STUDIO_PREFIX || pathname.startsWith(`${STUDIO_PREFIX}/`);
 }
 
@@ -62,15 +62,16 @@ function loadAgents(ctx: StudioContext) {
   return listReflectionAgents({
     projectRoot: ctx.server.config.root,
     agentsDir: ctx.options.agentsDir,
-    // Hot-reload grátis: o Vite invalida o module graph — por isso nunca cacheamos.
+    // Hot reload for free: Vite invalidates the module graph — which is why we never cache.
     load: (filePath) => ctx.server.ssrLoadModule(filePath),
   });
 }
 
 /**
- * True quando o path cai num namespace reservado da API. O separador é obrigatório
- * (`/_studio/svcfoo` NÃO é reservado — M6 EC-7), e o path exato conta (`/_studio/svc` sem
- * barra final também é reservado — M6 EC-3). Mesma forma do mastra (`index.ts:429-430`).
+ * True when the path falls in a reserved API namespace. The separator is mandatory
+ * (`/_studio/svcfoo` is NOT reserved — M6 EC-7), and the exact path counts (`/_studio/svc`
+ * without a trailing slash is reserved too — M6 EC-3). Same shape as mastra
+ * (`index.ts:429-430`).
  */
 function isReservedApiNamespace(pathname: string): boolean {
   return RESERVED_API_NAMESPACES.some(
@@ -93,7 +94,7 @@ async function handleStudioRequest(
     return;
   }
   if (pathname === "/_studio/api/tools" || pathname === "/_studio/api/workflows") {
-    // Agregados derivam da MESMA compilação por request (nunca cacheada — hot-reload).
+    // Aggregates derive from the SAME per-request compilation (never cached — hot reload).
     const { tools, workflows } = aggregateReflection((await loadAgents(ctx)).items);
     sendJson(res, 200, pathname.endsWith("tools") ? { items: tools } : { items: workflows });
     return;
@@ -111,25 +112,25 @@ async function handleStudioRequest(
     });
     return;
   }
-  // Namespace RESERVADO é decidido ANTES do fallback da SPA (M6 ADR A2). Sem isto, um path
-  // sob um prefixo de contrato caía no serveStudio e a resposta dependia da EXTENSÃO da URL:
-  // /_studio/svc/x/query devolvia HTML 200 e /_studio/svc/x/index.json devolvia 404 JSON —
-  // duas respostas para o mesmo namespace documentado (finding #49).
-  // Precedente: mastra packages/deployer/src/server/index.ts:428-435 exclui o namespace de
-  // API antes do catch-all da SPA; lá ele delega com next() a um router, aqui emitimos o
-  // envelope nós mesmos porque o middleware connect não tem a quem delegar.
+  // A RESERVED namespace is decided BEFORE the SPA fallback (M6 ADR A2). Without this, a path
+  // under a contract prefix fell into serveStudio and the answer depended on the URL's
+  // EXTENSION: /_studio/svc/x/query returned HTML 200 while /_studio/svc/x/index.json returned
+  // a JSON 404 — two answers for the same documented namespace (finding #49).
+  // Precedent: mastra packages/deployer/src/server/index.ts:428-435 excludes the API namespace
+  // before the SPA catch-all; there it delegates to a router with next(), here we emit the
+  // envelope ourselves because connect middleware has nobody to delegate to.
   if (isReservedApiNamespace(pathname)) {
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio api route matches ${pathname}`);
     return;
   }
-  // Namespace da SPA (T2.2): asset conhecido, senão fallback index.html com o config.
+  // The SPA's namespace (T2.2): a known asset, otherwise the index.html fallback with the config.
   await serveStudio(pathname, res, {
     spaDir: ctx.spaDir,
     config: { mode: "live", basePath: STUDIO_PREFIX },
   });
 }
 
-/** Plugin Vite: registra o middleware do Studio no dev server do host. */
+/** Vite plugin: registers the Studio middleware on the host's dev server. */
 export function theokitStudio(options: StudioPluginOptions = {}): Plugin {
   return {
     name: "theokit-studio",
@@ -140,14 +141,14 @@ export function theokitStudio(options: StudioPluginOptions = {}): Plugin {
         spaDir: resolveSpaDir({ env: process.env }),
       };
       const middleware: Connect.NextHandleFunction = (req, res, next) => {
-        // EC-1 (MUST FIX): decisão de rota SEMPRE sobre o pathname — nunca req.url cru.
+        // EC-1 (MUST FIX): the routing decision is ALWAYS on the pathname — never on a raw req.url.
         const pathname = new URL(req.url ?? "/", "http://local").pathname;
         if (!isStudioPath(pathname)) {
           next();
           return;
         }
         handleStudioRequest(pathname, req, res, ctx).catch((error: unknown) => {
-          // Última linha de defesa: erro não-tratado vira envelope, nunca hang/swallow.
+          // Last line of defence: an unhandled error becomes an envelope, never a hang or a swallow.
           sendErrorEnvelope(
             res,
             500,

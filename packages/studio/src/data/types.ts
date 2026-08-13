@@ -1,5 +1,5 @@
-// Entidades da superfície do Studio — o Agent Builder (fixtures; a reflection do dev
-// server troca o adapter). Camada 100% react-free (architecture.md § 2).
+// Entities of the Studio's surface — the Agent Builder (fixtures; the dev server's reflection
+// swaps the adapter). A 100% react-free layer (architecture.md § 2).
 
 export interface AgentSummary {
   id: string;
@@ -17,9 +17,9 @@ export interface SkillSummary {
 export interface BuilderSessionSummary {
   id: string;
   title: string;
-  /** agente alvo da sessão (quando já existe). */
+  /** the session's target agent (when one already exists). */
   agentId?: string;
-  /** atividade relativa exibida na lista (fixture display-ready, ex.: "2m"). */
+  /** relative activity shown in the list (display-ready fixture, e.g. "2m"). */
   lastActivity: string;
   pinned: boolean;
 }
@@ -30,29 +30,29 @@ export interface BuilderMessage {
 }
 
 export interface BuilderArtifactFile {
-  /** caminho do arquivo alterado (ex.: "agents/support-agent.ts"). */
+  /** path of the changed file (e.g. "agents/support-agent.ts"). */
   path: string;
   additions: number;
   deletions: number;
-  /** diff unificado exibido no painel de review (+/- coloridos). */
+  /** unified diff shown in the review panel (coloured +/-). */
   diff: string;
 }
 
 export interface BuilderSessionDetail extends BuilderSessionSummary {
   messages: BuilderMessage[];
-  /** duração exibida no log de trabalho (fixture display-ready, ex.: "2m 30s"). */
+  /** duration shown in the worklog (display-ready fixture, e.g. "2m 30s"). */
   workedFor: string;
-  /** passos do log de trabalho (expansível na thread). */
+  /** the worklog's steps (expandable in the thread). */
   workLog: string[];
-  /** arquivos editados pela sessão (painel Review à direita). */
+  /** files edited by the session (the Review panel on the right). */
   files: BuilderArtifactFile[];
 }
 
-// M7 T2.1: `"offline"` removido — nenhum consumidor o distinguia de `"default"`
-// (`fixture-datasource.ts` só ramifica em `"empty"`), então era superfície aceita e ignorada.
+// M7 T2.1: `"offline"` removed — no consumer distinguished it from `"default"`
+// (`fixture-datasource.ts` only branches on `"empty"`), so it was surface accepted and ignored.
 export type FixtureScenario = "default" | "empty";
 
-// Erros tipados da fronteira de dados (error-handling.md § 2 — fail-fast, contexto na mensagem).
+// Typed errors from the data boundary (error-handling.md § 2 — fail fast, context in the message).
 
 export class BlankBuildPromptError extends Error {
   constructor() {

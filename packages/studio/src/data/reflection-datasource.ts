@@ -3,25 +3,25 @@ import { metrics } from "./metrics";
 import type { AgentSummary, SkillSummary } from "./types";
 
 /**
- * Adapter live do M1 (ADR D5 — decorator sobre o FixtureDataSource): as superfícies
- * cobertas pela reflection (`/_studio/api/*`) falam com o dev server; o resto delega ao
- * fallback (que segue rotulado como fixtures na UI). Camada react-free
+ * M1's live adapter (ADR D5 — a decorator over FixtureDataSource): the surfaces covered by
+ * the reflection (`/_studio/api/*`) talk to the dev server; the rest delegates to the
+ * fallback (which stays labelled as fixtures in the UI). A react-free layer
  * (architecture.md § 2).
  *
- * Com o Studio reduzido ao Agent Builder, a reflection alimenta o seletor de agente-alvo
- * e a lista de skills; as sessões de build permanecem no fallback de fixtures.
+ * With the Studio reduced to the Agent Builder, the reflection feeds the target-agent
+ * selector and the skills list; build sessions stay on the fixture fallback.
  */
 
 export interface ReflectionDataSourceOptions {
-  /** superfícies fora da reflection delegam para cá (fixtures rotuladas — D5). */
+  /** surfaces outside the reflection delegate here (labelled fixtures — D5). */
   fallback: StudioDataSource;
-  /** prefixo do fetch; default "" (paths ABSOLUTOS /_studio/api — a SPA vive sob rota). */
+  /** fetch prefix; defaults to "" (ABSOLUTE /_studio/api paths — the SPA lives under a route). */
   baseUrl?: string;
-  /** seam de teste (jsdom sem servidor); default fetch global. */
+  /** test seam (jsdom with no server); defaults to the global fetch. */
   fetchImpl?: typeof fetch;
 }
 
-/** Erro da reflection que preserva o `code` do envelope do servidor (M6 T4.1). */
+/** A reflection error that preserves the `code` from the server's envelope (M6 T4.1). */
 export class ReflectionRequestError extends Error {
   readonly code: string;
   readonly status: number;
@@ -34,13 +34,13 @@ export class ReflectionRequestError extends Error {
 }
 
 /**
- * Reconstrói um erro TIPADO a partir do envelope `{error:{code,message}}` que o plugin envia.
- * Antes, o cliente descartava o envelope e montava um `Error` genérico do status — detecção de
- * offline degradava para comparação de string (finding #48).
+ * Rebuilds a TYPED error from the `{error:{code,message}}` envelope the plugin sends. Before,
+ * the client discarded the envelope and built a generic `Error` from the status — offline
+ * detection degraded into string comparison (finding #48).
  *
- * O corpo é lido UMA ÚNICA VEZ como texto (M6 EC-5): o body do `fetch` é um stream de leitura
- * única, então tentar `res.json()` e cair para `res.text()` no catch lança
- * `TypeError: body used already` — o caso negativo seria impossível de satisfazer.
+ * The body is read EXACTLY ONCE as text (M6 EC-5): `fetch`'s body is a single-read stream, so
+ * trying `res.json()` and falling back to `res.text()` in the catch throws
+ * `TypeError: body used already` — the negative case would be impossible to satisfy.
  */
 async function toTypedError(res: Response, path: string): Promise<ReflectionRequestError> {
   const fallback = `reflection ${path} responded ${res.status} — is the dev server running?`;
@@ -59,7 +59,7 @@ async function toTypedError(res: Response, path: string): Promise<ReflectionRequ
         : fallback;
     return new ReflectionRequestError(code, message, res.status);
   } catch {
-    // Corpo não-JSON (proxy HTML, resposta vazia) é caso NEGATIVO esperado, não excepcional.
+    // A non-JSON body (proxy HTML, empty response) is an expected NEGATIVE case, not an exception.
     return new ReflectionRequestError("HTTP_ERROR", fallback, res.status);
   }
 }
@@ -71,7 +71,7 @@ interface ReflectionAgentPayload {
   error?: string;
 }
 
-/** Cria o datasource live (reflection + delegação). */
+/** Creates the live datasource (reflection + delegation). */
 export function createReflectionDataSource(opts: ReflectionDataSourceOptions): StudioDataSource {
   const base = opts.baseUrl ?? "";
   const doFetch = opts.fetchImpl ?? fetch;
@@ -85,17 +85,17 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
     return (await res.json()) as T;
   }
 
-  // M8 T3.1: delegação EXPLÍCITA, método a método, no lugar de `...opts.fallback`.
-  // Precedente: o `Registry` do genkit delega cada operação ao `parent` (lookupAction,
-  // lookupPlugin, lookupValue, lookupSchema) e nunca espalha o objeto-pai.
+  // M8 T3.1: EXPLICIT delegation, method by method, in place of `...opts.fallback`.
+  // Precedent: genkit's `Registry` delegates each operation to its `parent` (lookupAction,
+  // lookupPlugin, lookupValue, lookupSchema) and never spreads the parent object.
   //
-  // O ganho é de COMPILAÇÃO, com um limite que vale nomear (review F-arch-3): o compilador
-  // cobra MEMBRO ausente (TS2741) — com o spread, um método novo em `StudioDataSource` caía
-  // silenciosamente no fixture e só falhava em runtime. Ele NÃO cobra aridade: uma delegação
-  // que esquece um argumento compila limpo. Por isso os dois métodos que levam argumento têm
-  // teste de forwarding em `reflection-datasource.test.ts`.
-  // Isto também dispensa o invariante que o spread exigia documentar — que ele só era correto
-  // porque o fallback é um objeto de closures stateless.
+  // The gain is at COMPILE time, with a limit worth naming (review F-arch-3): the compiler
+  // catches a MISSING MEMBER (TS2741) — with the spread, a new method on `StudioDataSource`
+  // silently fell through to the fixture and only failed at runtime. It does NOT catch arity: a
+  // delegation that forgets an argument compiles cleanly. That is why the two methods taking an
+  // argument have forwarding tests in `reflection-datasource.test.ts`.
+  // This also retires the invariant the spread forced us to document — that it was only correct
+  // because the fallback is an object of stateless closures.
   const { fallback } = opts;
   return {
     listBuilderSessions: () => fallback.listBuilderSessions(),
@@ -108,7 +108,7 @@ export function createReflectionDataSource(opts: ReflectionDataSourceOptions): S
       return items.map((a) => ({
         id: a.name,
         name: a.name,
-        // Item degradado é VISÍVEL, nunca mascarado (EC-9).
+        // A degraded item is VISIBLE, never masked (EC-9).
         description: a.error ? `⚠ failed to load: ${a.error}` : a.filePath,
         model: a.model,
       }));

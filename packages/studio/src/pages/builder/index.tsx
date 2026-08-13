@@ -36,8 +36,8 @@ const MODELS = [
   { id: "claude-haiku-4-5", name: "Haiku 4.5", blurb: "Snappy for quick edits" },
 ];
 
-// Vistas internas navegáveis da sidebar do builder (estrutura de app de code
-// assistant): home (nova sessão), sessão aberta, e as entradas de navegação.
+// The builder sidebar's navigable inner views (code-assistant app structure): home (new
+// session), an open session, and the navigation entries.
 type BuilderView =
   | { kind: "home" }
   | { kind: "session"; session: BuilderSessionDetail }
@@ -82,7 +82,7 @@ const FOLLOW_UP_REPLY: BuilderMessage = {
 };
 
 // ---------------------------------------------------------------------------
-// Vistas das entradas de navegação da sidebar (Skills / Scheduled / Templates).
+// Views for the sidebar's navigation entries (Skills / Scheduled / Templates).
 // ---------------------------------------------------------------------------
 
 function SkillsView() {
@@ -140,8 +140,8 @@ function TemplatesView() {
 }
 
 // ---------------------------------------------------------------------------
-// Página: sidebar de app (nova sessão → busca → navegação → pinned/projects/tasks)
-// + vista ativa. Sessões roteirizadas em fixtures, claramente rotuladas.
+// Page: app sidebar (new session → search → navigation → pinned/projects/tasks) + the active
+// view. Sessions are scripted from fixtures, clearly labelled.
 // ---------------------------------------------------------------------------
 
 export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
@@ -150,7 +150,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
   const { items: agents } = useListing((d) => d.listAgents());
   const [target, setTarget] = useState("new");
   const [prompt, setPrompt] = useState("");
-  // Config local da sessão (real — nada executa em fixtures, mas a escolha é do usuário).
+  // The session's local config (real — nothing executes on fixtures, but the choice is the user's).
   const [approval, setApproval] = useState<ApprovalMode>("ask");
   const [model, setModel] = useState("claude-fable-5");
   const [effort, setEffort] = useState("Medium");
@@ -198,8 +198,8 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
     if (prompt.trim().length === 0) {
       return;
     }
-    // Review F-arch-1/F-wire-1: a síntese da sessão roteirizada vive no datasource
-    // (DIP + métrica contada), não na página.
+    // Review F-arch-1/F-wire-1: synthesising the scripted session lives in the datasource
+    // (DIP + a counted metric), not in the page.
     setOpenError(null);
     ds.startBuilderSession(prompt, target === "new" ? undefined : target)
       .then((session) => {
@@ -252,7 +252,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
   };
 
   return (
-    // Superfície única do Studio: ocupa a viewport inteira (não há shell em volta).
+    // The Studio's single surface: it fills the whole viewport (there is no shell around it).
     <section data-testid="builder-surface" className="flex h-screen flex-col bg-background">
       {(loadError || openError) && (
         <p role="alert" className="mx-8 mt-4 text-red-400 text-sm">
@@ -261,7 +261,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
       )}
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-72 shrink-0 flex-col gap-3 overflow-auto border-border/40 border-r px-4 py-5 md:flex">
-          {/* Título com switcher (estrutura de app) */}
+          {/* Title with switcher (app structure) */}
           <button
             type="button"
             className="flex items-center gap-1 px-1 font-semibold text-foreground text-sm tracking-tight"
@@ -271,7 +271,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
             Agent Builder
             <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
           </button>
-          {/* Ordem da referência: nova sessão → busca → navegação */}
+          {/* The reference's order: new session → search → navigation */}
           <button
             type="button"
             onClick={() => {
@@ -358,7 +358,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
               )}
             </ul>
           </section>
-          {/* Rótulo honesto da origem dos dados — herdado do rodapé do shell removido. */}
+          {/* Honest label for the data's origin — inherited from the removed shell's footer. */}
           <div className="mt-auto flex items-center gap-2 rounded-lg border border-border/40 bg-card/60 px-3 py-2">
             <FlaskConical
               className={`size-3.5 shrink-0 ${live ? "text-emerald-400" : "text-amber-400"}`}
@@ -375,7 +375,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
           </div>
         </aside>
         {view.kind === "session" ? (
-          // key: estado interno (rightPane/draft/splitter) zera ao trocar de sessão (F-dom-1)
+          // key: inner state (rightPane/draft/splitter) resets when the session changes (F-dom-1)
           <SessionView key={view.session.id} session={view.session} onSend={sendFollowUp} />
         ) : view.kind === "skills" ? (
           <SkillsView />
@@ -407,7 +407,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
                 }}
               />
               <form onSubmit={startSession} className="mt-6">
-                {/* Anatomia do composer (referência): texto → linha de ações → linha do projeto */}
+                {/* Composer anatomy (reference): text → action row → project row */}
                 <div className="relative rounded-2xl border border-border/60 bg-card p-3 shadow-black/20 shadow-lg transition-colors focus-within:border-primary/50">
                   <Textarea
                     aria-label="Build instructions"
@@ -456,7 +456,7 @@ export function AgentBuilderPage({ live = false }: { live?: boolean } = {}) {
                     </span>
                   </div>
                 </div>
-                {/* Linha do projeto/alvo abaixo do composer (referência) */}
+                {/* Project/target row below the composer (reference) */}
                 <div className="mt-2 flex items-center gap-4 px-3 text-muted-foreground text-xs">
                   <span className="flex items-center gap-1.5">
                     <FolderKanban className="size-3.5" aria-hidden />

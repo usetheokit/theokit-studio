@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
-// Build node do plugin (M1 T1.1). A SPA builda via vite (dist/spa a partir de T2.1);
-// o plugin vive em dist/plugin — o layout que resolveStudioVersion/resolveSpaDir esperam.
+// The plugin's node build (M1 T1.1). The SPA builds through vite (dist/spa from T2.1 on);
+// the plugin lives in dist/plugin — the layout resolveStudioVersion/resolveSpaDir expect.
 export default defineConfig({
   entry: { "plugin/index": "plugin/index.ts" },
   outDir: "dist",

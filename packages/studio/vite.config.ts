@@ -3,12 +3,12 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { theokitStudio } from "./plugin";
 
-// O dev do próprio Studio monta o plugin (dogfood M1): /_studio/api/* responde no
-// `pnpm dev`, que é como o ReflectionDataSource (T3.1) é desenvolvido contra dados reais.
+// The Studio's own dev mounts the plugin (M1 dogfood): /_studio/api/* answers under
+// `pnpm dev`, which is how ReflectionDataSource (T3.1) is developed against real data.
 export default defineConfig({
   plugins: [react(), tailwindcss(), theokitStudio()],
-  // Embarcável (M1 T2.1, padrão Mastra): assets relativos servem sob qualquer prefixo;
-  // outDir aninhado preserva dist/plugin no rebuild da SPA (emptyOutDir só em dist/spa).
+  // Embeddable (M1 T2.1, the Mastra pattern): relative assets serve under any prefix; a nested
+  // outDir preserves dist/plugin across an SPA rebuild (emptyOutDir applies to dist/spa only).
   base: "./",
   build: { outDir: "dist/spa" },
 });

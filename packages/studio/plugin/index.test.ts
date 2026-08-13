@@ -3,9 +3,9 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Connect, ViteDevServer } from "vite";
 import { theokitStudio } from "./index";
 
-// Harness fake-Vite (espelha ../theokit/tests/integration/api-middleware-coverage.test.ts):
-// o plugin registra UM connect middleware via configureServer; o teste captura o handler
-// e o invoca com req/res instrumentados — sem servidor HTTP real (unit da fronteira).
+// Fake-Vite harness (mirrors ../theokit/tests/integration/api-middleware-coverage.test.ts):
+// the plugin registers ONE connect middleware via configureServer; the test captures the
+// handler and invokes it with instrumented req/res — no real HTTP server (boundary unit).
 
 interface FakeRes {
   statusCode: number | undefined;
@@ -51,8 +51,8 @@ function makeRes(): FakeRes {
     get writableEnded() {
       return state.ended;
     },
-    // M6 EC-2: getter REAL — reflete se writeHead já comprometeu o head. Um literal
-    // congelado tornaria o guard de resposta comprometida inalcançável (finding #68).
+    // M6 EC-2: a REAL getter — it reflects whether writeHead already committed the head. A
+    // frozen literal would make the committed-response guard unreachable (finding #68).
     get headersSent() {
       return state.statusCode !== undefined;
     },
@@ -92,8 +92,8 @@ async function run(handler: Connect.NextHandleFunction, url: string, method = "G
   const state = makeRes();
   let nextCalls = 0;
   await new Promise<void>((resolve) => {
-    // Flag settled interrompe o reagendamento (SEPA pre-COMMIT T1.1: sem polling órfão
-    // vivo após o resolve — handle latente viraria flake conforme o harness é reusado).
+    // A settled flag stops the rescheduling (SEPA pre-COMMIT T1.1: no orphan polling left alive
+    // after the resolve — a latent handle would become a flake as the harness is reused).
     let settled = false;
     const settle = () => {
       settled = true;
@@ -103,7 +103,7 @@ async function run(handler: Connect.NextHandleFunction, url: string, method = "G
       nextCalls += 1;
       settle();
     });
-    // handlers que respondem sem next(): aguardamos o end()
+    // handlers that answer without next(): we await the end()
     const wait = () => {
       if (settled) return;
       if (state.ended) {
@@ -139,18 +139,18 @@ describe("theokitStudio plugin — dispatcher + health (T1.1)", () => {
   it("test_non_studio_request_passes_through_untouched", async () => {
     const handler = captureHandler();
     const { state, nextCalls } = await run(handler, "/app");
-    // As DUAS metades (SEPA pre-RED): next() exatamente 1× E res intocado.
+    // BOTH halves (SEPA pre-RED): next() exactly once AND res untouched.
     expect(nextCalls).toBe(1);
     expect(state.touched).toBe(false);
   });
 
   it("test_studio_prefix_requires_boundary", async () => {
     const handler = captureHandler();
-    // /_studioX NÃO é nosso namespace → passthrough intocado.
+    // /_studioX is NOT our namespace → untouched passthrough.
     const miss = await run(handler, "/_studioX/api/health");
     expect(miss.nextCalls).toBe(1);
     expect(miss.state.touched).toBe(false);
-    // /_studio exato (sem barra) É nosso namespace → tratado (nunca next()).
+    // exactly /_studio (no slash) IS our namespace → handled (never next()).
     const exact = await run(handler, "/_studio");
     expect(exact.nextCalls).toBe(0);
     expect(exact.state.ended).toBe(true);
@@ -164,10 +164,10 @@ describe("theokitStudio plugin — dispatcher + health (T1.1)", () => {
   });
 });
 
-describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
+describe("reserved namespace before the SPA fallback (M6 T2.1)", () => {
   it("svc_namespace_without_route_returns_typed_404_json", async () => {
-    // CLAUDE.md trava /_studio/svc/{lens,memory,rag}/* como proxy. Enquanto não existe,
-    // devolver HTML da SPA numa rota de contrato é defeito de contrato (finding #49).
+    // CLAUDE.md pins /_studio/svc/{lens,memory,rag}/* as a proxy. While it does not exist,
+    // returning the SPA's HTML on a contract route is a contract defect (finding #49).
     const handler = captureHandler();
     const { state } = await run(handler, "/_studio/svc/lens/v1/traces");
 
@@ -176,8 +176,8 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
   });
 
   it("svc_namespace_404_is_extension_independent", async () => {
-    // O bug original: .../query caía na SPA (HTML 200) e .../index.json batia no branch de
-    // extensão conhecida (404 JSON). Mesmo namespace documentado, duas respostas.
+    // The original bug: .../query fell into the SPA (HTML 200) while .../index.json hit the
+    // known-extension branch (JSON 404). Same documented namespace, two answers.
     const handler = captureHandler();
     const a = await run(handler, "/_studio/svc/rag/v1/query");
     const b = await run(handler, "/_studio/svc/rag/v1/index.json");
@@ -187,7 +187,7 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
   });
 
   it("bare_svc_path_is_also_reserved", async () => {
-    // EC-3: sem a barra final o prefixo não casava e o bug sobrevivia na borda.
+    // EC-3: without the trailing slash the prefix did not match and the bug survived at the edge.
     const handler = captureHandler();
     const { state } = await run(handler, "/_studio/svc");
 
@@ -195,7 +195,7 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
   });
 
   it("reserved_namespace_requires_separator", async () => {
-    // EC-7: protege contra a forma insegura startsWith("/_studio/svc") sem separador.
+    // EC-7: guards against the unsafe startsWith("/_studio/svc") form with no separator.
     const handler = captureHandler();
     const { state } = await run(handler, "/_studio/svcfoo");
 
@@ -203,13 +203,13 @@ describe("namespace reservado antes do fallback da SPA (M6 T2.1)", () => {
   });
 });
 
-describe("erro após head comprometido não vira unhandled rejection (M6 T1.3)", () => {
+describe("an error after the head is committed does not become an unhandled rejection (M6 T1.3)", () => {
   it("dispatcher_error_after_committed_head_does_not_reject", async () => {
-    // Este é o teste que a review F-tests-1 flagrou como DECLARADO no plano e nunca escrito.
-    // Ele precisa entrar no caminho de ERRO de verdade (review F-dom-1: a primeira versão
-    // matava o mutante por uma asserção de ARRANJO sobre o fake, não por comportamento).
-    // Por isso a rota escolhida é /_studio/svc/*, que chama sendErrorEnvelope — sobre uma
-    // resposta cujo head JÁ foi comprometido.
+    // This is the test review F-tests-1 flagged as DECLARED in the plan and never written.
+    // It has to enter the real ERROR path (review F-dom-1: the first version killed the mutant
+    // through an ARRANGE assertion on the fake, not through behaviour). That is why the chosen
+    // route is /_studio/svc/*, which calls sendErrorEnvelope — over a response whose head has
+    // ALREADY been committed.
     const handler = captureHandler();
     const state = makeRes();
     const rejections: unknown[] = [];
@@ -227,10 +227,10 @@ describe("erro após head comprometido não vira unhandled rejection (M6 T1.3)",
       await new Promise((r) => setTimeout(r, 30));
 
       expect(rejections).toHaveLength(0);
-      // O status original permanece — o head já foi, não pode ser reescrito para 404...
+      // The original status stands — the head is gone, it cannot be rewritten to 404...
       expect(state.statusCode).toBe(200);
-      // ...mas o erro CHEGA ao cliente, no corpo (ADR A1). É esta asserção que morre se o
-      // guard de headersSent sumir do sendErrorEnvelope.
+      // ...but the error DOES reach the client, in the body (ADR A1). This is the assertion that
+      // dies if the headersSent guard disappears from sendErrorEnvelope.
       expect(state.body).toContain("NOT_FOUND");
     } finally {
       process.off("unhandledRejection", onRejection);
