@@ -4,34 +4,34 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { scanStudioAgents } from "./agent-scan";
 
-// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+// chmod 000 is a no-op for root (uid 0): the test would pass for the wrong reason.
 const SKIP_IF_ROOT = process.getuid?.() === 0;
 
-// Contrato: espelho fiel de ../theokit/packages/theo/src/server/scan/agent-scan.ts
-// (convenção LOCKED; ADR D3 do plano — o FONTE é a autoridade, verificado 2026-07-15):
-// extensões .ts/.tsx/.js/.jsx; exclusão de teste /\.(test|spec)$/ sobre o rel SEM extensão;
-// 13 subpastas de composição excluídas (só diretórios intermediários — arquivo plano
-// "tools.ts" É agent válido); index colapsado; index raiz ignorado; \\ normalizado; sort.
+// Contract: a faithful mirror of ../theokit/packages/theo/src/server/scan/agent-scan.ts
+// (LOCKED convention; the plan's ADR D3 — the SOURCE is the authority, verified 2026-07-15):
+// extensions .ts/.tsx/.js/.jsx; test exclusion /\.(test|spec)$/ over the rel WITHOUT its
+// extension; 13 composition subfolders excluded (intermediate directories only — a flat file
+// "tools.ts" IS a valid agent); index collapsed; root index ignored; \\ normalised; sorted.
 
 const FIXTURE = join(import.meta.dirname, "../tests/fixtures/demo-project");
 
-describe("scanStudioAgents — contrato da convenção theokit (T1.2)", () => {
+describe("scanStudioAgents — the theokit convention contract (T1.2)", () => {
   it("test_scan_discovers_top_level_agents_and_collapses_index", () => {
     const names = scanStudioAgents(FIXTURE).map((n) => n.name);
-    // Ordenação determinística por name (fs walk não garante ordem).
+    // Deterministic ordering by name (an fs walk guarantees none).
     expect(names).toEqual(["nested", "support", "team/support", "tools"]);
   });
 
   it("test_scan_excludes_composition_subfolders_and_tests_but_keeps_flat_files", () => {
     const names = scanStudioAgents(FIXTURE).map((n) => n.name);
-    // tools/ignored.ts está sob diretório de composição → fora.
+    // tools/ignored.ts sits under a composition directory → out.
     expect(names).not.toContain("tools/ignored");
-    // skip.test.ts casa /\.(test|spec)$/ no rel sem extensão → fora.
+    // skip.test.ts matches /\.(test|spec)$/ on the extensionless rel → out.
     expect(names).not.toContain("skip.test");
     expect(names).not.toContain("skip");
-    // MAS o arquivo plano "tools.ts" é um agent válido (a exclusão olha só diretórios).
+    // BUT the flat file "tools.ts" is a valid agent (the exclusion looks at directories only).
     expect(names).toContain("tools");
-    // index.ts na raiz de agents/ é ignorado (nome vazio não roteia).
+    // index.ts at the root of agents/ is ignored (an empty name does not route).
     expect(names).not.toContain("index");
   });
 
@@ -44,9 +44,9 @@ describe("scanStudioAgents — contrato da convenção theokit (T1.2)", () => {
   it("test_scan_returns_empty_when_agents_dir_missing_or_not_a_directory", () => {
     const tmp = mkdtempSync(join(tmpdir(), "studio-scan-"));
     try {
-      // Dir ausente → [] sem throw.
+      // Missing dir → [] without throwing.
       expect(scanStudioAgents(tmp)).toEqual([]);
-      // "agents" existente mas ARQUIVO → [] (paridade com statSync().isDirectory()).
+      // "agents" exists but is a FILE → [] (parity with statSync().isDirectory()).
       writeFileSync(join(tmp, "agents"), "not a dir");
       expect(scanStudioAgents(tmp)).toEqual([]);
     } finally {
@@ -66,10 +66,10 @@ describe("scanStudioAgents — contrato da convenção theokit (T1.2)", () => {
   });
 });
 
-describe("varredura resiliente a diretório ilegível (M6 T3.1)", () => {
+describe("a scan resilient to an unreadable directory (M6 T3.1)", () => {
   it.skipIf(SKIP_IF_ROOT)("unreadable_subdirectory_is_skipped_not_fatal", () => {
-    // scanStudioAgents tem DOIS consumidores (reflection-api.ts:85, run-endpoint.ts:173):
-    // um EACCES numa subpasta derrubava a reflection inteira E o run com 500.
+    // scanStudioAgents has TWO consumers (reflection-api.ts:85, run-endpoint.ts:173): an EACCES
+    // in one subfolder brought down the entire reflection AND the run with a 500.
     const tmp = mkdtempSync(join(tmpdir(), "studio-scan-eacces-"));
     const agents = join(tmp, "agents");
     mkdirSync(join(agents, "locked"), { recursive: true });
@@ -81,9 +81,9 @@ describe("varredura resiliente a diretório ilegível (M6 T3.1)", () => {
     try {
       const names = scanStudioAgents(tmp).map((n) => n.name);
 
-      // Degrada por diretório: o que é legível continua sendo servido.
+      // Degrades per directory: whatever is readable keeps being served.
       expect(names).toContain("support");
-      // E o pulo é VISÍVEL — engolir em silêncio é proibido (error-handling.md § 2).
+      // And the skip is VISIBLE — swallowing it silently is forbidden (error-handling.md § 2).
       expect(warnSpy).toHaveBeenCalled();
     } finally {
       warnSpy.mockRestore();

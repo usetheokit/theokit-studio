@@ -1,7 +1,7 @@
 import { createFixtureDataSource } from "./fixture-datasource";
 import { metrics } from "./metrics";
 
-describe("FixtureDataSource (contrato do Agent Builder)", () => {
+describe("FixtureDataSource (the Agent Builder contract)", () => {
   beforeEach(() => {
     metrics.reset();
   });

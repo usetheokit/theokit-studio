@@ -6,33 +6,33 @@ import { scanStudioAgents } from "./agent-scan";
 import { sendErrorEnvelope } from "./http";
 
 /**
- * Run endpoint (T1.4, ADR D4 — ramo degradado): `POST /_studio/api/agents/{name}/run`
- * streama NDJSON. Vocabulário de linha: `message` | `done` | `error` — `run-event` é
- * membro RESERVADO (bridge sem seam de RunEvent; theokit#132) que o parser de T3.1 já
- * trata como superset. Origem verificada ANTES de ler o body (run gasta tokens reais —
- * paridade com a defesa CSRF do mountAgent do theokit).
+ * Run endpoint (T1.4, ADR D4 — degraded branch): `POST /_studio/api/agents/{name}/run`
+ * streams NDJSON. Line vocabulary: `message` | `done` | `error` — `run-event` is a
+ * RESERVED member (the bridge has no RunEvent seam; theokit#132) that T3.1's parser already
+ * treats as a superset. Origin is verified BEFORE reading the body (a run spends real tokens —
+ * parity with theokit's mountAgent CSRF defence).
  */
 
 const RUN_PREFIX = "/_studio/api/agents/";
 const RUN_SUFFIX = "/run";
 
-// Espelho da convenção INTERNA do theokit (provider-resolver.ts:58-75 — first-match por
-// prioridade; agent-middleware.ts:231 usa resolveProvider().apiKey e DESCARTA baseUrl,
-// então "apiKey only" é bug-compatível com o caminho dev do ecossistema).
+// Mirror of theokit's INTERNAL convention (provider-resolver.ts:58-75 — first match by
+// priority; agent-middleware.ts:231 uses resolveProvider().apiKey and DISCARDS baseUrl, so
+// "apiKey only" is bug-compatible with the ecosystem's dev path).
 //
-// LIMITAÇÃO CONSCIENTE (review F-arch-5 / F-dom-api-1): a key é resolvida por esta lista
-// fixa, DESACOPLADA do `compiled.model` do agent. Com qualquer key setada, um provider
-// errado só aparece como 401 opaco upstream mid-stream, não como 424 tipado na fronteira.
-// É a mesma semântica process-global do theokit dev (parity deliberado). Followup F5:
-// selecionar a env var pelo provider inferido de `compiled.model` quando o mapeamento
-// provider→var estiver disponível.
+// DELIBERATE LIMITATION (review F-arch-5 / F-dom-api-1): the key is resolved from this fixed
+// list, DECOUPLED from the agent's `compiled.model`. With any key set, a wrong provider shows
+// up only as an opaque upstream 401 mid-stream, not as a typed 424 at the boundary. This is
+// the same process-global semantics as theokit dev (deliberate parity). Followup F5: select
+// the env var from the provider inferred out of `compiled.model`, once the provider→var
+// mapping is available.
 const PROVIDER_ENV_PRIORITY = [
   "OPENROUTER_API_KEY",
   "OPENAI_API_KEY",
   "ANTHROPIC_API_KEY",
 ] as const;
 
-/** Input entregue à fábrica de stream (default: streamAgentUIMessages do bridge). */
+/** Input handed to the stream factory (default: the bridge's streamAgentUIMessages). */
 export interface RunStreamInput {
   message: string;
   sessionId: string;
@@ -50,20 +50,20 @@ export interface RunEndpointDeps {
   projectRoot: string;
   agentsDir?: string;
   load: (filePath: string) => Promise<unknown>;
-  /** seam de teste/e2e (DIP); produção usa o bridge real. */
+  /** test/e2e seam (DIP); production uses the real bridge. */
   streamFactory?: RunStreamFactory;
-  /** env injetado (teste); produção usa process.env. */
+  /** injected env (tests); production uses process.env. */
   env?: Record<string, string | undefined>;
 }
 
-/** Resultado discriminado do match — sem sentinels colidindo com nomes válidos
- * (error-handling.md § 2: um agent legítimo pode se chamar "malformed"). */
+/** Discriminated match result — no sentinels colliding with valid names
+ * (error-handling.md § 2: a legitimate agent may be called "malformed"). */
 export type RunPathMatch = { kind: "match"; name: string } | { kind: "malformed" } | null;
 
 /**
- * Extrai o nome do agent do path do run. Nomes aninhados preservam `/` (EC-2 —
- * paridade com o agentPath do theokit). Percent-encoding malformado → kind
- * "malformed" (EC-5: nunca URIError não-tratada).
+ * Extracts the agent name from the run path. Nested names keep their `/` (EC-2 — parity with
+ * theokit's agentPath). Malformed percent-encoding → kind "malformed" (EC-5: never an
+ * unhandled URIError).
  */
 export function matchRunPath(pathname: string): RunPathMatch {
   if (!pathname.startsWith(RUN_PREFIX) || !pathname.endsWith(RUN_SUFFIX)) return null;
@@ -79,11 +79,11 @@ export function matchRunPath(pathname: string): RunPathMatch {
 function isSameOrigin(req: IncomingMessage): boolean {
   const origin = req.headers.origin;
   if (origin === undefined) return true; // curl/same-origin fetch sem header
-  if (origin === "null") return false; // opaque origin (EC-8) — sempre rejeitado
+  if (origin === "null") return false; // opaque origin (EC-8) — always rejected
   try {
     return new URL(origin).host === req.headers.host;
   } catch {
-    return false; // Origin malformado → rejeição tipada, nunca URIError/500
+    return false; // malformed Origin → typed rejection, never a URIError/500
   }
 }
 
@@ -121,8 +121,8 @@ function parseRunBody(raw: string): RunRequestBody | null {
   const sessionId = (parsed as { sessionId?: unknown }).sessionId;
   return {
     message,
-    // sessionId do cliente preservado (continuidade multi-turn — conversationStorage
-    // do SDK é keyed por sessionId; paridade com parseAgentRequestBody do theokit).
+    // the client's sessionId is preserved (multi-turn continuity — the SDK's
+    // conversationStorage is keyed by sessionId; parity with theokit's parseAgentRequestBody).
     sessionId: typeof sessionId === "string" && sessionId.length > 0 ? sessionId : randomUUID(),
   };
 }
@@ -133,11 +133,11 @@ const NDJSON_HEADERS = {
   "Cache-Control": "no-store",
 };
 
-/** Trata o run com defesas na fronteira; erros SEMPRE viram envelope/linha tipada. */
-/** Envelope de recusa: status + code + mensagem, do jeito que a fronteira já responde. */
+/** Handles the run with boundary defences; errors ALWAYS become a typed envelope/line. */
+/** Refusal envelope: status + code + message, in the shape the boundary already answers. */
 type RunRefusal = { kind: "refused"; status: number; code: string; message: string };
 
-/** Contexto executável de um run: tudo que o streaming precisa, já validado. */
+/** A run's executable context: everything the streaming needs, already validated. */
 type RunContext = {
   kind: "ready";
   body: NonNullable<ReturnType<typeof parseRunBody>>;
@@ -146,12 +146,12 @@ type RunContext = {
 };
 
 /**
- * Resolve a requisição num contexto executável, ou na razão pela qual ela é recusada.
+ * Resolves the request into an executable context, or into the reason it is refused.
  *
- * M8 T3.2: os oito guards viviam inline em `handleAgentRun`, que media CCN 20. A extração
- * nomeia um conceito real — "validar e resolver o pedido antes de gastar token do provider" —
- * e não uma fatia arbitrária: a ordem dos guards É o contrato (rota antes de método, origem
- * antes de ler o body), e agora ela mora num lugar só.
+ * M8 T3.2: the eight guards lived inline in `handleAgentRun`, which measured CCN 20. The
+ * extraction names a real concept — "validate and resolve the request before spending the
+ * provider's tokens" — rather than an arbitrary slice: the guards' ORDER is the contract
+ * (route before method, origin before reading the body), and it now lives in one place.
  */
 async function resolveRunRequest(
   pathname: string,
@@ -169,8 +169,8 @@ async function resolveRunRequest(
   if (req.method !== "POST") {
     return refuse(405, "METHOD_NOT_ALLOWED", `use POST for ${pathname}`);
   }
-  // Origem ANTES de qualquer trabalho (ler body, carregar agent, criar stream):
-  // um run gasta tokens reais do provider do usuário.
+  // Origin BEFORE any work (reading the body, loading the agent, creating the stream):
+  // a run spends real tokens from the user's provider.
   if (!isSameOrigin(req)) {
     return refuse(403, "ORIGIN_FORBIDDEN", "cross-origin agent runs are not allowed");
   }
@@ -222,11 +222,11 @@ export async function handleAgentRun(
 
   const controller = new AbortController();
   req.on("close", () => {
-    // close também dispara na conclusão NORMAL (pós-end) — abort só em disconnect real.
+    // close also fires on NORMAL completion (post-end) — abort only on a real disconnect.
     if (!res.writableEnded) controller.abort();
   });
 
-  // Guard universal (EC-7): NENHUMA escrita após end/abort — descartada em silêncio.
+  // Universal guard (EC-7): NO write after end/abort — silently discarded.
   const writeLine = (line: Record<string, unknown>): void => {
     if (res.writableEnded || controller.signal.aborted) return;
     res.write(`${JSON.stringify(line)}\n`);
@@ -236,8 +236,8 @@ export async function handleAgentRun(
   const streamFactory: RunStreamFactory =
     deps.streamFactory ??
     ((c, k, input) =>
-      // cwd fica fora: StreamAgentOptions do 0.39.0 publicado ainda não o aceita
-      // (chegou no worktree 0.40); RunStreamInput o carrega para factories injetadas.
+      // cwd stays out: the published 0.39.0 StreamAgentOptions does not accept it yet
+      // (it landed in the 0.40 worktree); RunStreamInput carries it for injected factories.
       streamAgentUIMessages(c, k, {
         message: input.message,
         sessionId: input.sessionId,
@@ -255,7 +255,7 @@ export async function handleAgentRun(
       writeLine({ kind: "message", chunk });
     }
     if (!controller.signal.aborted) {
-      writeLine({ kind: "done" }); // done SÓ no caminho de sucesso — nunca após error
+      writeLine({ kind: "done" }); // done ONLY on the success path — never after an error
     }
   } catch (error) {
     writeLine({

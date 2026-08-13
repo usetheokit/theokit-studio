@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { createServer, type ViteDevServer } from "vite";
 import { theokitStudio } from "../../plugin";
 
-// ORÁCULO CONTRATUAL do Goal do plano m1-studio-table-stakes (§ Goal): este teste é a
-// métrica que a Integration Validation e o /release citam. A sobreposição com
-// tests/integration/ é INTENCIONAL e sancionada (SEPA T3.2): lá, fronteiras granulares
-// que localizam regressão; aqui, o contrato de ponta a ponta num único assert nomeado.
-// NÃO deletar um dos dois como "duplicado".
+// The CONTRACT ORACLE for the m1-studio-table-stakes plan's Goal (§ Goal): this test is the
+// metric Integration Validation and /release cite. The overlap with tests/integration/ is
+// INTENTIONAL and sanctioned (SEPA T3.2): there, granular boundaries that localise a
+// regression; here, the end-to-end contract in a single named assertion.
+// Do NOT delete either as a "duplicate".
 
 let server: ViteDevServer;
 let baseUrl: string;
@@ -17,12 +17,12 @@ let spaTmp: string;
 const savedEnv: Record<string, string | undefined> = {};
 
 beforeAll(async () => {
-  // Env com save/restore (nunca vazar para outros testes do worker).
+  // Env with save/restore (never leak into other tests in the worker).
   savedEnv.THEOKIT_STUDIO_DIST = process.env.THEOKIT_STUDIO_DIST;
   savedEnv.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
   spaTmp = mkdtempSync(join(tmpdir(), "studio-e2e-spa-"));
   mkdirSync(join(spaTmp, "assets"), { recursive: true });
-  // index COM </head> — o caminho normal da injeção (EC-13 é o excepcional).
+  // An index WITH </head> — the normal injection path (EC-13 is the exceptional one).
   writeFileSync(
     join(spaTmp, "index.html"),
     "<!doctype html><html><head><title>Studio</title></head><body></body></html>",
@@ -35,7 +35,7 @@ beforeAll(async () => {
     logLevel: "silent",
     plugins: [
       theokitStudio({
-        // LLM real fora de teste (testing.md § 6) — o run real é smoke manual documentado.
+        // A real LLM stays out of tests (testing.md § 6) — the real run is a documented manual smoke.
         streamFactory: async function* (_compiled, _apiKey, input) {
           yield { type: "text-delta", id: "t", delta: `echo: ${input.message}` };
         },
@@ -51,8 +51,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await Promise.race([server.close(), new Promise((r) => setTimeout(r, 5_000))]);
-  // Restore simétrico: reatribuir vaza a string "undefined" (truthy) para o worker —
-  // uma ANTHROPIC_API_KEY="undefined" faria um run subsequente passar do 424 com key falsa.
+  // Symmetric restore: reassigning leaks the string "undefined" (truthy) into the worker — an
+  // ANTHROPIC_API_KEY="undefined" would let a later run past the 424 on a bogus key.
   for (const key of ["THEOKIT_STUDIO_DIST", "ANTHROPIC_API_KEY"] as const) {
     const saved = savedEnv[key];
     if (saved === undefined) delete process.env[key];
@@ -63,12 +63,12 @@ afterAll(async () => {
 
 describe("M1 Goal oracle", () => {
   it("studio_e2e_reflection_and_run", async () => {
-    // (1) health responde — o Studio detecta o dev server (graceful degradation seam).
+    // (1) health answers — the Studio detects the dev server (the graceful-degradation seam).
     const health = await fetch(`${baseUrl}/_studio/api/health`);
     expect(health.status).toBe(200);
     expect(((await health.json()) as { ok: boolean }).ok).toBe(true);
 
-    // (2) reflection enumera o agent da fixture COM tools (registry vivo, sem manifest).
+    // (2) the reflection enumerates the fixture's agent WITH its tools (live registry, no manifest).
     const agents = (await (await fetch(`${baseUrl}/_studio/api/agents`)).json()) as {
       items: Array<{ name: string; tools?: Array<{ name: string }> }>;
     };
@@ -76,14 +76,14 @@ describe("M1 Goal oracle", () => {
     expect(support).toBeTruthy();
     expect(support?.tools?.map((t) => t.name)).toContain("lookupOrder");
 
-    // (3) a SPA é servida em /_studio com o config live injetado no HTML.
+    // (3) the SPA is served at /_studio with the live config injected into the HTML.
     const page = await fetch(`${baseUrl}/_studio/agents`);
     expect(page.status).toBe(200);
     const html = await page.text();
     expect(html).toContain("window.__STUDIO_CONFIG__");
     expect(html).toContain('"mode":"live"');
 
-    // (4) POST run streama NDJSON: toda linha parseia com kind; ≥1 message; última done.
+    // (4) POST run streams NDJSON: every line parses with a kind; ≥1 message; the last is done.
     const run = await fetch(`${baseUrl}/_studio/api/agents/support/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

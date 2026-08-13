@@ -9,20 +9,20 @@ import { metrics } from "./data/metrics";
 import { createReflectionDataSource } from "./data/reflection-datasource";
 import "./index.css";
 
-// Composition root (architecture.md § 1): o único lugar que conhece o adapter concreto.
-// M5: fixtures; M1 troca por adapter real via window.__STUDIO_CONFIG__ (seam EC-8).
+// Composition root (architecture.md § 1): the only place that knows the concrete adapter.
+// M5: fixtures; M1 swaps in the real adapter via window.__STUDIO_CONFIG__ (the EC-8 seam).
 export function mount(rootEl: HTMLElement, config: StudioConfig): void {
-  // Ponto ÚNICO do default de mode (obrigação T2.1) — nenhum outro arquivo lê config.mode.
+  // The SINGLE point where mode defaults (T2.1 obligation) — no other file reads config.mode.
   const live = config.mode === "live";
   const fixtures = createFixtureDataSource({ scenario: config.scenario });
-  // D5: live = reflection para agents/tools/skills/workflows/run/health; resto delega
-  // ao fixture (rotulado). Fixtures mode = comportamento M5 intacto.
+  // D5: live = the reflection for agents/tools/skills/workflows/run/health; the rest delegates
+  // to the fixture (labelled). Fixtures mode = M5 behaviour intact.
   const dataSource = live ? createReflectionDataSource({ fallback: fixtures }) : fixtures;
-  // Observabilidade dev (ADR D5): contadores inspecionáveis no console do browser.
+  // Dev observability (ADR D5): counters inspectable from the browser console.
   (window as Window & { __STUDIO_METRICS__?: unknown }).__STUDIO_METRICS__ = {
     snapshot: () => metrics.snapshot(),
   };
-  // SPA servida sob prefixo (M1): rotas resolvem relativo ao basename injetado pelo host.
+  // SPA served under a prefix (M1): routes resolve relative to the basename the host injects.
   const router = createBrowserRouter(buildRoutes({ live }), {
     basename: config.basePath ?? "/",
   });

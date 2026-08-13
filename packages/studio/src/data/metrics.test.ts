@@ -6,7 +6,7 @@ import { metrics } from "./metrics";
 const SRC_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const INCREMENT_CALL_RE = /metrics\.increment\(\s*"([^"]+)"/g;
 
-/** Nomes de contador que aparecem num `metrics.increment("...")` fora de arquivo de teste. */
+/** Counter names appearing in a `metrics.increment("...")` outside a test file. */
 function emittersFoundInProductionSource(dir = SRC_ROOT, found = new Set<string>()): Set<string> {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
@@ -41,14 +41,14 @@ describe("metrics (T1.1 — ADR D5)", () => {
     expect(afterReset).toBe(0);
   });
 
-  // M7 T3.1: um contador declarado sem emissor aparece zerado para sempre em
-  // window.__STUDIO_METRICS__ — e quem lê conclui "não houve erro" onde o certo é
-  // "ninguém conta".
+  // M7 T3.1: a counter declared with no emitter shows up as a permanent zero in
+  // window.__STUDIO_METRICS__ — and whoever reads it concludes "there were no errors" where the
+  // truth is "nobody counts".
   //
-  // O oráculo VARRE o código de produção em vez de travar uma lista literal (review
-  // F-tests-4 / F-arch-7): a versão anterior tinha o nome deste teste mas só comparava com
-  // `["datasource_calls_total"]`, então adicionar um contador sem emissor e atualizar a
-  // literal deixava o teste verde — exatamente o defeito que ele diz pegar.
+  // The oracle SCANS the production code instead of pinning a literal list (review F-tests-4 /
+  // F-arch-7): the previous version carried this test's name but only compared against
+  // `["datasource_calls_total"]`, so adding a counter with no emitter and updating the literal
+  // left the test green — exactly the defect it claims to catch.
   it("every_declared_counter_has_a_production_emitter", () => {
     const declared = new Set(Object.keys(metrics.snapshot()));
     const emitted = emittersFoundInProductionSource();

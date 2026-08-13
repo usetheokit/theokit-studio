@@ -5,15 +5,15 @@ import { fileURLToPath } from "node:url";
 import { sendErrorEnvelope } from "./http";
 
 /**
- * Static serving da SPA embarcada (T2.2, ADR D2 — padrão Mastra): assets por extensão
- * CONHECIDA; qualquer outro path sob /_studio → fallback SPA (index.html com o config
- * injetado). Política registrada no log: extensão desconhecida é deep-link, não asset —
- * um agent chamado "v2.support" continua navegável.
+ * Static serving of the embedded SPA (T2.2, ADR D2 — Mastra pattern): assets by KNOWN
+ * extension; any other path under /_studio → SPA fallback (index.html with the config
+ * injected). Policy recorded in the log: an unknown extension is a deep link, not an asset —
+ * an agent named "v2.support" stays navigable.
  */
 
 const STUDIO_PREFIX = "/_studio";
 
-// Só o que a SPA buildada realmente emite (dev-only; mapa mínimo, KISS).
+// Only what the built SPA actually emits (dev-only; minimal map, KISS).
 const CONTENT_TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -28,21 +28,21 @@ const CONTENT_TYPES: Record<string, string> = {
 
 export interface ResolveSpaDirOptions {
   env: Record<string, string | undefined>;
-  /** seam de teste (EC-10): default import.meta.url do módulo em produção. */
+  /** test seam (EC-10): defaults to the module's import.meta.url in production. */
   moduleUrl?: string;
 }
 
 /**
- * Resolve o diretório da SPA: env override SEMPRE vence (mesmo apontando para dir
- * morto — o serve responde 503 acionável; fallthrough silencioso mentiria sobre a
- * escolha explícita do usuário). Sem override: dual-layout (dist/plugin → ../spa;
- * source plugin/ → ../dist/spa — mesma família do resolveStudioVersion).
+ * Resolves the SPA directory: an env override ALWAYS wins (even when it points at a dead
+ * dir — the serve answers an actionable 503; a silent fallthrough would lie about the user's
+ * explicit choice). Without an override: dual layout (dist/plugin → ../spa; source plugin/ →
+ * ../dist/spa — same family as resolveStudioVersion).
  */
 export function resolveSpaDir(opts: ResolveSpaDirOptions): string {
   const override = opts.env.THEOKIT_STUDIO_DIST;
   if (override !== undefined && override.length > 0) {
-    // normalize(join(x, ".")) remove trailing slash — sem isso, o prefix check do
-    // safeJoin viraria "root//" e TODO request responderia 403 (SEPA pre-COMMIT T2.2).
+    // normalize(join(x, ".")) strips the trailing slash — without it, safeJoin's prefix
+    // check would become "root//" and EVERY request would answer 403 (SEPA pre-COMMIT T2.2).
     return normalize(join(override, "."));
   }
   const here = dirname(fileURLToPath(opts.moduleUrl ?? import.meta.url));
@@ -50,7 +50,7 @@ export function resolveSpaDir(opts: ResolveSpaDirOptions): string {
     const candidate = join(here, rel);
     if (existsSync(candidate)) return candidate;
   }
-  // Nenhum layout encontrado — devolve o layout publicado; o serve responde 503 com hint.
+  // No layout found — return the published layout; the serve answers 503 with a hint.
   return join(here, "../spa");
 }
 
@@ -59,8 +59,8 @@ type SafeJoinResult =
   | { kind: "bad-request" }
   | { kind: "forbidden" };
 
-// Ordem fixa (SEPA T2.2): decode 1× (URIError → 400) → null byte (400) → normalize →
-// prefix check spaDir+sep (403). Decode único evita que %252e%252e vire traversal.
+// Fixed order (SEPA T2.2): decode once (URIError → 400) → null byte (400) → normalize →
+// prefix check spaDir+sep (403). Decoding exactly once stops %252e%252e becoming traversal.
 function safeJoin(spaDir: string, relPath: string): SafeJoinResult {
   let decoded: string;
   try {
@@ -76,34 +76,34 @@ function safeJoin(spaDir: string, relPath: string): SafeJoinResult {
 
 export interface ServeStudioOptions {
   spaDir: string;
-  /** injetado no index.html como window.__STUDIO_CONFIG__ (escapado anti-breakout). */
+  /** injected into index.html as window.__STUDIO_CONFIG__ (escaped against breakout). */
   config: { mode: "fixtures" | "live"; basePath: string };
 }
 
 function serveIndexWithConfig(res: ServerResponse, opts: ServeStudioOptions): void {
   const indexPath = join(opts.spaDir, "index.html");
   const html = readFileSync(indexPath, "utf8");
-  // Escape anti </script>-breakout: '<' nunca cru dentro do JSON (guardrail, 1 linha).
+  // Anti </script>-breakout escape: '<' never raw inside the JSON (one-line guardrail).
   const json = JSON.stringify(opts.config).replace(/</g, "\\u003c");
   const script = `<script>window.__STUDIO_CONFIG__=${json}</script>`;
   let injected: string;
   if (html.includes("</head>")) {
     injected = html.replace("</head>", `${script}</head>`);
   } else {
-    // EC-13: index sem </head> (build custom) — prepend com warn, nunca sem config.
+    // EC-13: an index with no </head> (custom build) — prepend with a warning, never without config.
     console.warn("TheoKit Studio: index.html without </head> — prepending config script");
     injected = script + html;
   }
   if (res.writableEnded || res.destroyed) return;
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8",
-    // Config muda por boot do dev server — index injetado NUNCA cacheado.
+    // The config changes per dev-server boot — the injected index is NEVER cached.
     "Cache-Control": "no-store",
   });
   res.end(injected);
 }
 
-/** Serve um path sob /_studio: asset conhecido, fallback SPA, ou erro tipado. */
+/** Serves a path under /_studio: known asset, SPA fallback, or a typed error. */
 export async function serveStudio(
   pathname: string,
   res: ServerResponse,
@@ -119,17 +119,18 @@ export async function serveStudio(
     return;
   }
   const rel = pathname.slice(STUDIO_PREFIX.length).replace(/^\/+/, "");
-  // Raiz e paths sem extensão conhecida são deep-links da SPA — nunca passam no
-  // safeJoin de asset (join(spaDir, "") não teria o prefixo spaDir+sep → 403 falso).
+  // The root and paths without a known extension are SPA deep links — they never go through
+  // the asset safeJoin (join(spaDir, "") would lack the spaDir+sep prefix → a false 403).
   const ext = extname(rel);
-  // `.html` NÃO é asset: servi-lo cru entregaria o index SEM o config injetado, e o bootstrap
-  // (src/bootstrap.ts) cai em fixtures quando `window.__STUDIO_CONFIG__` está ausente — ou seja,
-  // /_studio e /_studio/index.html bootariam PRODUTOS DIFERENTES. É a mesma divergência por
-  // extensão que este milestone existe para eliminar, no path mais adivinhável de todos
-  // (review F-dom-api-1). Todo HTML passa pelo fallback que injeta o config.
+  // `.html` is NOT an asset: serving it raw would deliver the index WITHOUT the injected
+  // config, and the bootstrap (src/bootstrap.ts) falls back to fixtures when
+  // `window.__STUDIO_CONFIG__` is absent — i.e. /_studio and /_studio/index.html would boot
+  // DIFFERENT PRODUCTS. That is the same by-extension divergence this milestone exists to
+  // eliminate, on the most guessable path of all (review F-dom-api-1). All HTML goes through
+  // the fallback that injects the config.
   const isKnownAsset = rel.length > 0 && ext in CONTENT_TYPES && ext !== ".html";
   if (!isKnownAsset) {
-    // Valida o path mesmo assim (null byte / encoding) antes do fallback.
+    // Validate the path anyway (null byte / encoding) before falling back.
     const check = safeJoin(opts.spaDir, rel.length === 0 ? "index.html" : rel);
     if (check.kind === "bad-request") {
       sendErrorEnvelope(res, 400, "BAD_REQUEST", "malformed path");
@@ -155,10 +156,11 @@ export async function serveStudio(
     sendErrorEnvelope(res, 404, "NOT_FOUND", `no studio asset at ${pathname}`);
     return;
   }
-  // LER ANTES DE COMPROMETER O HEAD (M6 T1.2). existsSync + statSync passarem NÃO garante
-  // leitura: EACCES é determinístico num arquivo sem permissão. Comprometer o 200 antes
-  // deixava a resposta truncada e o throw subia até o .catch() do dispatcher, matando o
-  // processo. `serveIndexWithConfig` (:85→:98) já lia antes — este era o único fora do padrão.
+  // READ BEFORE COMMITTING THE HEAD (M6 T1.2). existsSync + statSync passing does NOT
+  // guarantee a read: EACCES is deterministic on a file without permission. Committing the 200
+  // first left the response truncated and the throw rose to the dispatcher's .catch(), killing
+  // the process. `serveIndexWithConfig` (:85→:98) already read first — this was the only site
+  // off the pattern.
   let content: Buffer;
   try {
     content = readFileSync(safe.path);

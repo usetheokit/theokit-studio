@@ -3,11 +3,11 @@ import { createFixtureDataSource } from "./data/fixture-datasource";
 import { metrics } from "./data/metrics";
 import { mount } from "./main";
 
-// T2.1 — o composition root passa o basename do config ao createBrowserRouter:
-// com a SPA servida sob /_studio, as rotas resolvem relativo ao prefixo.
+// T2.1 — the composition root passes the config's basename to createBrowserRouter:
+// with the SPA served under /_studio, the routes resolve relative to that prefix.
 describe("mount (composition root — basename wiring)", () => {
   function mountAt(path: string, config: Parameters<typeof mount>[1]) {
-    // jsdom precisa estar SOB o basename antes do mount (senão nenhuma rota casa).
+    // jsdom must be UNDER the basename before mounting (otherwise no route matches).
     window.history.replaceState(null, "", path);
     const rootEl = document.createElement("div");
     document.body.appendChild(rootEl);
@@ -21,8 +21,8 @@ describe("mount (composition root — basename wiring)", () => {
   it("test_mount_wires_router_basename_from_config", async () => {
     const cleanup = mountAt("/_studio/builder", { scenario: "default", basePath: "/_studio" });
     try {
-      // Assert forte: a superfície do builder resolveu SOB o prefixo (o NotFound
-      // renderizaria no lugar dela se o basename não tivesse sido aplicado).
+      // Strong assertion: the builder surface resolved UNDER the prefix (NotFound would render
+      // in its place if the basename had not been applied).
       expect(await screen.findByTestId("builder-surface")).toBeTruthy();
     } finally {
       cleanup();
@@ -30,8 +30,8 @@ describe("mount (composition root — basename wiring)", () => {
   });
 
   it("test_root_under_basename_redirects_to_builder", async () => {
-    // A raiz da SPA servida sob prefixo tem de cair no builder — o redirect precisa
-    // respeitar o basename, senão /_studio abre em branco no host.
+    // The root of the SPA served under a prefix must land on the builder — the redirect has to
+    // honour the basename, or /_studio opens blank on the host.
     const cleanup = mountAt("/_studio", { scenario: "default", basePath: "/_studio" });
     try {
       expect(await screen.findByTestId("builder-surface")).toBeTruthy();
@@ -41,8 +41,8 @@ describe("mount (composition root — basename wiring)", () => {
   });
 
   it("test_composition_root_selects_hybrid_in_live_mode", async () => {
-    // Ponto ÚNICO do default de mode (obrigação T2.1): a decisão vive AQUI.
-    // Live: agents vêm da reflection (fetch stub); sessões seguem do fixture (D5).
+    // The SINGLE point where mode defaults (T2.1 obligation): the decision lives HERE.
+    // Live: agents come from the reflection (fetch stub); sessions still come from the fixture (D5).
     metrics.reset();
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async (input: RequestInfo | URL) => {
@@ -63,15 +63,15 @@ describe("mount (composition root — basename wiring)", () => {
       basePath: "/_studio",
     });
     try {
-      // M8 T1.1: a ÚNICA asserção que separa os dois ramos do ternário é o dado que só a
-      // reflection produz. As duas asserções anteriores eram satisfeitas pelos DOIS ramos —
-      // o rótulo vem de buildRoutes({ live }), que lê o booleano direto, e o contador
-      // datasource_calls_total.listAgents é incrementado tanto pelo fixture quanto pela
-      // reflection. Reproduzido: invertendo o ternário, a suíte devolvia 3 passed.
+      // M8 T1.1: the ONLY assertion separating the ternary's two branches is data that only the
+      // reflection produces. The two earlier assertions were satisfied by BOTH branches — the label
+      // comes from buildRoutes({ live }), which reads the boolean directly, and the counter
+      // datasource_calls_total.listAgents is incremented by the fixture as well as by the
+      // reflection. Reproduced: inverting the ternary, the suite still returned 3 passed.
       const liveAgent = await screen.findByText("live-agent");
       expect(liveAgent).toBeTruthy();
-      // O rótulo e a métrica continuam asseverados — não provam a escolha, mas travam
-      // regressões próprias (rótulo honesto e wiring pilar c).
+      // The label and the metric stay asserted — they do not prove the choice, but they pin
+      // regressions of their own (an honest label, and wiring pillar c).
       expect(await screen.findByText(/live reflection/i)).toBeTruthy();
       expect(metrics.snapshot().datasource_calls_total?.listAgents).toBeGreaterThanOrEqual(1);
     } finally {
@@ -80,29 +80,29 @@ describe("mount (composition root — basename wiring)", () => {
     }
   });
 
-  // Review F-tests-1: eu tinha armado UM lado do ternário. Sem este teste, o mutante
-  // `const live = true` passava a suíte inteira — os testes de modo fixtures asseveravam só
-  // `builder-surface`, que renderiza nos DOIS ramos. Era o mesmo defeito do milestone,
-  // espelhado: o nome do teste ficou honesto e a outra metade da linha 20 seguiu nua.
+  // Review F-tests-1: only ONE side of the ternary had been armed. Without this test, the
+  // mutant `const live = true` passed the entire suite — the fixture-mode tests asserted only
+  // `builder-surface`, which renders on BOTH branches. It was the milestone's own defect,
+  // mirrored: the test name became honest while the other half of line 20 stayed bare.
   it("test_composition_root_selects_fixtures_when_mode_is_absent", async () => {
     const cleanup = mountAt("/_studio/builder", { scenario: "default", basePath: "/_studio" });
     try {
-      // Dado que SÓ o fixture produz — a reflection devolveria o que o stub de fetch mandasse,
-      // e aqui não há stub: em modo live o fetch relativo rejeita e a lista fica vazia.
+      // Data only the fixture produces — the reflection would return whatever the fetch stub said,
+      // and there is no stub here: in live mode the relative fetch rejects and the list is empty.
       const fixtureAgent = await screen.findByText("Support Agent");
       expect(fixtureAgent).toBeTruthy();
-      // E o rótulo de origem tem de dizer fixtures, não live.
+      // And the origin label must say fixtures, not live.
       expect(screen.queryByText(/live reflection/i)).toBeNull();
     } finally {
       cleanup();
     }
   });
 
-  // EC-1 + review F-tests-6: a asserção discriminante só funciona enquanto "live-agent" não
-  // existir em NENHUMA superfície de fixture que a página renderiza. A primeira versão olhava
-  // só para os agents; as sessões do builder vêm do fallback mesmo em modo live
-  // (reflection-datasource.ts delega listBuilderSessions), então um título de sessão com esse
-  // nome devolveria o teste ao estado oco sem esta trava perceber.
+  // EC-1 + review F-tests-6: the discriminating assertion only works while "live-agent" exists
+  // in NO fixture surface the page renders. The first version looked only at the agents; the
+  // builder's sessions come from the fallback even in live mode (reflection-datasource.ts
+  // delegates listBuilderSessions), so a session title carrying that name would return the test
+  // to its hollow state without this pin noticing.
   it("the_discriminating_name_is_absent_from_every_rendered_fixture", async () => {
     const fx = createFixtureDataSource({ scenario: "default" });
     const rendered = [

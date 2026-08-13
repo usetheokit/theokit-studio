@@ -1,26 +1,26 @@
-// Entry point defensivo (T2.1): único módulo com side-effect de boot. Falha de load do
-// bundle/router renderiza startup-error em DOM puro em vez de tela branca.
+// Defensive entry point (T2.1): the only module with a boot side effect. A bundle/router
+// load failure renders startup-error in plain DOM instead of a blank screen.
 import { renderStartupError } from "./startup-error";
 
 export interface StudioConfig {
   /**
-   * M7 T2.1: `"offline"` saiu do union. Era aceito na fronteira e nunca lido — nenhum consumidor
-   * o distinguia de `"default"`. Entrada aceita e ignorada é falha silenciosa
-   * (`rules/error-handling.md` § 2), então agora cai no caminho de valor inválido: warning
-   * nomeando o valor + fallback para `"default"`.
+   * M7 T2.1: `"offline"` left the union. It was accepted at the boundary and never read — no
+   * consumer distinguished it from `"default"`. Input accepted and ignored is a silent failure
+   * (`rules/error-handling.md` § 2), so it now takes the invalid-value path: a warning naming
+   * the value + a fallback to `"default"`.
    */
   scenario: "default" | "empty";
-  /** ausente = fixtures (shape M5 permanece válido; ponto ÚNICO do default nasce em T3.1 no composition root). */
+  /** absent = fixtures (the M5 shape stays valid; the SINGLE default point is born in T3.1 at the composition root). */
   mode?: "fixtures" | "live";
-  /** prefixo onde a SPA está servida (ex.: "/_studio"); normalizado no parse. */
+  /** the prefix the SPA is served under (e.g. "/_studio"); normalised on parse. */
   basePath?: string;
 }
 
 const VALID_SCENARIOS = new Set(["default", "empty"]);
 const VALID_MODES = new Set(["fixtures", "live"]);
 
-// Consumo do mode: `config.mode ?? "fixtures"` (helper resolveStudioMode nasce em T3.1
-// junto do consumidor — o composition root híbrido; YAGNI até lá).
+// Consuming the mode: `config.mode ?? "fixtures"` (the resolveStudioMode helper is born in
+// T3.1 alongside its consumer — the hybrid composition root; YAGNI until then).
 
 function parseBasePath(raw: unknown, warnings: string[]): string | undefined {
   if (raw === undefined) return undefined;
@@ -28,13 +28,13 @@ function parseBasePath(raw: unknown, warnings: string[]): string | undefined {
     warnings.push(`basePath must be a non-empty string — ignoring ${JSON.stringify(raw)}`);
     return undefined;
   }
-  // Forma normal: barra inicial garantida, trailing removida.
+  // Normal form: leading slash guaranteed, trailing one removed.
   const withLead = raw.startsWith("/") ? raw : `/${raw}`;
   return withLead.length > 1 ? withLead.replace(/\/+$/, "") : withLead;
 }
 
-// Seam do M1 (Blueprint Rec-6): o host (theokit dev) injeta window.__STUDIO_CONFIG__.
-// Validação na fronteira (EC-8): config malformada → warn 1× + fallback fixtures.
+// The M1 seam (Blueprint Rec-6): the host (theokit dev) injects window.__STUDIO_CONFIG__.
+// Boundary validation (EC-8): a malformed config → one warning + a fixtures fallback.
 export function parseStudioConfig(raw: unknown): StudioConfig {
   if (raw === undefined || raw === null) {
     return { scenario: "default" };
@@ -72,7 +72,7 @@ export function parseStudioConfig(raw: unknown): StudioConfig {
   const basePath = parseBasePath(input.basePath, warnings);
 
   if (warnings.length > 0) {
-    // 1× por boot (EC-8) — agregado, com contexto do que foi ignorado.
+    // Once per boot (EC-8) — aggregated, with context on what was ignored.
     console.warn(
       `TheoKit Studio: window.__STUDIO_CONFIG__ partially malformed (${warnings.join("; ")}) — invalid fields fell back to defaults`,
       raw,
@@ -102,9 +102,9 @@ export async function bootstrap(): Promise<void> {
   }
 }
 
-// Auto-boot apenas fora de teste (module side-effect guardado — SEPA Phase 2).
+// Auto-boot outside tests only (the module side effect is guarded — SEPA Phase 2).
 if (!import.meta.env.TEST) {
-  // Falha já renderizada via startup-error (fail-loud único); catch evita unhandled
-  // rejection duplicada no console do browser.
+  // The failure is already rendered via startup-error (a single fail-loud); the catch avoids a
+  // duplicate unhandled rejection in the browser console.
   bootstrap().catch(() => {});
 }

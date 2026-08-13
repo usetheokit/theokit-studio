@@ -24,7 +24,7 @@ pnpm dev            # http://localhost:5173/builder — Studio standalone, fixtu
 
 Docker is not required.
 
-The intended integration is mounting Studio into `theokit dev` at `/_studio`, same origin, via the `@theokit/studio/plugin` export. **That registration does not exist yet** — it is pending coordination in the `theokit` CLI repo; the exact change is written up in [`docs/theokit-dev-integration.md`](./docs/theokit-dev-integration.md). Until it lands, `pnpm dev` above is the way to run Studio.
+The intended integration is mounting Studio into `theokit dev` at `/_studio`, same origin, via the `@theokit/studio/plugin` export. **That registration does not exist yet** — it is pending coordination in the `theokit` CLI repo; the exact change was written up in `docs/theokit-dev-integration.md`, which was removed in commit `4a60788` ("Remove outdated documentation and milestone records") and is only recoverable from git history. Until it lands, `pnpm dev` above is the way to run Studio.
 
 ## Scope — what was removed
 
@@ -34,7 +34,7 @@ They are not deprecated-but-working: they do not exist in this package. The data
 
 Note that no version of this package has ever been published to npm (`private: true`, `0.0.0`); `v0.3.0` and friends are git tags on this repository, so "go back to the previous release" means checking out a tag, not pinning a dependency.
 
-Whether any of those surfaces returns to the roadmap is an open product decision — see [`ROADMAP.md`](./ROADMAP.md).
+Whether any of those surfaces returns to the roadmap is an open product decision. (`ROADMAP.md` was removed in commit `4a60788` and this repo currently has no roadmap file.)
 
 > **Status: pre-release.** Studio is for development and debugging. Multi-tenant, production dashboards are the domain of Theo Cloud (pre-release).
 
@@ -57,7 +57,7 @@ Studio **accepts** a `window.__STUDIO_CONFIG__` JSON object with `scenario` (`"d
 
 ## Design
 
-The documents below are **pre-`74a96c6` design intent**, not a description of what ships today: [`docs/theokit-studio-arquitetura-proposta.md`](./docs/theokit-studio-arquitetura-proposta.md) (architecture), [`docs/studio-deep-research-2026-07-14.md`](./docs/studio-deep-research-2026-07-14.md) (competitive research), [`docs/mastra-studio-blueprint-clonagem-2026-07-14.md`](./docs/mastra-studio-blueprint-clonagem-2026-07-14.md) (Mastra Studio capability blueprint). For what exists now, read this file and [`ROADMAP.md`](./ROADMAP.md).
+The documents below were **pre-`74a96c6` design intent**, not a description of what ships today — and all of them were **removed from the repo** in commit `4a60788` ("Remove outdated documentation and milestone records"); they survive only in git history: `docs/theokit-studio-arquitetura-proposta.md` (architecture), `docs/studio-deep-research-2026-07-14.md` (competitive research), `docs/mastra-studio-blueprint-clonagem-2026-07-14.md` (Mastra Studio capability blueprint). For what exists now, read this file.
 
 ## License
 

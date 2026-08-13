@@ -6,13 +6,13 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveSpaDir, serveStudio } from "./static-serve";
 
-// chmod 000 é no-op para root (uid 0): o teste passaria por motivo errado.
+// chmod 000 is a no-op for root (uid 0): the test would pass for the wrong reason.
 const SKIP_IF_ROOT = process.getuid?.() === 0;
 
 // Static serving da SPA (T2.2): traversal guard (decode 1× → null byte → normalize →
-// prefix), fallback SPA com config injetado e escapado, 503 acionável sem dist.
-// Política de extensão (registrada no log): só extensões CONHECIDAS são assets;
-// desconhecida → fallback SPA (deep-link /_studio/agents/v2.support funciona).
+// prefix), SPA fallback with the config injected and escaped, actionable 503 without dist.
+// Extension policy (recorded in the log): only KNOWN extensions are assets; an unknown one →
+// SPA fallback (the deep link /_studio/agents/v2.support works).
 
 interface FakeRes {
   statusCode: number | undefined;
@@ -51,8 +51,8 @@ function makeRes(): FakeRes {
     get destroyed() {
       return false;
     },
-    // M6 EC-2: headersSent REFLETE writeHead. Um literal congelado nunca viraria true e
-    // tornaria o guard de resposta comprometida inalcançável por construção (finding #68).
+    // M6 EC-2: headersSent REFLECTS writeHead. A frozen literal would never become true and
+    // would make the committed-response guard unreachable by construction (finding #68).
     get headersSent() {
       return state.statusCode !== undefined;
     },
@@ -74,7 +74,7 @@ beforeEach(() => {
     "<!doctype html><html><head><title>Studio</title></head><body></body></html>",
   );
   writeFileSync(join(spaDir, "assets/app.js"), "console.log('studio')");
-  // Arquivo sentinela FORA do root — nunca pode aparecer num body.
+  // Sentinel file OUTSIDE the root — it must never appear in a body.
   writeFileSync(join(tmp, "secret.txt"), SENTINEL);
 });
 
@@ -99,8 +99,8 @@ describe("serveStudio (T2.2)", () => {
   });
 
   it("test_asset_with_query_string_still_resolves", async () => {
-    // EC-1: o dispatcher entrega pathname; aqui garantimos que a resolução por
-    // extensão conhecida não se confunde com sufixos de cache-busting já removidos.
+    // EC-1: the dispatcher hands over the pathname; here we ensure that resolving by known
+    // extension is not confused by cache-busting suffixes already stripped.
     const state = await serve("/_studio/assets/app.js");
     expect(state.statusCode).toBe(200);
   });
@@ -115,7 +115,7 @@ describe("serveStudio (T2.2)", () => {
   });
 
   it("test_config_injection_escapes_script_breakout", async () => {
-    // Guardrail anti </script>-breakout: um basePath malicioso nunca fecha a tag.
+    // Anti </script>-breakout guardrail: a malicious basePath never closes the tag.
     const state = makeRes();
     await serveStudio("/_studio/agents", state.res, {
       spaDir,
@@ -126,7 +126,7 @@ describe("serveStudio (T2.2)", () => {
   });
 
   it("test_studio_root_and_trailing_slash_serve_the_spa", async () => {
-    // Raiz nunca cai no safeJoin com rel vazio (403 acidental).
+    // The root never reaches safeJoin with an empty rel (an accidental 403).
     for (const p of ["/_studio", "/_studio/"]) {
       const state = await serve(p);
       expect(state.statusCode).toBe(200);
@@ -135,7 +135,7 @@ describe("serveStudio (T2.2)", () => {
   });
 
   it("test_unknown_extension_deep_link_falls_back_to_spa", async () => {
-    // Agent com ponto no nome (v2.support) — deep-link é SPA, não asset 404.
+    // An agent with a dot in its name (v2.support) — the deep link is SPA, not a 404 asset.
     const state = await serve("/_studio/agents/v2.support");
     expect(state.statusCode).toBe(200);
     expect(state.body).toContain("window.__STUDIO_CONFIG__");
@@ -158,18 +158,18 @@ describe("serveStudio (T2.2)", () => {
     }
   });
 
-  // M8 T2.1: o ramo `safe.kind === "forbidden"` do caminho de ASSET (static-serve.ts:150-153)
-  // não tinha teste. Ele só é alcançado quando `isKnownAsset` é VERDADEIRO — ou seja, extensão
-  // conhecida — e o caminho ainda assim escapa de spaDir. Os traversals do teste acima usam
-  // `.txt`, que não é asset conhecido, e caem noutro ramo.
+  // M8 T2.1: the `safe.kind === "forbidden"` branch of the ASSET path (static-serve.ts:150-153)
+  // had no test. It is reached only when `isKnownAsset` is TRUE — i.e. a known extension — and
+  // the path still escapes spaDir. The traversals in the test above use `.txt`, which is not a
+  // known asset, and land in another branch.
   it("test_traversal_with_known_extension_is_forbidden", async () => {
     const state = await serve("/_studio/assets/../../../etc/passwd.js");
     expect(state.statusCode).toBe(403);
     const body = JSON.parse(state.body);
     expect(body.error.code).toBe("FORBIDDEN");
-    // Review F-tests-8: os DOIS ramos forbidden emitem 403 + FORBIDDEN; só a mensagem separa o
-    // caminho de asset (:151) do caminho de índice (:139). Sem esta linha, forçar
-    // `isKnownAsset = false` deixava o teste verde com o ramo errado.
+    // Review F-tests-8: BOTH forbidden branches emit 403 + FORBIDDEN; only the message
+    // separates the asset path (:151) from the index path (:139). Without this line, forcing
+    // `isKnownAsset = false` left the test green on the wrong branch.
     expect(body.error.message).toBe("asset path escapes the studio root");
   });
 
@@ -203,8 +203,8 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 
   it("test_env_override_with_trailing_slash_still_serves", async () => {
-    // Regressão (SEPA pre-COMMIT): THEOKIT_STUDIO_DIST com trailing slash não pode
-    // quebrar o prefix check do safeJoin (403 universal).
+    // Regression (SEPA pre-COMMIT): a THEOKIT_STUDIO_DIST with a trailing slash must not
+    // break safeJoin's prefix check (a universal 403).
     const resolved = resolveSpaDir({
       env: { THEOKIT_STUDIO_DIST: `${spaDir}/` },
       moduleUrl: pathToFileURL(join(tmp, "plugin.js")).href,
@@ -216,8 +216,8 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 
   it("test_env_override_pointing_at_dead_dir_is_honored_not_fallthrough", () => {
-    // O usuário pediu explicitamente aquele dir — inexistente → devolve como está
-    // (o serve responde 503 acionável); nunca fallthrough silencioso ao layout.
+    // The user asked for that dir explicitly — non-existent → return it as is (the serve
+    // answers an actionable 503); never a silent fallthrough to the layout.
     const dead = join(tmp, "dead-dist");
     const resolved = resolveSpaDir({
       env: { THEOKIT_STUDIO_DIST: dead },
@@ -227,7 +227,7 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 
   it("test_resolve_spa_dir_works_from_built_layout", () => {
-    // EC-10: dist/plugin/index.js → ../spa (layout publicado).
+    // EC-10: dist/plugin/index.js → ../spa (the published layout).
     mkdirSync(join(tmp, "dist/plugin"), { recursive: true });
     mkdirSync(join(tmp, "dist/spa"), { recursive: true });
     const resolved = resolveSpaDir({
@@ -238,8 +238,8 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 
   it("test_resolve_spa_dir_works_from_source_layout", () => {
-    // Source: plugin/index.ts → ../dist/spa (dev do próprio Studio pós-build).
-    // Base isolada: o spa/ do beforeEach na raiz do tmp não pode interferir.
+    // Source: plugin/index.ts -> ../dist/spa (Studio's own dev server, post-build).
+    // Isolated base: the beforeEach's spa/ at the tmp root must not interfere.
     const base = join(tmp, "pkg");
     mkdirSync(join(base, "plugin"), { recursive: true });
     mkdirSync(join(base, "dist/spa"), { recursive: true });
@@ -251,13 +251,13 @@ describe("resolveSpaDir (T2.2)", () => {
   });
 });
 
-describe("asset ilegível não compromete o head (T1.2)", () => {
+describe("an unreadable asset does not commit the head (T1.2)", () => {
   it.skipIf(SKIP_IF_ROOT)(
     "asset_read_failure_yields_error_envelope_not_committed_200",
     async () => {
-      // EACCES é DETERMINÍSTICO depois de existsSync/statSync passarem — não é corrida.
-      // Comprometer o head 200 antes da leitura deixava a resposta 200 truncada e, no
-      // dispatcher, matava o processo (M6 findings #46/#47).
+      // EACCES is DETERMINISTIC once existsSync/statSync pass — it is not a race.
+      // Committing the 200 head before the read left the 200 response truncated and, in the
+      // dispatcher, killed the process (M6 findings #46/#47).
       const assetPath = join(spaDir, "locked.css");
       writeFileSync(assetPath, "body{}");
       chmodSync(assetPath, 0o000);
@@ -271,7 +271,7 @@ describe("asset ilegível não compromete o head (T1.2)", () => {
   );
 
   it("empty_asset_still_returns_200_with_content_type", async () => {
-    // EC-6: 0 byte é asset VÁLIDO; com a leitura antes do head não pode virar falha.
+    // EC-6: 0 bytes is a VALID asset; with the read before the head it must not become a failure.
     writeFileSync(join(spaDir, "empty.css"), "");
     const state = makeRes();
 
@@ -282,10 +282,10 @@ describe("asset ilegível não compromete o head (T1.2)", () => {
   });
 });
 
-describe("index.html não é asset cru (review F-dom-api-1)", () => {
+describe("index.html is not served as a raw asset (review F-dom-api-1)", () => {
   it("explicit_index_html_gets_the_injected_config_like_the_root", async () => {
-    // /_studio e /_studio/index.html precisam bootar o MESMO produto: servir o html cru
-    // entregaria o index sem window.__STUDIO_CONFIG__, e o bootstrap cai em fixtures.
+    // /_studio and /_studio/index.html must boot the SAME product: serving the raw html would
+    // deliver the index without window.__STUDIO_CONFIG__, and the bootstrap falls to fixtures.
     const root = makeRes();
     const explicit = makeRes();
 

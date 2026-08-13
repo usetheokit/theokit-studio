@@ -1,3 +1,3 @@
-// index colapsa para "nested" — e o export NÃO é um agent (compileAgentModule lança):
-// fixture do caminho de degradação por item da reflection.
+// index collapses to "nested" — and the export is NOT an agent (compileAgentModule throws):
+// the fixture for the reflection's per-item degradation path.
 export default { notAnAgent: true };

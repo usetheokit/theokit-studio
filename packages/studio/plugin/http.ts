@@ -1,22 +1,23 @@
 import type { ServerResponse } from "node:http";
 
-// Helpers HTTP compartilhados do plugin (SEPA T1.2: módulo próprio evita o ciclo
-// index ⇄ reflection-api mantendo o envelope canônico único — DRY sobre conhecimento).
+// The plugin's shared HTTP helpers (SEPA T1.2: a module of its own avoids the
+// index ⇄ reflection-api cycle while keeping one canonical envelope — DRY over knowledge).
 
-/** Envelope de erro canônico de TODOS os handlers do plugin (error-handling.md § 2). */
+/** The canonical error envelope for EVERY handler in the plugin (error-handling.md § 2). */
 export function sendErrorEnvelope(
   res: ServerResponse,
   status: number,
   code: string,
   message: string,
 ): void {
-  // A ORDEM É O CONTRATO (M6 EC-1): encerrada/destruída sai primeiro. Escrever numa
-  // resposta já encerrada levantaria ERR_STREAM_WRITE_AFTER_END — trocaria um crash por outro.
+  // THE ORDER IS THE CONTRACT (M6 EC-1): ended/destroyed is checked first. Writing to an
+  // already-ended response would raise ERR_STREAM_WRITE_AFTER_END — trading one crash for another.
   if (res.writableEnded || res.destroyed) return;
   const payload = JSON.stringify({ error: { code, message } });
   if (res.headersSent) {
-    // Head já comprometido: o status não muda mais, mas o erro TEM de chegar ao cliente.
-    // Desistir em silêncio deixaria uma resposta truncada sem causa (ADR A1; precedente
+    // The head is already committed: the status can no longer change, but the error MUST still
+    // reach the client. Giving up silently would leave a truncated response with no cause
+    // (ADR A1; precedent
     // genkit js/core/src/reflection.ts:359-363).
     res.end(payload);
     return;
@@ -25,15 +26,15 @@ export function sendErrorEnvelope(
   res.end(payload);
 }
 
-/** Resposta JSON simples com guard de response já encerrado ou comprometido. */
+/** A plain JSON response, guarded against an already-ended or committed response. */
 export function sendJson(res: ServerResponse, status: number, body: unknown): void {
-  // A ORDEM É O CONTRATO (M6 EC-1), igual ao sendErrorEnvelope.
+  // THE ORDER IS THE CONTRACT (M6 EC-1), same as sendErrorEnvelope.
   if (res.writableEnded || res.destroyed) return;
   if (res.headersSent) {
-    // Não há resposta de SUCESSO a dar depois de um head comprometido: o status já foi.
-    // Mas ENCERRAR é obrigatório — apenas retornar deixaria a requisição pendurada aberta,
-    // trocando o crash ruidoso por um hang silencioso (review F-arch-1). Chegar aqui é bug
-    // de chamador, então o aviso é alto em vez de engolido (error-handling.md § 2).
+    // There is no SUCCESS response left to give after a committed head: the status is gone.
+    // But ENDING is mandatory — merely returning would leave the request hanging open, trading
+    // the noisy crash for a silent hang (review F-arch-1). Reaching here is a caller bug, so the
+    // warning is loud rather than swallowed (error-handling.md § 2).
     console.warn("theokit-studio: sendJson called on an already-committed response — ending it");
     res.end();
     return;

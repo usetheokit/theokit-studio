@@ -5,16 +5,16 @@ import type {
   BuilderSessionSummary,
   SkillSummary,
 } from "./types";
-// Contrato único de dados da superfície do Studio — o Agent Builder (ADR D2 — DIP: o
-// domínio da UI define a interface; adapters implementam). Fixtures hoje; a reflection
-// do dev server serve agents/skills quando o host injeta mode: "live".
+// The single data contract of the Studio's surface — the Agent Builder (ADR D2 — DIP: the
+// UI's domain defines the interface; adapters implement it). Fixtures today; the dev server's
+// reflection serves agents/skills when the host injects mode: "live".
 export interface StudioDataSource {
   listAgents(): Promise<AgentSummary[]>;
   listSkills(): Promise<SkillSummary[]>;
   listBuilderSessions(): Promise<BuilderSessionSummary[]>;
-  /** transcript + artefato de uma sessão; rejeita erro tipado se não existir. */
+  /** a session's transcript + artifact; rejects with a typed error when it does not exist. */
   getBuilderSession(sessionId: string): Promise<BuilderSessionDetail>;
-  /** inicia sessão de build roteirizada (fixtures); rejeita prompt em branco. */
+  /** starts a scripted build session (fixtures); rejects a blank prompt. */
   startBuilderSession(prompt: string, targetAgentId?: string): Promise<BuilderSessionDetail>;
 }
 

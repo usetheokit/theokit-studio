@@ -14,16 +14,16 @@ function NotFound() {
   );
 }
 
-// Superfície única: o Agent Builder em tela cheia. A raiz redireciona para ela e
-// qualquer outro path cai no NotFound — não há mais shell nem navegação lateral.
+// A single surface: the Agent Builder, full screen. The root redirects to it and any other
+// path lands on NotFound — there is no shell and no side navigation any more.
 export function buildRoutes(opts: { live?: boolean } = {}): RouteObject[] {
   return [
     {
       path: "/",
       loader: () => redirect("/builder"),
       element: null,
-      // O redirect resolve no primeiro tick; o fallback evita a tela branca (e o warning
-      // de hidratação sem HydrateFallback) enquanto o loader roda.
+      // The redirect resolves on the first tick; the fallback avoids the blank screen (and the
+      // hydration warning for a missing HydrateFallback) while the loader runs.
       hydrateFallbackElement: <div aria-busy="true" />,
     },
     {

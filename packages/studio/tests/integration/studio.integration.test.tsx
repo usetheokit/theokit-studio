@@ -9,8 +9,8 @@ import { metrics } from "../../src/data/metrics";
 import { mount } from "../../src/main";
 import { renderStartupError } from "../../src/startup-error";
 
-// Integração da SPA reduzida a uma superfície: o Agent Builder. Cobre o caminho de boot
-// (bootstrap → mount → rota) e as fronteiras de erro que sobrevivem ao corte.
+// Integration of the SPA reduced to a single surface: the Agent Builder. Covers the boot path
+// (bootstrap → mount → route) and the error boundaries that survive the cut.
 describe("Studio integration", () => {
   beforeEach(() => {
     metrics.reset();
@@ -99,14 +99,14 @@ describe("Studio integration", () => {
         element: <div />,
         errorElement: <RouteError />,
         loader: () => {
-          throw "string crua";
+          throw "raw string";
         },
       },
     ]);
 
     render(<RouterProvider router={router} />);
 
-    expect((await screen.findByRole("alert")).textContent).toContain("string crua");
+    expect((await screen.findByRole("alert")).textContent).toContain("raw string");
     spy.mockRestore();
   });
 });
