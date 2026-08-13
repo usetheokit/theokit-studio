@@ -29,4 +29,8 @@
 
 ### Fixed
 
+- **O pacote publicado passa a declarar e a carregar a licença (usetheodev/theokit#213).** O manifest não tinha campo `license` e o `files: ["dist"]` não levava nenhum `LICENSE` — o `LICENSE` Apache-2.0 existia só na raiz do repositório, que não é o artefato. **Um pacote npm sem campo `license` é all rights reserved para quem instala:** a concessão viaja no tarball, não no GitHub, e quem resolve o pacote de um mirror de registry nunca vê o repositório.
+
+  Agora o manifest declara `Apache-2.0` e o `LICENSE` fica ao lado dele, então o npm o inclui apesar do `files`. Verificado no `npm pack --dry-run`: `11.3kB LICENSE`, 38 arquivos. `tests/packaging/license-declared.test.ts` guarda as duas metades — declarar sem embarcar, ou embarcar um texto diferente do SPDX declarado, são falhas distintas e a segunda é pior, porque é uma afirmação em que o consumidor confia sem ler.
+
 ### Security

@@ -1,6 +1,7 @@
 {
   "name": "@theokit/studio",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "type": "module",
   "description": "TheoKit Studio \u2014 local dev UI (M1: reflection plugin + embeddable SPA)",
   "exports": {
