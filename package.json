@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "pnpm --filter @theokit/studio dev",
     "build": "pnpm -r run build",
-    "test": "pnpm -r run test && pnpm run test:roadmap",
+    "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
     "lint": "biome check .",
     "typecheck": "pnpm -r run typecheck",
@@ -18,8 +18,7 @@
     "check:fix": "biome check --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm run build && changeset publish",
-    "test:roadmap": "python3 tests/roadmap_dod_shape_test.py"
+    "release": "pnpm run build && changeset publish"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",

@@ -29,6 +29,10 @@
 
 ### Fixed
 
+- **`pnpm test` na raiz voltou a passar — estava vermelho desde o `4a60788`.** O script `test:roadmap` rodava `tests/roadmap_dod_shape_test.py`, que lê `ROADMAP.md`. Esse arquivo foi removido de propósito naquele mesmo commit, junto com o extrator de `.claude/skills/acceptance/` que o teste importava como oráculo. Um guarda órfão em cima de um oráculo órfão, verificando a forma de um artefato que o README já documenta como inexistente.
+
+  Ele nem falhava com asserção: estourava `FileNotFoundError`, então a suíte da raiz saía não-zero por um erro que não dizia o que fazer. Removido — o assunto dele não existe mais, e um gate impossível de satisfazer treina o time a ignorar vermelho. Volta se um roadmap voltar, junto com o extrator que lhe dava sentido.
+
 - **O pacote publicado passa a declarar e a carregar a licença (usetheodev/theokit#213).** O manifest não tinha campo `license` e o `files: ["dist"]` não levava nenhum `LICENSE` — o `LICENSE` Apache-2.0 existia só na raiz do repositório, que não é o artefato. **Um pacote npm sem campo `license` é all rights reserved para quem instala:** a concessão viaja no tarball, não no GitHub, e quem resolve o pacote de um mirror de registry nunca vê o repositório.
 
   Agora o manifest declara `Apache-2.0` e o `LICENSE` fica ao lado dele, então o npm o inclui apesar do `files`. Verificado no `npm pack --dry-run`: `11.3kB LICENSE`, 38 arquivos. `tests/packaging/license-declared.test.ts` guarda as duas metades — declarar sem embarcar, ou embarcar um texto diferente do SPDX declarado, são falhas distintas e a segunda é pior, porque é uma afirmação em que o consumidor confia sem ler.
