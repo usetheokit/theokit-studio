@@ -20,9 +20,7 @@ function parseFeatureTableSurfaces(markdown: string): string[] {
   const lines = markdown.split("\n");
   const headerIndex = lines.findIndex((line) => line.startsWith(TABLE_HEADER));
   if (headerIndex === -1) {
-    throw new Error(
-      `feature table not found in the README: no line starts with "${TABLE_HEADER}"`,
-    );
+    throw new Error(`feature table not found in the README: no line starts with "${TABLE_HEADER}"`);
   }
   const surfaces: string[] = [];
   // Skips the `|---|---|---|` separator and reads until the first line outside the table.
