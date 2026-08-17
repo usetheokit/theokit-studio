@@ -18,7 +18,8 @@
     "check:fix": "biome check --write .",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm run build && changeset publish"
+    "release": "pnpm run build && changeset publish",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.0",
@@ -35,6 +36,6 @@
     }
   },
   "_comments": {
-    "pnpm.overrides": "Corre\u00e7\u00e3o de CVEs em depend\u00eancias TRANSITIVAS, apuradas por osv-scanner em 2026-08-04 (relat\u00f3rio: .claude/knowledge-base/audits/plugin-hardening-deps-audit-2026-08-04.md). brace-expansion: GHSA-mh99-v99m-4gvg + GHSA-rgw5-rvv9-x895 (HIGH, DoS por expans\u00e3o ilimitada) \u2014 as duas majors coexistem na \u00e1rvore e cada uma recebe o m\u00ednimo corrigido da sua linha. postcss: GHSA-fxqj-rqcc-2cmp (MODERATE, leitura de arquivo via sourceMappingURL). esbuild: GHSA-g7r4-m6w7-qqqr (LOW, dev server no Windows). Remover um override s\u00f3 depois que o pai correspondente subir a vers\u00e3o sozinho."
+    "pnpm.overrides": "Correção de CVEs em dependências TRANSITIVAS, apuradas por osv-scanner em 2026-08-04 (relatório: .claude/knowledge-base/audits/plugin-hardening-deps-audit-2026-08-04.md). brace-expansion: GHSA-mh99-v99m-4gvg + GHSA-rgw5-rvv9-x895 (HIGH, DoS por expansão ilimitada) — as duas majors coexistem na árvore e cada uma recebe o mínimo corrigido da sua linha. postcss: GHSA-fxqj-rqcc-2cmp (MODERATE, leitura de arquivo via sourceMappingURL). esbuild: GHSA-g7r4-m6w7-qqqr (LOW, dev server no Windows). Remover um override só depois que o pai correspondente subir a versão sozinho."
   }
 }

@@ -5,6 +5,8 @@
 
 ### Added
 
+- Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que `git commit --no-verify` não consegue pular. Falsos positivos confirmados são silenciados linha a linha com um comentário `trufflehog:ignore`, nunca excluindo o caminho — excluir o caminho esconderia também um segredo real acrescentado depois àquele mesmo fixture. (secret-scanning-2026-08)
+
 - **`tests/version-floor.test.ts` — piso anti-vacuidade sobre as versões que este pacote declara.** Escrito porque 15 vermelhos ficaram verdes com uma mudança de três linhas, num item antes descrito como "sete majors de migração": um verde tão barato merece descrença até que algo independente confirme que o código novo é o código que roda.
 
   Ele não pergunta versão — pergunta aos módulos carregados o que eles expõem: `AgentBuilder` presente e `agent` ausente no bridge, `compileAgentModule` / `streamAgentUIMessages` ainda funções, e a família config/trust/wiring do SDK 4.49. Um manifest pode declarar qualquer range; só o módulo carregado responde se a API existe.
