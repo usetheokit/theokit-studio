@@ -15,6 +15,10 @@
 
 ### Changed
 
+- **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-studio`. (usetheokit/theokit#316)
+
+- **O texto da licença Apache-2.0 foi substituído pelo oficial.** O texto distribuído até aqui tinha o parágrafo 4(d) truncado, omitindo "reasonable and customary use" da cláusula de NOTICE. Um corpo modificado sob o identificador SPDX `Apache-2.0` é, na prática, uma licença customizada, e obrigava quem consome a raciocinar sobre a diferença. O LICENSE da raiz e o de `packages/studio` são agora byte-a-byte idênticos ao texto canônico. (usetheokit/theokit#316)
+
 - **O `@theokit/studio` passa a exigir `@theokit/agents@^7.6.0` e `@theokit/sdk@^4.49.0`.** Isto é mudança de contrato de **instalação**: os peers declarados eram `^0.39.0` e `^3.8.0`, sete majors e uma major atrás do que o framework publica hoje. Enquanto ninguém satisfazia o peer obsoleto, ninguém descobria que ele estava obsoleto.
 
   Alinhar os ranges levou a suíte de 192 verdes para 177 verdes e 15 vermelhos, em 4 arquivos. Diagnosticados um a um, todos os 15 descendem de **uma** renomeação de API — e ela está nas *fixtures de teste*, não no produto. `agent()` deixou de ser exportado do bridge entre 0.39 e 7.x; o sucessor é `AgentBuilder.create()`, com a mesma cadeia (`.model` / `.system` / `.tool` / `.skills` / `.build`).
