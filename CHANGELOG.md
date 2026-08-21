@@ -5,6 +5,20 @@
 
 ### Added
 
+- `CI`, which runs check, build, typecheck and test on every pull request. Until now the only
+  workflow here was the secret scan, so a pull request reported "all checks passed" without
+  anything having verified that the code compiles (#19)
+- `Release`, a changesets-driven publish authenticated with npm trusted publishing. Versions
+  previously reached the registry from a developer machine, carrying no provenance (#19)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#19)
+- `@theokit/studio` declares `engines.node` and publishes with a provenance attestation (#19)
+
+### Changed
+
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#19)
+
+### Added
+
 - Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que `git commit --no-verify` não consegue pular. Falsos positivos confirmados são silenciados linha a linha com um comentário `trufflehog:ignore`, nunca excluindo o caminho — excluir o caminho esconderia também um segredo real acrescentado depois àquele mesmo fixture. (secret-scanning-2026-08)
 
 - **`tests/version-floor.test.ts` — piso anti-vacuidade sobre as versões que este pacote declara.** Escrito porque 15 vermelhos ficaram verdes com uma mudança de três linhas, num item antes descrito como "sete majors de migração": um verde tão barato merece descrença até que algo independente confirme que o código novo é o código que roda.
