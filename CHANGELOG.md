@@ -15,6 +15,8 @@
 
 ### Changed
 
+- **A suíte deixou de reivindicar todos os núcleos da máquina.** O `vitest.config.ts` não limitava nada, então valia o default — `os.availableParallelism()`, um fork por núcleo, cada um subindo um ambiente de teste inteiro. Numa máquina de 12 threads um único `vitest run` tomava a máquina inteira, e qualquer outra coisa rodando junto (outra suíte, um typecheck, o desktop) disputava o que sobrasse. O teto agora deixa 4 núcleos livres (`Math.max(2, cpus().length - 4)`), escalando com o runner em vez de fixar a contagem de uma máquina só. Não custa tempo de parede — medido no `theokit-ui`, a suíte completa rodou em 73,96s com 4 workers contra 74,36s com 12. (usetheokit/theokit-ui#51)
+
 - **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-studio`. (usetheokit/theokit#316)
 
 - **O texto da licença Apache-2.0 foi substituído pelo oficial.** O texto distribuído até aqui tinha o parágrafo 4(d) truncado, omitindo "reasonable and customary use" da cláusula de NOTICE. Um corpo modificado sob o identificador SPDX `Apache-2.0` é, na prática, uma licença customizada, e obrigava quem consome a raciocinar sobre a diferença. O LICENSE da raiz e o de `packages/studio` são agora byte-a-byte idênticos ao texto canônico. (usetheokit/theokit#316)
