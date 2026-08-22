@@ -57,6 +57,15 @@ jobs:
           # .nvmrc, for the same single-authority reason.
           node-version-file: '.nvmrc'
           cache: 'pnpm'
+          # The cache key must change when the package manager does. setup-node keys the
+          # pnpm store on the lockfile alone, so a pnpm 9 -> 10 bump leaves the key
+          # identical and the job restores a store the new pnpm reads as inconsistent —
+          # `ERR_PNPM_MISSING_PACKAGE_INDEX_FILE`, on a package the lockfile does list.
+          # package.json carries `packageManager`, so including it ties the cache to the
+          # pnpm that wrote it.
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            package.json
           # NO `registry-url`. It looks harmless and is not: setup-node writes
           # `//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}` into an npmrc
           # UNCONDITIONALLY and points NPM_CONFIG_USERCONFIG at it, then exports
@@ -111,6 +120,12 @@ jobs:
           # The only credential here, and it is GitHub's own: changesets uses it to open
           # the version pull request. Nothing here authenticates to npm.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No NPM_CONFIG_PROVENANCE: `publishConfig.provenance: true` already sits in the
-          # manifest, so provenance is declared beside the package it describes rather than
-          # in an environment variable this file has to remember.
+          # NO PROVENANCE, AND NOT BY OVERSIGHT. npm refuses to attest a package whose
+          # source repository is private, answering E422. This repository is private, so
+          # declaring `publishConfig.provenance: true` would fail every publish rather than
+          # produce an unsigned one.
+          #
+          # Trusted publishing still works — it is authentication, and it is what removes the
+          # long-lived token. What is missing is the attestation a consumer could verify.
+          # Restore `publishConfig.provenance: true` in packages/studio/package.json the day
+          # this repository goes public; nothing else here has to change.

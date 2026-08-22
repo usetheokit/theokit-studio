@@ -11,7 +11,7 @@
 - `Release`, a changesets-driven publish authenticated with npm trusted publishing. Versions
   previously reached the registry from a developer machine, carrying no provenance (#19)
 - `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#19)
-- `@theokit/studio` declares `engines.node` and publishes with a provenance attestation (#19)
+- `@theokit/studio` declares `engines.node` (#19)
 
 ### Changed
 
