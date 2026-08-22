@@ -5,6 +5,20 @@
 
 ### Added
 
+- `CI`, which runs check, build, typecheck and test on every pull request. Until now the only
+  workflow here was the secret scan, so a pull request reported "all checks passed" without
+  anything having verified that the code compiles (#19)
+- `Release`, a changesets-driven publish authenticated with npm trusted publishing. Versions
+  previously reached the registry from a developer machine, carrying no provenance (#19)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#19)
+- `@theokit/studio` declares `engines.node` and publishes with a provenance attestation (#19)
+
+### Changed
+
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#19)
+
+### Added
+
 - Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que `git commit --no-verify` não consegue pular. Falsos positivos confirmados são silenciados linha a linha com um comentário `trufflehog:ignore`, nunca excluindo o caminho — excluir o caminho esconderia também um segredo real acrescentado depois àquele mesmo fixture. (secret-scanning-2026-08)
 
 - **`tests/version-floor.test.ts` — piso anti-vacuidade sobre as versões que este pacote declara.** Escrito porque 15 vermelhos ficaram verdes com uma mudança de três linhas, num item antes descrito como "sete majors de migração": um verde tão barato merece descrença até que algo independente confirme que o código novo é o código que roda.
@@ -14,6 +28,12 @@
   Levou quatro tentativas, e cada uma errada foi o mesmo defeito — uma sonda incapaz de detectar a condição que rastreia: `package.json` fora do mapa de `exports`; caminhar para cima a partir de uma resolução CJS; resolução CJS contra um subpath ESM-only (`ERR_PACKAGE_PATH_NOT_EXPORTED` é a resposta *correta* para a pergunta errada); e `import.meta.resolve`, que o transform SSR do Vite não fornece.
 
 ### Changed
+
+- **A suíte deixou de reivindicar todos os núcleos da máquina.** O `vitest.config.ts` não limitava nada, então valia o default — `os.availableParallelism()`, um fork por núcleo, cada um subindo um ambiente de teste inteiro. Numa máquina de 12 threads um único `vitest run` tomava a máquina inteira, e qualquer outra coisa rodando junto (outra suíte, um typecheck, o desktop) disputava o que sobrasse. O teto agora deixa 4 núcleos livres (`Math.max(2, cpus().length - 4)`), escalando com o runner em vez de fixar a contagem de uma máquina só. Não custa tempo de parede — medido no `theokit-ui`, a suíte completa rodou em 73,96s com 4 workers contra 74,36s com 12. (usetheokit/theokit-ui#51)
+
+- **O repositório passou para a organização oficial `usetheokit`.** Clones existentes continuam funcionando: o GitHub redireciona permanentemente o remote antigo `usetheodev/theokit-studio`. (usetheokit/theokit#316)
+
+- **O texto da licença Apache-2.0 foi substituído pelo oficial.** O texto distribuído até aqui tinha o parágrafo 4(d) truncado, omitindo "reasonable and customary use" da cláusula de NOTICE. Um corpo modificado sob o identificador SPDX `Apache-2.0` é, na prática, uma licença customizada, e obrigava quem consome a raciocinar sobre a diferença. O LICENSE da raiz e o de `packages/studio` são agora byte-a-byte idênticos ao texto canônico. (usetheokit/theokit#316)
 
 - **O `@theokit/studio` passa a exigir `@theokit/agents@^7.6.0` e `@theokit/sdk@^4.49.0`.** Isto é mudança de contrato de **instalação**: os peers declarados eram `^0.39.0` e `^3.8.0`, sete majors e uma major atrás do que o framework publica hoje. Enquanto ninguém satisfazia o peer obsoleto, ninguém descobria que ele estava obsoleto.
 

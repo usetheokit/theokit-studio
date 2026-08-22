@@ -22,3 +22,6 @@ architect-output/
 
 # loop-code-review working dir (durable artifacts copied to knowledge-base/audits/)
 code-review-output/
+
+# Kit de manutencao (Squad) instalado em .claude/ — nao versionado
+.claude/
