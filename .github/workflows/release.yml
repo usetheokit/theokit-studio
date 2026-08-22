@@ -111,6 +111,12 @@ jobs:
           # The only credential here, and it is GitHub's own: changesets uses it to open
           # the version pull request. Nothing here authenticates to npm.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No NPM_CONFIG_PROVENANCE: `publishConfig.provenance: true` already sits in the
-          # manifest, so provenance is declared beside the package it describes rather than
-          # in an environment variable this file has to remember.
+          # NO PROVENANCE, AND NOT BY OVERSIGHT. npm refuses to attest a package whose
+          # source repository is private, answering E422. This repository is private, so
+          # declaring `publishConfig.provenance: true` would fail every publish rather than
+          # produce an unsigned one.
+          #
+          # Trusted publishing still works — it is authentication, and it is what removes the
+          # long-lived token. What is missing is the attestation a consumer could verify.
+          # Restore `publishConfig.provenance: true` in packages/studio/package.json the day
+          # this repository goes public; nothing else here has to change.
