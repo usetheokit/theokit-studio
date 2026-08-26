@@ -24,10 +24,17 @@ import { describe, expect, it } from "vitest";
  */
 
 describe("the loaded modules are the ones the manifest declares", () => {
-  it("test_bridge_exposes_the_7x_authoring_api_and_not_the_0_39_one", async () => {
-    // `AgentBuilder.create()` replaced `agent()` between 0.39 and 7.x, and it is the whole content
-    // of this migration. If `agent` were still reachable the migration would have been
-    // unnecessary; if `AgentBuilder` were missing, the fixtures could not compile at all.
+  it("test_bridge_exposes_the_builder_authoring_api_and_not_the_0_39_one", async () => {
+    // `AgentBuilder.create()` replaced `agent()` between 0.39 and 7.x and is still the authoring
+    // entry point on the 11.x floor this package now declares. If `agent` were still reachable the
+    // migration would have been unnecessary; if `AgentBuilder` were missing, the fixtures could not
+    // compile at all.
+    //
+    // Note what this file does NOT check, and why the peer range still went stale: every assertion
+    // here is a FLOOR. They all stayed green while the declared range said `^7.6.0` and the
+    // published agents moved to 11.1.0, because a floor cannot see a ceiling. The check that the
+    // declared range still admits the published `latest` is a manifest question, not a runtime one
+    // — it lives in the dependency gate, not here.
     const bridge = (await import("@theokit/agents/bridge")) as Record<string, unknown>;
     expect(bridge.AgentBuilder, "AgentBuilder is the 7.x authoring entry point").toBeTruthy();
     expect(bridge.agent, "`agent` is the 0.39 entry point and must be gone").toBeUndefined();
