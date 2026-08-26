@@ -58,8 +58,8 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@theokit/agents':
-        specifier: ^11.1.0
-        version: 11.1.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)
+        specifier: ^12.0.0
+        version: 12.0.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)
       '@theokit/sdk':
         specifier: ^4.49.0
         version: 4.51.1(ws@8.21.0)(zod@4.4.3)
@@ -1279,8 +1279,8 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@theokit/agents@11.1.0':
-    resolution: {integrity: sha512-+5Xt93rly0VVtNf69mAbEhLLURBOHj4f0DVAqXbK3sr+uFegfonE3VICBLk5aaw0g8Uvik7015VcMVZb9+D3EQ==}
+  '@theokit/agents@12.0.0':
+    resolution: {integrity: sha512-GJrtmkW26aLxgZpm+wn5vVkXYkDxMYkbCRjHE/8U6dzDHqp31beM8AbQrpmx4mkcP2d5e6hAIxmaXSPRLrtU6w==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       '@theokit/http': '>=0.1.0-alpha.0'
@@ -1313,11 +1313,6 @@ packages:
     peerDependencies:
       '@theokit/sdk': ^4.49.0
       zod: ^4.0.0
-
-  '@theokit/sdk-pty@0.3.3':
-    resolution: {integrity: sha512-7/cYXYStDSLq0OCFuP5F9QDOncZjWbwtiy0nbPSflIMhveWbfj+vqFVGqeA6sh6crvOCbe8g2ZCbVys6Qi+rNw==}
-    peerDependencies:
-      '@theokit/sdk': '>=4.4.1'
 
   '@theokit/sdk-tools@0.26.3':
     resolution: {integrity: sha512-ixXVxepReAzyI0oXLtPq9hfyJvrEjscUhah7u9JkN3cIbqD0Raqxd/IkUTABjik7R3wWlpDIM4gcMLxB7kmkOw==}
@@ -2173,12 +2168,6 @@ packages:
     resolution: {integrity: sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
-
-  node-addon-api@7.1.1:
-    resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
-
-  node-pty@1.1.0:
-    resolution: {integrity: sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==}
 
   node-releases@2.0.51:
     resolution: {integrity: sha512-wRNIrw4DmVLKQlbgOMdkMx27Wrpzes2hh5Jtbi2bjPd+4wJstWIqP5A+lscnqbm0xxmT5Bpg8Lec5ItEBwx6BQ==}
@@ -3919,12 +3908,11 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@theokit/agents@11.1.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)':
+  '@theokit/agents@12.0.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)':
     dependencies:
       '@theokit/http': 0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3)
       '@theokit/presenter': 0.8.0(@theokit/sdk@4.57.0(ws@8.21.0))(zod@4.4.3)
       '@theokit/sdk': 4.57.0(ws@8.21.0)
-      '@theokit/sdk-pty': 0.3.3(@theokit/sdk@4.57.0(ws@8.21.0))
       '@theokit/sdk-tools': 0.26.3(@theokit/sdk@4.57.0(ws@8.21.0))(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(zod@4.4.3)
       zod: 4.4.3
     optionalDependencies:
@@ -3952,12 +3940,6 @@ snapshots:
     dependencies:
       '@theokit/sdk': 4.57.0(ws@8.21.0)
       zod: 4.4.3
-
-  '@theokit/sdk-pty@0.3.3(@theokit/sdk@4.57.0(ws@8.21.0))':
-    dependencies:
-      '@theokit/sdk': 4.57.0(ws@8.21.0)
-    optionalDependencies:
-      node-pty: 1.1.0
 
   '@theokit/sdk-tools@0.26.3(@theokit/sdk@4.57.0(ws@8.21.0))(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(zod@4.4.3)':
     dependencies:
@@ -4731,14 +4713,6 @@ snapshots:
       thenify-all: 1.6.0
 
   nanoid@3.3.16: {}
-
-  node-addon-api@7.1.1:
-    optional: true
-
-  node-pty@1.1.0:
-    dependencies:
-      node-addon-api: 7.1.1
-    optional: true
 
   node-releases@2.0.51: {}
 
