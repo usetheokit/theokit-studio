@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The published package declares where it comes from. `packages/studio/package.json` carried no
+  `repository`, `homepage` or `bugs` field, so npm had no source to match the provenance bundle
+  against and answered `E422 — Failed to validate repository information` on every attested
+  publish. A consumer reading the package page also had no link back to the code (#25)
+
+### Changed
+
+- The repository is public, and provenance is back on. It was off because npm refuses to attest a
+  package built from a private source; `@theokit/studio@0.2.0` is the only release in the
+  ecosystem carrying no attestation, and the same single fact — a private repository — also kept
+  the organization's release secrets from reaching this repository, since the free plan delivers
+  them to public repositories only. One cause, two costs, both now gone (#25)
+
 ## [0.3.0] - 2026-08-27
 
 ### Added

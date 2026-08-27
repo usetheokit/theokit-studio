@@ -148,12 +148,13 @@ jobs:
           # opens with nothing but the external Apps reporting and stays unmergeable until a
           # person closes and reopens it. Nothing here authenticates to npm.
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          # NO PROVENANCE, AND NOT BY OVERSIGHT. npm refuses to attest a package whose
-          # source repository is private, answering E422. This repository is private, so
-          # declaring `publishConfig.provenance: true` would fail every publish rather than
-          # produce an unsigned one.
+          # Provenance is ON, declared in `packages/studio/package.json`. It was off while this
+          # repository was private, because npm refuses to attest a package built from a private
+          # source and answers E422 — so declaring it would have failed every publish rather
+          # than produce an unsigned one. The repository is public now and `0.2.0` is the only
+          # release in the ecosystem carrying no attestation.
           #
-          # Trusted publishing still works — it is authentication, and it is what removes the
-          # long-lived token. What is missing is the attestation a consumer could verify.
-          # Restore `publishConfig.provenance: true` in packages/studio/package.json the day
-          # this repository goes public; nothing else here has to change.
+          # Note for the next E422 read here: a private source is not the only thing that
+          # produces one. Publishing 0.3.0 answered `E422 ... Failed to validate repository
+          # information` from a public repository, because the manifest carried no `repository`
+          # field at all — npm cannot match a source it was never told about.
