@@ -2,8 +2,15 @@
   "name": "@theokit/studio",
   "version": "0.3.0",
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usetheokit/theokit-studio.git",
+    "directory": "packages/studio"
+  },
+  "homepage": "https://github.com/usetheokit/theokit-studio#readme",
+  "bugs": "https://github.com/usetheokit/theokit-studio/issues",
   "type": "module",
-  "description": "TheoKit Studio — local dev UI (M1: reflection plugin + embeddable SPA)",
+  "description": "TheoKit Studio \u2014 local dev UI (M1: reflection plugin + embeddable SPA)",
   "exports": {
     "./plugin": {
       "types": "./dist/plugin/index.d.ts",
@@ -35,7 +42,7 @@
     "react-router": "^7.18.1"
   },
   "_comments": {
-    "@theokit/sdk": "SPA: types-only (`import type`); plugin node-side consome em runtime no host — por isso também peerDependency (M1 T1.1)",
+    "@theokit/sdk": "SPA: types-only (`import type`); plugin node-side consome em runtime no host \u2014 por isso tamb\u00e9m peerDependency (M1 T1.1)",
     "@theokit/agents": "plugin node-side: compileAgentModule/streamAgentUIMessages do ./bridge (M1 ADR D2); devDep para fixtures/testes (EC-4)"
   },
   "devDependencies": {
@@ -57,7 +64,8 @@
     "vitest": "^3.2.7"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "engines": {
     "node": ">=22.12.0"
