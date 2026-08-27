@@ -1,9 +1,14 @@
+import { cpus } from "node:os";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
   test: {
+    // Default is os.availableParallelism(): one fork per core, each booting a full
+    // test environment. Capping leaves headroom for the host, and costs no wall-clock
+    // because the gain above this point was already noise when measured.
+    maxWorkers: Math.max(2, cpus().length - 4),
     environment: "jsdom",
     globals: true,
     // Headroom for a cold cache (review F-tests-1): the tests are event-driven; on green runs the

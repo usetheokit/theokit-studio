@@ -1,42 +1,90 @@
 # Changelog
 
+Changes to the repository itself — CI, licensing, tooling and repository-wide sweeps.
+Changes to the published package are recorded in
+[`@theokit/studio`](packages/studio/CHANGELOG.md).
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-27
+
 ### Added
 
-- Secret scanning em duas camadas: um hook `pre-commit` que varre com o TruffleHog o conteúdo que está staged e recusa o commit, e `.github/workflows/secret-scan.yml`, que revarre no CI o intervalo empurrado. O hook é o que impede a credencial de entrar no histórico; o workflow é o que `git commit --no-verify` não consegue pular. Falsos positivos confirmados são silenciados linha a linha com um comentário `trufflehog:ignore`, nunca excluindo o caminho — excluir o caminho esconderia também um segredo real acrescentado depois àquele mesmo fixture. (secret-scanning-2026-08)
+- `CI`, which runs check, build, typecheck and test on every pull request. Until now the only
+  workflow here was the secret scan, so a pull request reported "all checks passed" without
+  anything having verified that the code compiles (#19)
+- `Release`, a changesets-driven publish authenticated with npm trusted publishing. Versions
+  previously reached the registry from a developer machine, carrying no provenance (#19)
+- `Workflow Lint`, a CI gate running actionlint and zizmor over `.github/workflows/` (#19)
+- `Dependency Gate`, which checks every declared sibling range against what is installed, against
+  the registry, and against the bottom of the range — the class of defect #21 was (#20)
+- `@theokit/studio` declares `engines.node` (#19)
+- Secret scanning in two layers: a `pre-commit` hook that scans staged content with TruffleHog and
+  refuses the commit, and `.github/workflows/secret-scan.yml`, which rescans the pushed range in
+  CI. The hook is what keeps a credential out of history; the workflow is what
+  `git commit --no-verify` cannot skip. Confirmed false positives are silenced line by line with a
+  `trufflehog:ignore` comment, never by excluding the path — excluding the path would also hide a
+  real secret added to that same fixture later (secret-scanning-2026-08)
+- `tests/version-floor.test.ts`, an anti-vacuity floor over the versions this package declares.
+  Written because 15 reds went green on a three-line change, in an item previously described as
+  "seven majors of migration": a green that cheap deserves disbelief until something independent
+  confirms the new code is the code that runs.
 
-- **`tests/version-floor.test.ts` — piso anti-vacuidade sobre as versões que este pacote declara.** Escrito porque 15 vermelhos ficaram verdes com uma mudança de três linhas, num item antes descrito como "sete majors de migração": um verde tão barato merece descrença até que algo independente confirme que o código novo é o código que roda.
+  It does not ask for a version — it asks the loaded modules what they expose: `AgentBuilder`
+  present and `agent` absent from the bridge, `compileAgentModule` / `streamAgentUIMessages` still
+  functions, and the config/trust/wiring family of SDK 4.49. A manifest can declare any range; only
+  the loaded module answers whether the API exists.
 
-  Ele não pergunta versão — pergunta aos módulos carregados o que eles expõem: `AgentBuilder` presente e `agent` ausente no bridge, `compileAgentModule` / `streamAgentUIMessages` ainda funções, e a família config/trust/wiring do SDK 4.49. Um manifest pode declarar qualquer range; só o módulo carregado responde se a API existe.
-
-  Levou quatro tentativas, e cada uma errada foi o mesmo defeito — uma sonda incapaz de detectar a condição que rastreia: `package.json` fora do mapa de `exports`; caminhar para cima a partir de uma resolução CJS; resolução CJS contra um subpath ESM-only (`ERR_PACKAGE_PATH_NOT_EXPORTED` é a resposta *correta* para a pergunta errada); e `import.meta.resolve`, que o transform SSR do Vite não fornece.
+  It took four attempts, and every wrong one was the same defect — a probe unable to detect the
+  condition it tracks: `package.json` outside the `exports` map; walking upward from a CJS
+  resolution; CJS resolution against an ESM-only subpath (`ERR_PACKAGE_PATH_NOT_EXPORTED` is the
+  *correct* answer to the wrong question); and `import.meta.resolve`, which Vite's SSR transform
+  does not provide.
 
 ### Changed
 
-- **O `@theokit/studio` passa a exigir `@theokit/agents@^7.6.0` e `@theokit/sdk@^4.49.0`.** Isto é mudança de contrato de **instalação**: os peers declarados eram `^0.39.0` e `^3.8.0`, sete majors e uma major atrás do que o framework publica hoje. Enquanto ninguém satisfazia o peer obsoleto, ninguém descobria que ele estava obsoleto.
-
-  Alinhar os ranges levou a suíte de 192 verdes para 177 verdes e 15 vermelhos, em 4 arquivos. Diagnosticados um a um, todos os 15 descendem de **uma** renomeação de API — e ela está nas *fixtures de teste*, não no produto. `agent()` deixou de ser exportado do bridge entre 0.39 e 7.x; o sucessor é `AgentBuilder.create()`, com a mesma cadeia (`.model` / `.system` / `.tool` / `.skills` / `.build`).
-
-  A superfície que o plugin realmente consome — `compileAgentModule` e `streamAgentUIMessages` — atravessou as sete majors intacta. Um dos vermelhos devolvia `422` onde esperava `200` no endpoint de run: não era contrato quebrado, era a degradação por item funcionando exatamente como projetada, alimentada por uma fixture que lançava no import.
-
-  Três linhas depois: 192 verdes, `tsc --noEmit` limpo.
-
-- O README deixa de linkar `ROADMAP.md` e os quatro documentos de `docs/`, todos removidos no commit `4a60788`; o texto agora diz que eles só existem no histórico do git. (docs-reorg-2026-08)
-
-### Deprecated
-
-### Removed
+- Node pinned to 22.12.0 and pnpm to 10.34.1, resolved from `.nvmrc` and `packageManager` (#19)
+- **The suite stopped claiming every core on the machine.** `vitest.config.ts` capped nothing, so
+  the default applied — `os.availableParallelism()`, one fork per core, each starting a whole test
+  environment. On a 12-thread machine a single `vitest run` took the entire machine, and anything
+  else running alongside it (another suite, a typecheck, the desktop) fought over what was left.
+  The cap now leaves 4 cores free (`Math.max(2, cpus().length - 4)`), scaling with the runner
+  rather than hardcoding one machine's count. It costs no wall-clock: measured on `theokit-ui`, the
+  full suite ran in 73.96s with 4 workers against 74.36s with 12 (usetheokit/theokit-ui#51)
+- **The repository moved to the official `usetheokit` organisation.** Existing clones keep working:
+  GitHub permanently redirects the old `usetheodev/theokit-studio` remote (usetheokit/theokit#316)
+- **The Apache-2.0 licence text was replaced with the official one.** The text shipped until now had
+  paragraph 4(d) truncated, omitting "reasonable and customary use" from the NOTICE clause. A
+  modified body under the SPDX identifier `Apache-2.0` is in practice a custom licence, and forced
+  consumers to reason about the difference. The root `LICENSE` and the one in `packages/studio` are
+  now byte-for-byte identical to the canonical text (usetheokit/theokit#316)
+- **The README no longer links `ROADMAP.md` and the four documents under `docs/`**, all removed in
+  commit `4a60788`; the text now says they exist only in git history (docs-reorg-2026-08)
 
 ### Fixed
 
-- **`pnpm test` na raiz voltou a passar — estava vermelho desde o `4a60788`.** O script `test:roadmap` rodava `tests/roadmap_dod_shape_test.py`, que lê `ROADMAP.md`. Esse arquivo foi removido de propósito naquele mesmo commit, junto com o extrator de `.claude/skills/acceptance/` que o teste importava como oráculo. Um guarda órfão em cima de um oráculo órfão, verificando a forma de um artefato que o README já documenta como inexistente.
+- **`pnpm test` at the root passes again — it had been red since `4a60788`.** The `test:roadmap`
+  script ran `tests/roadmap_dod_shape_test.py`, which reads `ROADMAP.md`. That file was removed on
+  purpose in that same commit, along with the extractor under `.claude/skills/acceptance/` the test
+  imported as its oracle. An orphan guard on top of an orphan oracle, checking the shape of an
+  artifact the README already documents as non-existent.
 
-  Ele nem falhava com asserção: estourava `FileNotFoundError`, então a suíte da raiz saía não-zero por um erro que não dizia o que fazer. Removido — o assunto dele não existe mais, e um gate impossível de satisfazer treina o time a ignorar vermelho. Volta se um roadmap voltar, junto com o extrator que lhe dava sentido.
+  It did not even fail on an assertion: it raised `FileNotFoundError`, so the root suite exited
+  non-zero on an error that did not say what to do. Removed — its subject no longer exists, and a
+  gate impossible to satisfy trains the team to ignore red. It comes back if a roadmap comes back,
+  together with the extractor that gave it meaning.
 
-- **O pacote publicado passa a declarar e a carregar a licença (usetheodev/theokit#213).** O manifest não tinha campo `license` e o `files: ["dist"]` não levava nenhum `LICENSE` — o `LICENSE` Apache-2.0 existia só na raiz do repositório, que não é o artefato. **Um pacote npm sem campo `license` é all rights reserved para quem instala:** a concessão viaja no tarball, não no GitHub, e quem resolve o pacote de um mirror de registry nunca vê o repositório.
+- **The published package now declares and ships its licence** (usetheodev/theokit#213). The
+  manifest had no `license` field and `files: ["dist"]` carried no `LICENSE` — the Apache-2.0
+  `LICENSE` existed only at the repository root, which is not the artifact. **An npm package with no
+  `license` field is all rights reserved to whoever installs it:** the grant travels in the tarball,
+  not on GitHub, and someone resolving the package from a registry mirror never sees the repository.
 
-  Agora o manifest declara `Apache-2.0` e o `LICENSE` fica ao lado dele, então o npm o inclui apesar do `files`. Verificado no `npm pack --dry-run`: `11.3kB LICENSE`, 38 arquivos. `tests/packaging/license-declared.test.ts` guarda as duas metades — declarar sem embarcar, ou embarcar um texto diferente do SPDX declarado, são falhas distintas e a segunda é pior, porque é uma afirmação em que o consumidor confia sem ler.
-
-### Security
+  The manifest now declares `Apache-2.0` and the `LICENSE` sits beside it, so npm includes it
+  despite `files`. Verified with `npm pack --dry-run`: `11.3kB LICENSE`, 38 files.
+  `tests/packaging/license-declared.test.ts` guards both halves — declaring without shipping, and
+  shipping a text different from the declared SPDX, are distinct failures, and the second is worse,
+  because it is a claim the consumer trusts without reading.
