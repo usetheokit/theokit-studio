@@ -1,0 +1,8 @@
+{
+  "mode": "pre",
+  "tag": "next",
+  "initialVersions": {
+    "@theokit/studio": "0.3.0"
+  },
+  "changesets": []
+}

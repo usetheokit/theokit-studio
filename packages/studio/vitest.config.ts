@@ -26,6 +26,11 @@ export default defineConfig({
       // file whose defect names the milestone, and keeping it out of the measurement is what made
       // the fixtures-branch hole invisible to the coverage DoD's number.
       exclude: ["src/test/**", "src/vite-env.d.ts", "plugin/**/*.test.ts"],
+      // `lcov` is what SonarCloud reads, and it is NOT in vitest's default reporter set — the
+      // defaults are text/html/clover/json. Naming any reporter replaces that set, so the
+      // defaults are repeated here rather than lost: `text` for the CI log, `html` for the local
+      // report, `json` for tooling.
+      reporter: ["text", "html", "clover", "json", "lcov"],
     },
   },
 });

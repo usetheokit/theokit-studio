@@ -76,3 +76,28 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+  # SonarQube Cloud, from CI rather than Automatic Analysis.
+  #
+  # Automatic Analysis does not import coverage — "code coverage information is not supported" in
+  # its own documentation — so on that mechanism this project reported bugs and smells while the
+  # quality gate stayed blind to how much of the code the suite reaches.
+  #
+  # The workflow lives in shared-workflows rather than as a step here. The one repository that
+  # had an inline version carried `if: matrix.node-version == '22.x'` against a matrix of
+  # ['22.12', '22'] — a value that never occurs — so the step reported `skipped` on every run for
+  # two months, and a skipped step renders exactly like a passing one.
+  #
+  # Automatic Analysis must be OFF for this project or the scanner refuses to run:
+  # "You are running CI analysis while Automatic Analysis is enabled." Already switched off.
+  sonar:
+    needs: verify
+    # `@v1` is a moving ref by design — a policy fix in shared-workflows must reach every
+    # caller without eleven pull requests, which is the reason that repository exists.
+    uses: usetheokit/shared-workflows/.github/workflows/sonar.yml@v1 # zizmor: ignore[unpinned-uses]
+    # Named rather than inherited: `secrets: inherit` would hand the scanner every secret
+    # this repository holds.
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    with:
+      coverage-command: pnpm test:coverage
