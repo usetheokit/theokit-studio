@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2026-08-27
 
 ### Added
+- **ci:** `Promotion gate` refuses a pull request into `develop` that does not come from this repository's own `workspace`. `git-safety.md` has always said so and `validate-command.sh:245` has always blocked it — for a `git merge` typed locally, which is not how any of this repository's 14 promotions landed (usetheokit/theokit#606)
 
 - `CI`, which runs check, build, typecheck and test on every pull request. Until now the only
   workflow here was the secret scan, so a pull request reported "all checks passed" without
