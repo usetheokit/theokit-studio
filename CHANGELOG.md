@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **release:** the release channel this repository declares is now guarded. `"releaseChannel"` in
+  the root manifest and `.changeset/pre.json` must agree, checked on every pull request and again
+  immediately before a release. `changeset pre exit`, a bad merge, or a conflict resolved the wrong
+  way removes `pre.json`; nothing errors; the next release publishes a stable version and moves the
+  `latest` dist-tag for every consumer, reporting success. Cutting a stable release stays available
+  and becomes deliberate — it takes both edits, in the same pull request.
+
 ### Fixed
 
 - The published package declares where it comes from. `packages/studio/package.json` carried no
