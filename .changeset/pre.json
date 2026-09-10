@@ -4,5 +4,7 @@
   "initialVersions": {
     "@theokit/studio": "0.3.0"
   },
-  "changesets": []
+  "changesets": [
+    "agents-13-is-a-peer-bump-not-a-break"
+  ]
 }
