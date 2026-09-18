@@ -58,8 +58,8 @@ importers:
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
       '@theokit/agents':
-        specifier: ^14.5.1
-        version: 14.5.1(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)
+        specifier: ^15.0.0
+        version: 15.0.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)
       '@theokit/sdk':
         specifier: ^5.9.0
         version: 5.9.0(ws@8.21.0)
@@ -1279,8 +1279,8 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@theokit/agents@14.5.1':
-    resolution: {integrity: sha512-UxvAiPFwx0p1rAv4GfsX8901gr6xwkKtIKkmII3Qh4HPos/MZ263BI6oEsjNhIOooqGixSqEHcxtnkhJSymyvw==}
+  '@theokit/agents@15.0.0':
+    resolution: {integrity: sha512-l9ZC+rgseH4cdqbRceTiMscAW+GzEvJHoUaSaLcTMgvcxp9amxGU57NG6j1xTgbGOtwtTNl0gNWK2oMUB5eLRg==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       '@theokit/http': '>=2.1.0-next.0'
@@ -1308,11 +1308,11 @@ packages:
       react-dom:
         optional: true
 
-  '@theokit/presenter@0.9.0':
-    resolution: {integrity: sha512-8olzCZVg6QEw1Eb/tw4s1glqJ05OWsCTA2qUu3cUYVgL90IY0/bCJ88P0UZLip55qwB8xUxN7R6fAa44VO6D3A==}
+  '@theokit/presenter@0.10.0':
+    resolution: {integrity: sha512-isnmEsYpYhNnHfN9Jv5nulZLSISFFynoHtChArrpqJ2KYdGioQ0SJS/MnsvD4Ycl774voP0JvYj+FvJi2mtPyg==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
-      '@theokit/sdk': ^4.49.0 || ^5.0.0
+      '@theokit/sdk': ^5.3.0
       zod: ^4.0.0
 
   '@theokit/sdk-tools@0.27.5':
@@ -3880,10 +3880,10 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@theokit/agents@14.5.1(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)':
+  '@theokit/agents@15.0.0(@theokit/http@0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3))(react@19.2.7)(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(ws@8.21.0)(zod@4.4.3)':
     dependencies:
       '@theokit/http': 0.7.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(reflect-metadata@0.2.2)(zod@4.4.3)
-      '@theokit/presenter': 0.9.0(@theokit/sdk@5.9.0(ws@8.21.0))(zod@4.4.3)
+      '@theokit/presenter': 0.10.0(@theokit/sdk@5.9.0(ws@8.21.0))(zod@4.4.3)
       '@theokit/sdk': 5.9.0(ws@8.21.0)
       '@theokit/sdk-tools': 0.27.5(@theokit/sdk@5.9.0(ws@8.21.0))(vitest@3.2.7(@types/node@22.20.1)(jiti@2.7.0)(jsdom@26.1.0)(lightningcss@1.32.0))(zod@4.4.3)
       zod: 4.4.3
@@ -3908,7 +3908,7 @@ snapshots:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
 
-  '@theokit/presenter@0.9.0(@theokit/sdk@5.9.0(ws@8.21.0))(zod@4.4.3)':
+  '@theokit/presenter@0.10.0(@theokit/sdk@5.9.0(ws@8.21.0))(zod@4.4.3)':
     dependencies:
       '@theokit/sdk': 5.9.0(ws@8.21.0)
       zod: 4.4.3
