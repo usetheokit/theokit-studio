@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { relative } from "node:path";
-import { compileAgentModule, streamAgentUIMessages } from "@theokit/agents/bridge";
+import { compileLoadedAgentModule, streamAgentUIMessages } from "@theokit/agents/bridge";
 import { scanStudioAgents } from "./agent-scan";
 import { sendErrorEnvelope } from "./http";
 
@@ -41,7 +41,7 @@ export interface RunStreamInput {
 }
 
 export type RunStreamFactory = (
-  compiled: ReturnType<typeof compileAgentModule>,
+  compiled: ReturnType<typeof compileLoadedAgentModule>,
   apiKey: string,
   input: RunStreamInput,
 ) => AsyncIterable<unknown>;
@@ -142,7 +142,7 @@ type RunContext = {
   kind: "ready";
   body: NonNullable<ReturnType<typeof parseRunBody>>;
   apiKey: string;
-  compiled: ReturnType<typeof compileAgentModule>;
+  compiled: ReturnType<typeof compileLoadedAgentModule>;
 };
 
 /**
@@ -196,7 +196,7 @@ async function resolveRunRequest(
   }
   try {
     const mod = await deps.load(node.filePath);
-    const compiled = compileAgentModule(mod, relative(deps.projectRoot, node.filePath));
+    const compiled = compileLoadedAgentModule(mod, relative(deps.projectRoot, node.filePath));
     return { kind: "ready", body, apiKey, compiled };
   } catch (error) {
     return refuse(422, "AGENT_INVALID", error instanceof Error ? error.message : String(error));
