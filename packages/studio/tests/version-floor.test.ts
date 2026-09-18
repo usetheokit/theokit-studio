@@ -45,6 +45,13 @@ describe("the loaded modules are the ones the manifest declares", () => {
     // majors intact — which is why the migration turned out to be three lines in fixtures rather
     // than a rewrite, and why saying so out loud belongs in a test rather than a commit message.
     const bridge = (await import("@theokit/agents/bridge")) as Record<string, unknown>;
+    expect(typeof bridge.compileLoadedAgentModule).toBe("function");
+
+    // `compileAgentModule` still exists and is deliberately NOT what this package calls. Its
+    // parameter tightened from `unknown` to `AgentModule` in agents 13 (usetheokit/theokit#663),
+    // and this package hands it a module read off disk — a shape no typechecker can know. The
+    // separate name is how a genuine disk boundary says so, and asserting BOTH are present is what
+    // stops a later edit from moving quietly back to the typed one behind a cast.
     expect(typeof bridge.compileAgentModule).toBe("function");
     expect(typeof bridge.streamAgentUIMessages).toBe("function");
   });

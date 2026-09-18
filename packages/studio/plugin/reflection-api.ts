@@ -1,11 +1,12 @@
 import { join, relative } from "node:path";
-import { compileAgentModule } from "@theokit/agents/bridge";
+import { compileLoadedAgentModule } from "@theokit/agents/bridge";
 import { type AgentFileNode, scanStudioAgents } from "./agent-scan";
 
 /**
  * Agent reflection (T1.2, ADR D2): fs scan + injected load (DIP — production uses
  * `server.ssrLoadModule`, hot reload for free; NEVER cache between requests) + the bridge's
- * public `compileAgentModule`. A load/compile failure degrades ONLY that item.
+ * public `compileLoadedAgentModule` — the disk-boundary entry point, named so `unknown` cannot
+ * re-enter the typed one. A load/compile failure degrades ONLY that item.
  */
 export interface ReflectionTool {
   name: string;
@@ -66,7 +67,7 @@ async function loadWithTimeout(
 function toReflectionAgent(
   node: AgentFileNode,
   projectRoot: string,
-  compiled: ReturnType<typeof compileAgentModule>,
+  compiled: ReturnType<typeof compileLoadedAgentModule>,
 ): ReflectionAgent {
   return {
     name: node.name,
@@ -95,7 +96,7 @@ export async function listReflectionAgents(deps: ListAgentsDeps): Promise<ListAg
     const relPath = relative(deps.projectRoot, node.filePath).replace(/\\/g, "/");
     try {
       const mod = await loadWithTimeout(deps.load, node.filePath, timeoutMs);
-      items.push(toReflectionAgent(node, deps.projectRoot, compileAgentModule(mod, relPath)));
+      items.push(toReflectionAgent(node, deps.projectRoot, compileLoadedAgentModule(mod, relPath)));
     } catch (error) {
       // Per-item degradation carrying the REAL message (fail-clear) — never a silent empty list.
       items.push({
