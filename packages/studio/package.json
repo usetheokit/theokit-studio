@@ -1,6 +1,6 @@
 {
   "name": "@theokit/studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "@theokit/agents": ">=13.0.0 <15",
+    "@theokit/agents": ">=13.0.0 <16",
     "@theokit/sdk": ">=4.49.0 <6",
     "vite": ">=6 <9"
   },
@@ -50,7 +50,7 @@
     "@tailwindcss/vite": "^4.3.2",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@theokit/agents": "^14.5.1",
+    "@theokit/agents": "^15.0.0",
     "@theokit/sdk": "^5.9.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
